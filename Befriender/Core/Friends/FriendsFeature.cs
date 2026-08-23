@@ -10,6 +10,9 @@ public class FriendsFeature : IFeatureModule {
         services.AddSingleton<ICharacterIdentityService, CharacterIdentityService>();
         services.AddSingleton<IFriendStorage, JsonFriendStorage>();
         services.AddSingleton<IFriendRepository, FriendRepository>();
+
+        // Register the concrete class to keep the framework event running, and forward the interface to it
         services.AddSingleton<FriendSyncService>();
+        services.AddSingleton<IFriendSyncService>(provider => provider.GetRequiredService<FriendSyncService>());
     }
 }

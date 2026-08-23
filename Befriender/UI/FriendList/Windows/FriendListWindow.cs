@@ -4,6 +4,7 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.UI.FriendList.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface; // Required for FontAwesomeIcon
 using Dalamud.Interface.Windowing;
 using System.Collections.Generic;
 using System.Numerics;
@@ -11,20 +12,29 @@ using System.Numerics;
 public class FriendListWindow : Window {
     private IFriendRepository friendRepository;
     private IFriendDisplayService displayService;
+    private IFriendSyncService syncService;
     private bool showOnlineOnly = false;
 
     private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
     private int lastFriendCount = -1;
     private bool forceRefresh = false;
 
-    public FriendListWindow(IFriendRepository friendRepository, IFriendDisplayService displayService) : base("Befriender - Friend List", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IFriendRepository friendRepository, IFriendDisplayService displayService, IFriendSyncService syncService) : base("Befriender - Friend List", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.friendRepository = friendRepository;
         this.displayService = displayService;
+        this.syncService = syncService;
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(500, 600),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
+
+        // Add the manual sync button to the title bar
+        this.TitleBarButtons.Add(new TitleBarButton {
+            Icon = FontAwesomeIcon.Sync,
+            IconOffset = new Vector2(1, 1),
+            Click = (mouseButton) => this.syncService.ForceSync()
+        });
     }
 
     public override void Draw() {

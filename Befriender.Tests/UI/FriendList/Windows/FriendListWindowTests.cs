@@ -8,15 +8,17 @@ using Xunit;
 
 public class FriendListWindowTests {
     [Fact]
-    public void FriendListWindow_Initialization_SetsCorrectProperties() {
+    public void FriendListWindow_Initialization_SetsCorrectPropertiesAndButtons() {
         // Arrange
         var mockRepo = Substitute.For<IFriendRepository>();
         var mockDisplay = Substitute.For<IFriendDisplayService>();
+        var mockSync = Substitute.For<IFriendSyncService>();
 
         // Act
-        var window = new FriendListWindow(mockRepo, mockDisplay);
+        var window = new FriendListWindow(mockRepo, mockDisplay, mockSync);
 
         // Assert
         Assert.Equal("Befriender - Friend List", window.WindowName);
+        Assert.Single(window.TitleBarButtons);
     }
 }

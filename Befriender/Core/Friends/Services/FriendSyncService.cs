@@ -5,12 +5,12 @@ using Befriender.Core.Friends.Contracts;
 using Dalamud.Plugin.Services;
 using System;
 
-public class FriendSyncService : IDisposable {
+public class FriendSyncService : IFriendSyncService, IDisposable {
     private IFramework framework;
     private IConfigurationService configurationService;
     private IFriendScanner friendScanner;
-    private DateTime lastSyncTime = DateTime.MinValue;
     private IFriendRepository friendRepository;
+    private DateTime lastSyncTime = DateTime.MinValue;
 
     public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository) {
         this.framework = framework;
@@ -32,9 +32,11 @@ public class FriendSyncService : IDisposable {
         }
     }
 
-    // Expose method for testing without reflecting private events
-    public void TriggerUpdateForTesting() {
-        this.OnUpdate(this.framework);
+    // Official implementation of the manual trigger
+    public void ForceSync() {
+        this.lastSyncTime = DateTime.Now;
+        var scannedFriends = this.friendScanner.ScanActiveFriends();
+        this.friendRepository.UpdateFriends(scannedFriends);
     }
 
     public void Dispose() {

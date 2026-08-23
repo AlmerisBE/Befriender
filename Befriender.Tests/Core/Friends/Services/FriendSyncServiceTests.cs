@@ -39,7 +39,7 @@ public class FriendSyncServiceTests {
         using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner, mockRepository);
 
         // Act
-        service.TriggerUpdateForTesting();
+        service.ForceSync();
 
         // Assert
         mockRepository.Received(1).UpdateFriends(Arg.Is<IEnumerable<FriendProfile>>(list =>
