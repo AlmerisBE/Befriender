@@ -10,7 +10,7 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     private IConfigurationService configurationService;
     private IFriendScanner friendScanner;
     private IFriendRepository friendRepository;
-    private DateTime lastSyncTime = DateTime.MinValue;
+    public DateTime LastSyncTime { get; private set; } = DateTime.MinValue;
 
     public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository) {
         this.framework = framework;
@@ -25,16 +25,15 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         var config = this.configurationService.GetConfig();
         var interval = TimeSpan.FromMinutes(config.SyncIntervalMinutes);
 
-        if (DateTime.Now - this.lastSyncTime >= interval) {
-            this.lastSyncTime = DateTime.Now;
+        if (DateTime.Now - this.LastSyncTime >= interval) {
+            this.LastSyncTime = DateTime.Now;
             var scannedFriends = this.friendScanner.ScanActiveFriends();
             this.friendRepository.UpdateFriends(scannedFriends);
         }
     }
 
-    // Official implementation of the manual trigger
     public void ForceSync() {
-        this.lastSyncTime = DateTime.Now;
+        this.LastSyncTime = DateTime.Now;
         var scannedFriends = this.friendScanner.ScanActiveFriends();
         this.friendRepository.UpdateFriends(scannedFriends);
     }
