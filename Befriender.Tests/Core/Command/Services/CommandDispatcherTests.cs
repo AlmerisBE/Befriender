@@ -1,11 +1,12 @@
-﻿using Befriender.Core.Command.Contracts;
+﻿namespace Befriender.Tests.Core.Command.Services;
+
+using Befriender.Core.Command.Contracts;
 using Befriender.Core.Command.Services;
 using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
 using NSubstitute;
+using System.Collections.Generic;
 using Xunit;
-
-namespace Befriender.Tests.Core.Command.Services;
 
 public class CommandDispatcherTests {
     [Fact]
@@ -18,43 +19,17 @@ public class CommandDispatcherTests {
         using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
 
         // Assert
-        mockCommandManager.Received(1).AddHandler("/baseplugin", Arg.Any<CommandInfo>());
+        mockCommandManager.Received(1).AddHandler("/fl", Arg.Any<CommandInfo>());
     }
 
     [Fact]
-    public void CommandDispatcher_OnCommand_DispatchesToCorrectCommandAction() {
+    public void CommandDispatcher_OnCommand_ExecutesDefaultCommandWhenNoArgsProvided() {
         // Arrange
         var mockCommandManager = Substitute.For<ICommandManager>();
+        var mockDefaultCommand = Substitute.For<ICommand>();
+        mockDefaultCommand.CommandTrigger.Returns(string.Empty);
 
-        var mockCommand = Substitute.For<ICommand>();
-        mockCommand.CommandTrigger.Returns("hello");
-
-        var commands = new List<ICommand> { mockCommand };
-        CommandInfo capturedCommandInfo = null!;
-
-        // Capture the entire CommandInfo object instead of just the delegate
-        mockCommandManager.When(x => x.AddHandler(Arg.Any<string>(), Arg.Any<CommandInfo>()))
-            .Do(callInfo => capturedCommandInfo = callInfo.Arg<CommandInfo>());
-
-        using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
-
-        // Act
-        // Invoke the handler dynamically from the captured object
-        capturedCommandInfo.Handler.Invoke("/baseplugin", "hello world");
-
-        // Assert
-        mockCommand.Received(1).Execute("world");
-    }
-
-    [Fact]
-    public void CommandDispatcher_OnCommand_IsCaseInsensitive() {
-        // Arrange
-        var mockCommandManager = Substitute.For<ICommandManager>();
-
-        var mockCommand = Substitute.For<ICommand>();
-        mockCommand.CommandTrigger.Returns("hello");
-
-        var commands = new List<ICommand> { mockCommand };
+        var commands = new List<ICommand> { mockDefaultCommand };
         CommandInfo capturedCommandInfo = null!;
 
         mockCommandManager.When(x => x.AddHandler(Arg.Any<string>(), Arg.Any<CommandInfo>()))
@@ -63,10 +38,32 @@ public class CommandDispatcherTests {
         using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
 
         // Act
-        capturedCommandInfo.Handler.Invoke("/baseplugin", "HeLlO arGuments");
+        capturedCommandInfo.Handler.Invoke("/fl", string.Empty);
 
         // Assert
-        mockCommand.Received(1).Execute("arGuments");
+        mockDefaultCommand.Received(1).Execute(string.Empty);
+    }
+
+    [Fact]
+    public void CommandDispatcher_OnCommand_DispatchesToCorrectSubCommand() {
+        // Arrange
+        var mockCommandManager = Substitute.For<ICommandManager>();
+        var mockConfigCommand = Substitute.For<ICommand>();
+        mockConfigCommand.CommandTrigger.Returns("config");
+
+        var commands = new List<ICommand> { mockConfigCommand };
+        CommandInfo capturedCommandInfo = null!;
+
+        mockCommandManager.When(x => x.AddHandler(Arg.Any<string>(), Arg.Any<CommandInfo>()))
+            .Do(callInfo => capturedCommandInfo = callInfo.Arg<CommandInfo>());
+
+        using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
+
+        // Act
+        capturedCommandInfo.Handler.Invoke("/fl", "config extraArgs");
+
+        // Assert
+        mockConfigCommand.Received(1).Execute("extraArgs");
     }
 
     [Fact]
@@ -74,13 +71,12 @@ public class CommandDispatcherTests {
         // Arrange
         var mockCommandManager = Substitute.For<ICommandManager>();
         var commands = new List<ICommand>();
-
         var dispatcher = new CommandDispatcher(mockCommandManager, commands);
 
         // Act
         dispatcher.Dispose();
 
         // Assert
-        mockCommandManager.Received(1).RemoveHandler("/baseplugin");
+        mockCommandManager.Received(1).RemoveHandler("/fl");
     }
 }

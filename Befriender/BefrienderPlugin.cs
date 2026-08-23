@@ -8,14 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Befriender;
 
-public sealed class Befriender : IDalamudPlugin {
+public sealed class BefrienderPlugin : IDalamudPlugin {
     public string Name => "Befriender";
 
     private ServiceProvider serviceProvider;
     private IDalamudPluginInterface pluginInterface;
     private WindowSystem windowSystem;
 
-    public Befriender(
+    public BefrienderPlugin(
         IDalamudPluginInterface pluginInterface,
         IChatGui chatGui,
         ICommandManager commandManager,
