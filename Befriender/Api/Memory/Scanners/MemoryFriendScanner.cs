@@ -27,7 +27,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
             return friends;
         }
 
-        // Correct access to the base interface through InfoProxyPageInterface
         var count = friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
 
         for (uint i = 0; i < count; i++) {
@@ -48,7 +47,13 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 name = Encoding.UTF8.GetString(nameSpan);
             }
 
+            // We filter out any residual memory entry that doesn't have a valid name
+            if (string.IsNullOrWhiteSpace(name)) {
+                continue;
+            }
+
             friends.Add(new FriendProfile {
+                ContentId = entry->ContentId,
                 Name = name,
                 HomeWorldId = entry->HomeWorld
             });

@@ -22,7 +22,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         ICommandManager commandManager,
         IClientState clientState,
         IPluginLog pluginLog,
-        IFramework framework) { // Injection du IFramework par Dalamud
+        IFramework framework,
+        IObjectTable objectTable) { // Injection du IFramework par Dalamud
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -35,6 +36,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(clientState);
         services.AddSingleton(pluginLog);
         services.AddSingleton(framework);
+        services.AddSingleton(objectTable);
 
         services.AddPluginFeatures();
 
