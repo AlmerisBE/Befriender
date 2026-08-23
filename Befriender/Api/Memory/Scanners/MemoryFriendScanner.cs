@@ -47,15 +47,32 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 name = Encoding.UTF8.GetString(nameSpan);
             }
 
-            // We filter out any residual memory entry that doesn't have a valid name
             if (string.IsNullOrWhiteSpace(name)) {
                 continue;
             }
 
+            string fcTag = string.Empty;
+            var fcTagSpan = entry->FCTag;
+
+            if (!fcTagSpan.IsEmpty) {
+                int nullIndex = fcTagSpan.IndexOf((byte)0);
+                if (nullIndex >= 0) {
+                    fcTagSpan = fcTagSpan[..nullIndex];
+                }
+
+                fcTag = Encoding.UTF8.GetString(fcTagSpan);
+            }
+
+            bool isOnline = entry->State != 0;
+
             friends.Add(new FriendProfile {
                 ContentId = entry->ContentId,
                 Name = name,
-                HomeWorldId = entry->HomeWorld
+                HomeWorldId = entry->HomeWorld,
+                IsOnline = isOnline,
+                JobId = entry->Job,
+                LocationId = entry->Location,
+                FcTag = fcTag
             });
         }
 
