@@ -1,32 +1,27 @@
-﻿namespace Befriender.UI.Windows;
+﻿namespace Befriender.UI.Configuration.Tabs;
 
 using Befriender.Core.Configuration.Contracts;
+using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Windowing;
 using System;
-using System.Numerics;
 
-public class ConfigWindow : Window {
+public class ConfigTab : ITab {
     private IConfigurationService configurationService;
     private readonly int[] availableIntervals = { 5, 15, 30 };
 
-    public ConfigWindow(IConfigurationService configurationService)
-        : base("Befriender Configuration", ImGuiWindowFlags.None) {
-        this.configurationService = configurationService;
+    public string Name => "Configuration";
 
-        this.SizeConstraints = new WindowSizeConstraints {
-            MinimumSize = new Vector2(300, 150),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
-        };
+    public ConfigTab(IConfigurationService configurationService) {
+        this.configurationService = configurationService;
     }
 
-    public override void Draw() {
+    public void Draw() {
         var config = this.configurationService.GetConfig();
         var currentInterval = config.SyncIntervalMinutes;
 
         var currentIndex = Array.IndexOf(this.availableIntervals, currentInterval);
         if (currentIndex == -1) {
-            currentIndex = 1; // Fallback to 15 minutes if somehow invalid
+            currentIndex = 1;
         }
 
         var previewValue = $"{this.availableIntervals[currentIndex]} minutes";

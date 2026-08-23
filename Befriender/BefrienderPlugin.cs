@@ -3,7 +3,7 @@
 using Befriender.Core.Command.Services;
 using Befriender.Core.Framework;
 using Befriender.Core.Friends.Services;
-using Befriender.UI.Windows;
+using Befriender.UI.FriendList.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -55,7 +55,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        var configWindow = this.serviceProvider.GetService<ConfigWindow>();
+        var configWindow = this.serviceProvider.GetService<FriendListWindow>();
         if (configWindow != null) {
             configWindow.IsOpen = true;
         }

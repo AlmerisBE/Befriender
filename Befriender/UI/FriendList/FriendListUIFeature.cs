@@ -5,20 +5,21 @@ using Befriender.Core.Framework;
 using Befriender.UI.FriendList.Commands;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.FriendList.Services;
+using Befriender.UI.FriendList.Tabs;
 using Befriender.UI.FriendList.Windows;
+using Befriender.UI.Windows.Contracts;
 using Dalamud.Interface.Windowing;
 using Microsoft.Extensions.DependencyInjection;
 
 public class FriendListUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
-        // Register display services
         services.AddSingleton<IFriendDisplayService, FriendDisplayService>();
 
-        // Register the window
+        // Enregistrement de l'onglet de liste
+        services.AddSingleton<ITab, ListTab>();
+
         services.AddSingleton<FriendListWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<FriendListWindow>());
-
-        // Register the command to open it
         services.AddSingleton<ICommand, OpenFriendListCommand>();
     }
 }

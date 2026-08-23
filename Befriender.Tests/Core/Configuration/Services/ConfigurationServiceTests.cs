@@ -1,11 +1,11 @@
-﻿using Befriender.Core.Configuration.Models;
+﻿namespace Befriender.Tests.Core.Configuration.Services;
+
+using Befriender.Core.Configuration.Models;
 using Befriender.Core.Configuration.Services;
 using Dalamud.Configuration;
 using Dalamud.Plugin;
 using NSubstitute;
 using Xunit;
-
-namespace Befriender.Tests.Core.Configuration.Services;
 
 public class ConfigurationServiceTests {
     [Fact]
@@ -14,10 +14,9 @@ public class ConfigurationServiceTests {
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
         var existingConfig = new PluginConfiguration {
             Version = 1,
-            ExampleCheckbox = true
+            SyncIntervalMinutes = 30
         };
 
-        // Mock Dalamud returning an existing configuration file
         mockPluginInterface.GetPluginConfig().Returns(existingConfig);
 
         // Act
@@ -26,7 +25,7 @@ public class ConfigurationServiceTests {
 
         // Assert
         Assert.NotNull(config);
-        Assert.True(config.ExampleCheckbox);
+        Assert.Equal(30, config.SyncIntervalMinutes);
         Assert.Equal(1, config.Version);
     }
 
@@ -35,7 +34,6 @@ public class ConfigurationServiceTests {
         // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
 
-        // Mock Dalamud returning null (first time the plugin is launched)
         mockPluginInterface.GetPluginConfig().Returns((IPluginConfiguration)null!);
 
         // Act
@@ -44,7 +42,7 @@ public class ConfigurationServiceTests {
 
         // Assert
         Assert.NotNull(config);
-        Assert.False(config.ExampleCheckbox); // Default value expected
+        Assert.Equal(15, config.SyncIntervalMinutes); // 15 is the default expected value
         Assert.Equal(0, config.Version);
     }
 
@@ -55,14 +53,12 @@ public class ConfigurationServiceTests {
         var service = new ConfigurationService(mockPluginInterface);
         var config = service.GetConfig();
 
-        // Modify a value to simulate user interaction in the UI
-        config.ExampleCheckbox = true;
+        config.SyncIntervalMinutes = 5;
 
         // Act
         service.Save();
 
         // Assert
-        // Verify that SavePluginConfig was called exactly once with our config object
         mockPluginInterface.Received(1).SavePluginConfig(config);
     }
 }
