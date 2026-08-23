@@ -1,18 +1,19 @@
-﻿using Befriender.Core.Configuration.Contracts;
+﻿namespace Befriender.UI.Windows;
+
+using Befriender.Core.Configuration.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using System;
 using System.Numerics;
-
-namespace Befriender.UI.Windows;
 
 public class ConfigWindow : Window {
     private IConfigurationService configurationService;
+    private readonly int[] availableIntervals = { 5, 15, 30 };
 
     public ConfigWindow(IConfigurationService configurationService)
         : base("Befriender Configuration", ImGuiWindowFlags.None) {
         this.configurationService = configurationService;
 
-        // Basic window properties
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(300, 150),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
@@ -21,11 +22,28 @@ public class ConfigWindow : Window {
 
     public override void Draw() {
         var config = this.configurationService.GetConfig();
-        var exampleValue = config.ExampleCheckbox;
+        var currentInterval = config.SyncIntervalMinutes;
 
-        if (ImGui.Checkbox("Exemple de case à cocher", ref exampleValue)) {
-            config.ExampleCheckbox = exampleValue;
-            this.configurationService.Save();
+        var currentIndex = Array.IndexOf(this.availableIntervals, currentInterval);
+        if (currentIndex == -1) {
+            currentIndex = 1; // Fallback to 15 minutes if somehow invalid
+        }
+
+        var previewValue = $"{this.availableIntervals[currentIndex]} minutes";
+
+        if (ImGui.BeginCombo("Background Sync Interval", previewValue)) {
+            for (int i = 0; i < this.availableIntervals.Length; i++) {
+                bool isSelected = currentIndex == i;
+                if (ImGui.Selectable($"{this.availableIntervals[i]} minutes", isSelected)) {
+                    config.SyncIntervalMinutes = this.availableIntervals[i];
+                    this.configurationService.Save();
+                }
+
+                if (isSelected) {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
         }
     }
 }
