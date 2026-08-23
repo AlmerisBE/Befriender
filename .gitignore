@@ -6,8 +6,8 @@
 *.suo
 
 # Dalamud Packager
-/BasePlugin/bin/
-/BasePlugin/obj/
+/*/bin/
+/*/obj/
 
 LLM_Context.txt
 

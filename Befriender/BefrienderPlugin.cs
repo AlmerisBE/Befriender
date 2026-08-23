@@ -1,6 +1,6 @@
-﻿using Befriender.Core;
-using Befriender.Features.Command.Services;
-using Befriender.Features.Configuration.UI;
+﻿using Befriender.Core.Command.Services;
+using Befriender.Core.Framework;
+using Befriender.UI.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
