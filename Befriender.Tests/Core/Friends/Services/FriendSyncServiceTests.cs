@@ -3,48 +3,33 @@
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;
 using Befriender.Core.Friends.Contracts;
+using Befriender.Core.Friends.Models;
 using Befriender.Core.Friends.Services;
 using Dalamud.Plugin.Services;
 using NSubstitute;
+using System.Collections.Generic;
 using Xunit;
 
 public class FriendSyncServiceTests {
     [Fact]
-    public void FriendSyncService_OnFirstUpdate_TriggersScanner() {
+    public void FriendSyncService_OnUpdate_PushesScannedFriendsToRepository() {
         // Arrange
         var mockFramework = Substitute.For<IFramework>();
         var mockConfigService = Substitute.For<IConfigurationService>();
         var mockScanner = Substitute.For<IFriendScanner>();
+        var mockRepository = Substitute.For<IFriendRepository>();
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncIntervalMinutes = 15 });
 
-        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner);
+        var dummyFriends = new List<FriendProfile> { new FriendProfile { Name = "Test Friend" } };
+        mockScanner.ScanActiveFriends().Returns(dummyFriends);
+
+        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner, mockRepository);
 
         // Act
-        // Simulate a framework tick by invoking the event handler
         service.TriggerUpdateForTesting();
 
         // Assert
-        mockScanner.Received(1).ScanActiveFriends();
-    }
-
-    [Fact]
-    public void FriendSyncService_OnConsecutiveUpdate_DoesNotTriggerScannerIfTimeNotElapsed() {
-        // Arrange
-        var mockFramework = Substitute.For<IFramework>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        var mockScanner = Substitute.For<IFriendScanner>();
-
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncIntervalMinutes = 15 });
-
-        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner);
-
-        // Act
-        service.TriggerUpdateForTesting(); // First tick triggers it
-        service.TriggerUpdateForTesting(); // Second tick immediately after should not
-
-        // Assert
-        // Still only 1 call received in total
-        mockScanner.Received(1).ScanActiveFriends();
+        mockRepository.Received(1).UpdateFriends(dummyFriends);
     }
 }

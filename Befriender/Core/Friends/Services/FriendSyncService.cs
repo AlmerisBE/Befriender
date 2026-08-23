@@ -10,11 +10,13 @@ public class FriendSyncService : IDisposable {
     private IConfigurationService configurationService;
     private IFriendScanner friendScanner;
     private DateTime lastSyncTime = DateTime.MinValue;
+    private IFriendRepository friendRepository;
 
-    public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner) {
+    public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository) {
         this.framework = framework;
         this.configurationService = configurationService;
         this.friendScanner = friendScanner;
+        this.friendRepository = friendRepository;
 
         this.framework.Update += this.OnUpdate;
     }
@@ -25,7 +27,8 @@ public class FriendSyncService : IDisposable {
 
         if (DateTime.Now - this.lastSyncTime >= interval) {
             this.lastSyncTime = DateTime.Now;
-            this.friendScanner.ScanActiveFriends();
+            var scannedFriends = this.friendScanner.ScanActiveFriends();
+            this.friendRepository.UpdateFriends(scannedFriends);
         }
     }
 
