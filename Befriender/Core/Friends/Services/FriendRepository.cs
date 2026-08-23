@@ -41,16 +41,32 @@ public class FriendRepository : IFriendRepository {
             this.EnsureLoaded();
 
             var incoming = newFriends.ToList();
-            // Explicit cast to ushort to comply with recent Dalamud API changes
             var currentTerritory = (ushort)this.clientState.TerritoryType;
             var now = DateTime.Now;
 
             foreach (var friend in incoming) {
                 var existing = this.friends.FirstOrDefault(f => f.ContentId == friend.ContentId);
 
-                if (existing != null && existing.AddedAt != DateTime.MinValue) {
-                    friend.AddedAt = existing.AddedAt;
-                    friend.AddedLocationId = existing.AddedLocationId;
+                if (existing != null) {
+                    if (existing.AddedAt != DateTime.MinValue) {
+                        friend.AddedAt = existing.AddedAt;
+                        friend.AddedLocationId = existing.AddedLocationId;
+                    }
+
+                    // Preserve last known volatile data if the friend goes offline or if memory clears it
+                    if (!friend.IsOnline) {
+                        if (friend.JobId == 0 && existing.JobId != 0) {
+                            friend.JobId = existing.JobId;
+                        }
+
+                        if (string.IsNullOrEmpty(friend.FcTag) && !string.IsNullOrEmpty(existing.FcTag)) {
+                            friend.FcTag = existing.FcTag;
+                        }
+
+                        if (friend.LocationId == 0 && existing.LocationId != 0) {
+                            friend.LocationId = existing.LocationId;
+                        }
+                    }
                 }
                 else {
                     friend.AddedAt = now;

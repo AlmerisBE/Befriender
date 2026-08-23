@@ -19,10 +19,13 @@ public class BefrienderPluginTests {
         var mockCommandManager = Substitute.For<ICommandManager>();
         var mockClientState = Substitute.For<IClientState>();
         var mockLogger = Substitute.For<IPluginLog>();
-        var mockFramework = Substitute.For<IFramework>(); var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockFramework = Substitute.For<IFramework>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockDataManager = Substitute.For<IDataManager>();
+        var mockTextureProvider = Substitute.For<ITextureProvider>();
 
         // Act & Assert
-        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger, mockFramework, mockObjectTable));
+        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger, mockFramework, mockObjectTable, mockDataManager, mockTextureProvider));
 
         Assert.Null(exception);
     }

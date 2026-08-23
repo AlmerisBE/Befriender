@@ -2,9 +2,12 @@
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
+using Befriender.Core.GameData.Contracts;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Textures;
+using Dalamud.Plugin.Services;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -12,6 +15,8 @@ public class ListTab : ITab {
     private IFriendRepository friendRepository;
     private IFriendDisplayService displayService;
     private IFriendSyncService syncService;
+    private IGameDataService gameDataService;
+    private ITextureProvider textureProvider;
 
     private bool showOnlineOnly = false;
     private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
@@ -20,10 +25,12 @@ public class ListTab : ITab {
 
     public string Name => "List";
 
-    public ListTab(IFriendRepository friendRepository, IFriendDisplayService displayService, IFriendSyncService syncService) {
+    public ListTab(IFriendRepository friendRepository, IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider) {
         this.friendRepository = friendRepository;
         this.displayService = displayService;
         this.syncService = syncService;
+        this.gameDataService = gameDataService;
+        this.textureProvider = textureProvider;
     }
 
     public void Draw() {
@@ -34,7 +41,6 @@ public class ListTab : ITab {
             return;
         }
 
-        // We reserve space for the footer (status bar)
         float footerHeight = ImGui.GetFrameHeightWithSpacing();
 
         if (ImGui.BeginChild("TableChild", new Vector2(0, -footerHeight), false)) {
@@ -44,7 +50,7 @@ public class ListTab : ITab {
                 ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
-                ImGui.TableSetupColumn("Added On", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Added", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
 
                 this.HandleSortingAndFiltering(rawFriends);
@@ -59,7 +65,37 @@ public class ListTab : ITab {
                     ImGui.Text(friend.Name);
 
                     ImGui.TableNextColumn();
-                    ImGui.Text(friend.JobId.ToString());
+                    if (friend.JobId > 0) {
+                        var iconId = this.gameDataService.GetJobIconId(friend.JobId);
+                        var jobAbbr = this.gameDataService.GetJobAbbreviation(friend.JobId);
+                        bool iconDrawn = false;
+
+                        if (iconId > 0) {
+                            var iconLookup = new GameIconLookup { IconId = iconId };
+                            var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+
+                            // If texture is loaded, render it
+                            if (iconWrap != null) {
+                                // 24x24 is the standard comfortable icon size for Dalamud lists
+                                var iconSize = new Vector2(24, 24);
+                                ImGui.Image(iconWrap.Handle, iconSize);
+
+                                // Show job abbreviation in tooltip on hover
+                                if (ImGui.IsItemHovered()) {
+                                    ImGui.SetTooltip(jobAbbr);
+                                }
+                                iconDrawn = true;
+                            }
+                        }
+
+                        // Fallback text while texture is loading asynchronously
+                        if (!iconDrawn) {
+                            ImGui.Text(jobAbbr);
+                        }
+                    }
+                    else {
+                        ImGui.Text(string.Empty);
+                    }
 
                     ImGui.TableNextColumn();
                     if (!string.IsNullOrEmpty(friend.FcTag)) {
@@ -70,10 +106,12 @@ public class ListTab : ITab {
                     }
 
                     ImGui.TableNextColumn();
-                    ImGui.Text(friend.HomeWorldId.ToString());
+                    ImGui.Text(this.gameDataService.GetWorldName(friend.HomeWorldId));
 
                     ImGui.TableNextColumn();
-                    ImGui.Text(friend.AddedAt == System.DateTime.MinValue ? "Unknown" : friend.AddedAt.ToShortDateString());
+                    var dateStr = friend.AddedAt == System.DateTime.MinValue ? "Unknown" : friend.AddedAt.ToShortDateString();
+                    var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
+                    ImGui.Text($"{dateStr} ({locStr})");
                 }
 
                 ImGui.EndTable();
@@ -81,7 +119,6 @@ public class ListTab : ITab {
             ImGui.EndChild();
         }
 
-        // Status Bar (US-5.4)
         ImGui.Separator();
         if (ImGui.Checkbox("Show Online Only", ref this.showOnlineOnly)) {
             this.forceRefresh = true;

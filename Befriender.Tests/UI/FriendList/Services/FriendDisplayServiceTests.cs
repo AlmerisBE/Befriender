@@ -1,7 +1,9 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Services;
 
 using Befriender.Core.Friends.Models;
+using Befriender.Core.GameData.Contracts;
 using Befriender.UI.FriendList.Services;
+using NSubstitute;
 using System.Collections.Generic;
 using Xunit;
 
@@ -15,7 +17,8 @@ public class FriendDisplayServiceTests {
     [Fact]
     public void FriendDisplayService_ProcessFriends_FiltersOnlineOnly() {
         // Arrange
-        var service = new FriendDisplayService();
+        var mockData = Substitute.For<IGameDataService>();
+        var service = new FriendDisplayService(mockData);
 
         // Act
         var result = service.ProcessFriends(this.dummyFriends, true, -1, true);
@@ -28,7 +31,8 @@ public class FriendDisplayServiceTests {
     [Fact]
     public void FriendDisplayService_ProcessFriends_SortsByNameAscending() {
         // Arrange
-        var service = new FriendDisplayService();
+        var mockData = Substitute.For<IGameDataService>();
+        var service = new FriendDisplayService(mockData);
 
         // Act
         // Column 1 is Name
@@ -43,7 +47,8 @@ public class FriendDisplayServiceTests {
     [Fact]
     public void FriendDisplayService_ProcessFriends_SortsByStatusDescending() {
         // Arrange
-        var service = new FriendDisplayService();
+        var mockData = Substitute.For<IGameDataService>();
+        var service = new FriendDisplayService(mockData);
 
         // Act
         // Column 0 is Status (Descending usually puts True/Online first)

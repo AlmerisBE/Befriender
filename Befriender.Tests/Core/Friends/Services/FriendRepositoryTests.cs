@@ -66,4 +66,48 @@ public class FriendRepositoryTests {
         Assert.NotEqual(DateTime.MinValue, result[0].AddedAt); // Doit avoir été assigné à DateTime.Now
         Assert.Equal(130, result[0].AddedLocationId); // Doit correspondre à la zone actuelle
     }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_PreservesLastKnownDataWhenOffline() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile {
+                ContentId = 1,
+                Name = "Offline Friend",
+                IsOnline = true,
+                JobId = 24, // WHM
+                FcTag = "TEST"
+            }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+
+        // Simuler un scan où l'ami est désormais déconnecté, la mémoire renvoie un job à 0 et pas de FC
+        var scannedFriends = new List<FriendProfile> {
+            new FriendProfile {
+                ContentId = 1,
+                Name = "Offline Friend",
+                IsOnline = false,
+                JobId = 0,
+                FcTag = string.Empty
+            }
+        };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        Assert.Single(result);
+        Assert.False(result[0].IsOnline);
+        Assert.Equal(24, result[0].JobId); // Le dernier job connu doit être conservé
+        Assert.Equal("TEST", result[0].FcTag); // Le dernier FC connu doit être conservé
+    }
 }
