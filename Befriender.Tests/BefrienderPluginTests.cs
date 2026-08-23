@@ -18,7 +18,7 @@ public class BefrienderTests {
 
         // Act & Assert
         // We verify that building the plugin (and its DI container) throws no exceptions
-        var exception = Record.Exception(() => new Befriender(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger));
+        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger));
 
         Assert.Null(exception);
     }

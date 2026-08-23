@@ -1,23 +1,23 @@
-﻿using Befriender.Core.Command.Contracts;
+﻿namespace Befriender.Core.Command.Services;
+
+using Befriender.Core.Command.Contracts;
 using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Befriender.Core.Command.Services;
-
 public class CommandDispatcher : IDisposable {
     private ICommandManager commandManager;
     private IEnumerable<ICommand> commands;
-    private string mainCommand = "/baseplugin";
+    private string mainCommand = "/fl";
 
     public CommandDispatcher(ICommandManager commandManager, IEnumerable<ICommand> commands) {
         this.commandManager = commandManager;
         this.commands = commands;
 
         this.commandManager.AddHandler(this.mainCommand, new CommandInfo(this.OnCommand) {
-            HelpMessage = "Type '/baseplugin help' for more information."
+            HelpMessage = "Opens the friend list. Type '/fl config' to access settings."
         });
     }
 
@@ -27,6 +27,10 @@ public class CommandDispatcher : IDisposable {
         var subArguments = args.Length > 1 ? args[1] : string.Empty;
 
         var targetCommand = this.commands.FirstOrDefault(c => c.CommandTrigger.Equals(subCommand, StringComparison.InvariantCultureIgnoreCase));
+
+        if (targetCommand == null && string.IsNullOrEmpty(subCommand)) {
+            targetCommand = this.commands.FirstOrDefault(c => c.CommandTrigger == string.Empty);
+        }
 
         if (targetCommand != null) {
             targetCommand.Execute(subArguments);
