@@ -1,12 +1,13 @@
-﻿using Befriender.Core.Command.Services;
+﻿namespace Befriender;
+
+using Befriender.Core.Command.Services;
 using Befriender.Core.Framework;
+using Befriender.Core.Friends.Services;
 using Befriender.UI.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
-
-namespace Befriender;
 
 public sealed class BefrienderPlugin : IDalamudPlugin {
     public string Name => "Befriender";
@@ -20,35 +21,33 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         IChatGui chatGui,
         ICommandManager commandManager,
         IClientState clientState,
-        IPluginLog pluginLog) {
+        IPluginLog pluginLog,
+        IFramework framework) { // Injection du IFramework par Dalamud
+
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
 
         var services = new ServiceCollection();
 
-        // 1. Register Dalamud Services
         services.AddSingleton(this.pluginInterface);
         services.AddSingleton(chatGui);
         services.AddSingleton(commandManager);
         services.AddSingleton(clientState);
         services.AddSingleton(pluginLog);
+        services.AddSingleton(framework);
 
-        // 2. Discover and register all features automatically
         services.AddPluginFeatures();
 
-        // 3. Build the container
         this.serviceProvider = services.BuildServiceProvider();
 
-        // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
+        this.serviceProvider.GetRequiredService<FriendSyncService>();
 
-        // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {
             this.windowSystem.AddWindow(window);
         }
 
-        // 6. Hook UI events
         this.pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi += this.OnOpenConfigUi;
     }

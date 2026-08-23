@@ -1,12 +1,11 @@
-﻿using Dalamud.Plugin;
+﻿namespace Befriender.Tests;
+
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using NSubstitute;
 using Xunit;
 
-namespace Befriender.Tests;
-
-public class BefrienderTests {
-
+public class BefrienderPluginTests {
     [Fact]
     public void Plugin_OnInitialization_BuildsDependencyInjectionWithoutErrors() {
         // Arrange
@@ -15,10 +14,11 @@ public class BefrienderTests {
         var mockCommandManager = Substitute.For<ICommandManager>();
         var mockClientState = Substitute.For<IClientState>();
         var mockLogger = Substitute.For<IPluginLog>();
+        var mockFramework = Substitute.For<IFramework>(); // Création du mock IFramework
 
         // Act & Assert
-        // We verify that building the plugin (and its DI container) throws no exceptions
-        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger));
+        // On passe mockFramework en dernier paramètre
+        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger, mockFramework));
 
         Assert.Null(exception);
     }
