@@ -4,6 +4,6 @@ using Befriender.Core.Friends.Models;
 using System.Collections.Generic;
 
 public interface IFriendStorage {
-    IReadOnlyList<FriendProfile> Load();
-    void Save(IEnumerable<FriendProfile> friends);
+    IReadOnlyList<FriendProfile> Load(string characterId);
+    void Save(string characterId, IEnumerable<FriendProfile> friends);
 }

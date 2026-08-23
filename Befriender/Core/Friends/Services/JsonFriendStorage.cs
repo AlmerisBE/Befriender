@@ -8,19 +8,28 @@ using System.IO;
 using System.Text.Json;
 
 public class JsonFriendStorage : IFriendStorage {
-    private string filePath;
+    private IDalamudPluginInterface pluginInterface;
 
     public JsonFriendStorage(IDalamudPluginInterface pluginInterface) {
-        this.filePath = Path.Combine(pluginInterface.ConfigDirectory.FullName, "friends.json");
+        this.pluginInterface = pluginInterface;
     }
 
-    public IReadOnlyList<FriendProfile> Load() {
-        if (!File.Exists(this.filePath)) {
+    private string GetFilePath(string characterId) {
+        return Path.Combine(this.pluginInterface.ConfigDirectory.FullName, $"friends_{characterId}.json");
+    }
+
+    public IReadOnlyList<FriendProfile> Load(string characterId) {
+        if (string.IsNullOrEmpty(characterId)) {
+            return new List<FriendProfile>();
+        }
+
+        var filePath = this.GetFilePath(characterId);
+        if (!File.Exists(filePath)) {
             return new List<FriendProfile>();
         }
 
         try {
-            var json = File.ReadAllText(this.filePath);
+            var json = File.ReadAllText(filePath);
             return JsonSerializer.Deserialize<List<FriendProfile>>(json) ?? new List<FriendProfile>();
         }
         catch {
@@ -28,9 +37,14 @@ public class JsonFriendStorage : IFriendStorage {
         }
     }
 
-    public void Save(IEnumerable<FriendProfile> friends) {
+    public void Save(string characterId, IEnumerable<FriendProfile> friends) {
+        if (string.IsNullOrEmpty(characterId)) {
+            return;
+        }
+
+        var filePath = this.GetFilePath(characterId);
         var options = new JsonSerializerOptions { WriteIndented = true };
         var json = JsonSerializer.Serialize(friends, options);
-        File.WriteAllText(this.filePath, json);
+        File.WriteAllText(filePath, json);
     }
 }

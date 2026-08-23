@@ -10,14 +10,18 @@ using Xunit;
 
 public class FriendRepositoryTests {
     [Fact]
-    public void FriendRepository_Initialization_LoadsFromStorage() {
+    public void FriendRepository_GetFriends_LoadsFromStorageWhenCharacterChanges() {
         // Arrange
         var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
         var dummyFriends = new List<FriendProfile> { new FriendProfile { Name = "Persisted Friend" } };
-        mockStorage.Load().Returns(dummyFriends);
+        mockStorage.Load("Almeris_33").Returns(dummyFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService);
 
         // Act
-        var repository = new FriendRepository(mockStorage);
         var friends = repository.GetFriends();
 
         // Assert
@@ -26,18 +30,20 @@ public class FriendRepositoryTests {
     }
 
     [Fact]
-    public void FriendRepository_UpdateFriends_SavesToStorage() {
+    public void FriendRepository_UpdateFriends_SavesToStorageWithCorrectCharacterId() {
         // Arrange
         var mockStorage = Substitute.For<IFriendStorage>();
-        mockStorage.Load().Returns(new List<FriendProfile>());
-        var repository = new FriendRepository(mockStorage);
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+        mockStorage.Load("Almeris_33").Returns(new List<FriendProfile>());
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService);
         var dummyFriends = new List<FriendProfile> { new FriendProfile { Name = "New Friend" } };
 
         // Act
         repository.UpdateFriends(dummyFriends);
 
         // Assert
-        // We verify the contents of the list instead of the reference, because the repository creates a new list instance.
-        mockStorage.Received(1).Save(Arg.Is<IEnumerable<FriendProfile>>(list => list.Count() == 1 && list.First().Name == "New Friend"));
+        mockStorage.Received(1).Save("Almeris_33", Arg.Is<IEnumerable<FriendProfile>>(list => list.Count() == 1 && list.First().Name == "New Friend"));
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 public class FriendsFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
+        services.AddSingleton<ICharacterIdentityService, CharacterIdentityService>();
         services.AddSingleton<IFriendStorage, JsonFriendStorage>();
         services.AddSingleton<IFriendRepository, FriendRepository>();
         services.AddSingleton<FriendSyncService>();

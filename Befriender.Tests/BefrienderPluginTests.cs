@@ -19,10 +19,10 @@ public class BefrienderPluginTests {
         var mockCommandManager = Substitute.For<ICommandManager>();
         var mockClientState = Substitute.For<IClientState>();
         var mockLogger = Substitute.For<IPluginLog>();
-        var mockFramework = Substitute.For<IFramework>();
+        var mockFramework = Substitute.For<IFramework>(); var mockObjectTable = Substitute.For<IObjectTable>();
 
         // Act & Assert
-        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger, mockFramework));
+        var exception = Record.Exception(() => new BefrienderPlugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger, mockFramework, mockObjectTable));
 
         Assert.Null(exception);
     }
