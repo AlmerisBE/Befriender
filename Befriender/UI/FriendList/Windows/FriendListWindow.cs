@@ -1,15 +1,25 @@
 ﻿namespace Befriender.UI.FriendList.Windows;
 
 using Befriender.Core.Friends.Contracts;
+using Befriender.Core.Friends.Models;
+using Befriender.UI.FriendList.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using System.Collections.Generic;
 using System.Numerics;
 
 public class FriendListWindow : Window {
     private IFriendRepository friendRepository;
+    private IFriendDisplayService displayService;
+    private bool showOnlineOnly = false;
 
-    public FriendListWindow(IFriendRepository friendRepository) : base("Befriender - Friend List", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
+    private int lastFriendCount = -1;
+    private bool forceRefresh = false;
+
+    public FriendListWindow(IFriendRepository friendRepository, IFriendDisplayService displayService) : base("Befriender - Friend List", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.friendRepository = friendRepository;
+        this.displayService = displayService;
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(500, 600),
@@ -18,22 +28,29 @@ public class FriendListWindow : Window {
     }
 
     public override void Draw() {
-        var friends = this.friendRepository.GetFriends();
+        var rawFriends = this.friendRepository.GetFriends();
 
-        if (friends.Count == 0) {
+        if (rawFriends.Count == 0) {
             ImGui.Text("Your friend list is currently empty or syncing...");
             return;
         }
 
-        if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY)) {
-            ImGui.TableSetupColumn("Status");
+        if (ImGui.Checkbox("Show Online Only", ref this.showOnlineOnly)) {
+            this.forceRefresh = true;
+        }
+
+        // We enable sorting on the table
+        if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
+            ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Name");
-            ImGui.TableSetupColumn("Job");
-            ImGui.TableSetupColumn("FC");
-            ImGui.TableSetupColumn("World");
+            ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableHeadersRow();
 
-            foreach (var friend in friends) {
+            this.HandleSortingAndFiltering(rawFriends);
+
+            foreach (var friend in this.cachedFriends) {
                 ImGui.TableNextRow();
 
                 ImGui.TableNextColumn();
@@ -58,6 +75,29 @@ public class FriendListWindow : Window {
             }
 
             ImGui.EndTable();
+        }
+    }
+
+    private void HandleSortingAndFiltering(IReadOnlyList<FriendProfile> rawFriends) {
+        var sortSpecs = ImGui.TableGetSortSpecs();
+
+        if (sortSpecs.SpecsDirty || this.forceRefresh || rawFriends.Count != this.lastFriendCount) {
+            int sortColumn = -1;
+            bool isAscending = true;
+
+            // We use SpecsCount provided by the ImGuiTableSortSpecs wrapper
+            if (sortSpecs.SpecsCount > 0) {
+                // ImGuiTableColumnSortSpecsPtr acts as an array pointer, so we can use the indexer
+                var spec = sortSpecs.Specs[0];
+                sortColumn = spec.ColumnIndex;
+                isAscending = spec.SortDirection == ImGuiSortDirection.Ascending;
+            }
+
+            this.cachedFriends = this.displayService.ProcessFriends(rawFriends, this.showOnlineOnly, sortColumn, isAscending);
+
+            sortSpecs.SpecsDirty = false;
+            this.forceRefresh = false;
+            this.lastFriendCount = rawFriends.Count;
         }
     }
 }
