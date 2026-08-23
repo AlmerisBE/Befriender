@@ -1,5 +1,7 @@
 ﻿namespace Befriender.Core.Friends.Models;
 
+using System;
+
 public class FriendProfile {
     public ulong ContentId { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -8,4 +10,7 @@ public class FriendProfile {
     public byte JobId { get; set; }
     public ushort LocationId { get; set; }
     public string FcTag { get; set; } = string.Empty;
+
+    public DateTime AddedAt { get; set; }
+    public ushort AddedLocationId { get; set; }
 }

@@ -38,12 +38,13 @@ public class ListTab : ITab {
         float footerHeight = ImGui.GetFrameHeightWithSpacing();
 
         if (ImGui.BeginChild("TableChild", new Vector2(0, -footerHeight), false)) {
-            if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
+            if (ImGui.BeginTable("FriendsTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
                 ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Name");
                 ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Added On", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
 
                 this.HandleSortingAndFiltering(rawFriends);
@@ -70,6 +71,9 @@ public class ListTab : ITab {
 
                     ImGui.TableNextColumn();
                     ImGui.Text(friend.HomeWorldId.ToString());
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(friend.AddedAt == System.DateTime.MinValue ? "Unknown" : friend.AddedAt.ToShortDateString());
                 }
 
                 ImGui.EndTable();

@@ -3,47 +3,67 @@
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Friends.Services;
+using Dalamud.Plugin.Services;
 using NSubstitute;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 public class FriendRepositoryTests {
     [Fact]
-    public void FriendRepository_GetFriends_LoadsFromStorageWhenCharacterChanges() {
+    public void FriendRepository_UpdateFriends_PreservesMetadataForExistingFriends() {
         // Arrange
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+        mockClientState.TerritoryType.Returns((ushort)130);
 
-        var dummyFriends = new List<FriendProfile> { new FriendProfile { Name = "Persisted Friend" } };
-        mockStorage.Load("Almeris_33").Returns(dummyFriends);
+        var originalDate = new DateTime(2023, 1, 1);
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Old Friend", AddedAt = originalDate, AddedLocationId = 129 }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
 
-        var repository = new FriendRepository(mockStorage, mockIdentityService);
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+
+        // Simuler un nouveau scan où l'ami est toujours là, mais sans métadonnées (le scanner n'a pas cette info)
+        var scannedFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Old Friend" }
+        };
 
         // Act
-        var friends = repository.GetFriends();
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
 
         // Assert
-        Assert.Single(friends);
-        Assert.Equal("Persisted Friend", friends[0].Name);
+        Assert.Single(result);
+        Assert.Equal(originalDate, result[0].AddedAt);
+        Assert.Equal(129, result[0].AddedLocationId);
     }
 
     [Fact]
-    public void FriendRepository_UpdateFriends_SavesToStorageWithCorrectCharacterId() {
+    public void FriendRepository_UpdateFriends_AssignsMetadataToNewFriends() {
         // Arrange
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+        mockClientState.TerritoryType.Returns((ushort)130); // Zone actuelle du joueur
         mockStorage.Load("Almeris_33").Returns(new List<FriendProfile>());
 
-        var repository = new FriendRepository(mockStorage, mockIdentityService);
-        var dummyFriends = new List<FriendProfile> { new FriendProfile { Name = "New Friend" } };
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+        var scannedFriends = new List<FriendProfile> { new FriendProfile { ContentId = 2, Name = "New Friend" } };
 
         // Act
-        repository.UpdateFriends(dummyFriends);
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
 
         // Assert
-        mockStorage.Received(1).Save("Almeris_33", Arg.Is<IEnumerable<FriendProfile>>(list => list.Count() == 1 && list.First().Name == "New Friend"));
+        Assert.Single(result);
+        Assert.NotEqual(DateTime.MinValue, result[0].AddedAt); // Doit avoir été assigné à DateTime.Now
+        Assert.Equal(130, result[0].AddedLocationId); // Doit correspondre à la zone actuelle
     }
 }

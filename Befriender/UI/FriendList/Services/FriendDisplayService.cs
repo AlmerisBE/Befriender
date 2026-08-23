@@ -19,6 +19,7 @@ public class FriendDisplayService : IFriendDisplayService {
             2 => isAscending ? query.OrderBy(f => f.JobId).ThenBy(f => f.Name) : query.OrderByDescending(f => f.JobId).ThenBy(f => f.Name),
             3 => isAscending ? query.OrderBy(f => f.FcTag).ThenBy(f => f.Name) : query.OrderByDescending(f => f.FcTag).ThenBy(f => f.Name),
             4 => isAscending ? query.OrderBy(f => f.HomeWorldId).ThenBy(f => f.Name) : query.OrderByDescending(f => f.HomeWorldId).ThenBy(f => f.Name),
+            5 => isAscending ? query.OrderBy(f => f.AddedAt).ThenBy(f => f.Name) : query.OrderByDescending(f => f.AddedAt).ThenBy(f => f.Name),
             _ => query
         };
 
