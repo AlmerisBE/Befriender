@@ -70,6 +70,14 @@ public class FriendRepository : IFriendRepository {
                 }
 
                 if (repositoryDict.TryGetValue(scanned.ContentId, out var existing)) {
+                    // Name change detection logic (US-2.1)
+                    if (!string.Equals(existing.Name, scanned.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
+                        existing.PreviousNames ??= new List<string>();
+                        if (!existing.PreviousNames.Contains(existing.Name)) {
+                            existing.PreviousNames.Add(existing.Name);
+                        }
+                    }
+
                     existing.IsOnline = scanned.IsOnline;
                     existing.Name = scanned.Name;
                     existing.HomeWorldId = scanned.HomeWorldId;

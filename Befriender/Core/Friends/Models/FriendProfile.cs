@@ -1,6 +1,7 @@
 ﻿namespace Befriender.Core.Friends.Models;
 
 using System;
+using System.Collections.Generic;
 
 public class FriendProfile {
     public ulong ContentId { get; set; }
@@ -17,4 +18,7 @@ public class FriendProfile {
     public DateTime AddedAt { get; set; }
     public ushort AddedLocationId { get; set; }
     public DateTime LastSeenAt { get; set; }
+
+    // History of previous names detected for this character
+    public List<string> PreviousNames { get; set; } = new();
 }

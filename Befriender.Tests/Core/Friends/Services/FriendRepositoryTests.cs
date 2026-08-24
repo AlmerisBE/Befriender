@@ -131,4 +131,37 @@ public class FriendRepositoryTests {
         Assert.True(friendA.LastSeenAt > pastDate); // Updated to ~now
         Assert.Equal(pastDate, friendB.LastSeenAt); // Preserved
     }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_DetectsAndRecordsNameChanges() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 999, Name = "Old Name", HomeWorldId = 33 }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        // Simulate a scan where the same ContentId returns a new name
+        var scannedFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 999, Name = "New Name", HomeWorldId = 33, IsOnline = true }
+        };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("New Name", result[0].Name);
+        Assert.NotNull(result[0].PreviousNames);
+        Assert.Contains("Old Name", result[0].PreviousNames);
+    }
 }
