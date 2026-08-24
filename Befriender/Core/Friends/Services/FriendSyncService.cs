@@ -10,25 +10,53 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     private IConfigurationService configurationService;
     private IFriendScanner friendScanner;
     private IFriendRepository friendRepository;
+    private IClientState clientState;
+
+    private int lastFriendCount = -1;
+
     public DateTime LastSyncTime { get; private set; } = DateTime.MinValue;
 
-    public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository) {
+    public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository, IClientState clientState) {
         this.framework = framework;
         this.configurationService = configurationService;
         this.friendScanner = friendScanner;
         this.friendRepository = friendRepository;
+        this.clientState = clientState;
 
         this.framework.Update += this.OnUpdate;
+        this.clientState.Login += this.OnLogin;
+        this.clientState.TerritoryChanged += this.OnTerritoryChanged;
+    }
+
+    private void OnLogin() {
+        if (this.configurationService.GetConfig().SyncOnLogin) {
+            this.ForceSync();
+        }
+    }
+
+    private void OnTerritoryChanged(uint territoryId) {
+        if (this.configurationService.GetConfig().SyncOnTerritoryChange) {
+            this.ForceSync();
+        }
     }
 
     private void OnUpdate(IFramework framework) {
         var config = this.configurationService.GetConfig();
-        var interval = TimeSpan.FromMinutes(config.SyncIntervalMinutes);
 
+        // 1. Event trigger: Friend count changed
+        if (config.SyncOnFriendListChange) {
+            var currentCount = this.friendScanner.GetCurrentFriendCount();
+            if (this.lastFriendCount != -1 && currentCount != this.lastFriendCount) {
+                this.ForceSync();
+            }
+
+            this.lastFriendCount = currentCount;
+        }
+
+        // 2. Time trigger: Interval passed (independent from count changes)
+        var interval = TimeSpan.FromMinutes(config.SyncIntervalMinutes);
         if (DateTime.Now - this.LastSyncTime >= interval) {
-            this.LastSyncTime = DateTime.Now;
-            var scannedFriends = this.friendScanner.ScanActiveFriends();
-            this.friendRepository.UpdateFriends(scannedFriends);
+            this.ForceSync();
         }
     }
 
@@ -40,5 +68,7 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
 
     public void Dispose() {
         this.framework.Update -= this.OnUpdate;
+        this.clientState.Login -= this.OnLogin;
+        this.clientState.TerritoryChanged -= this.OnTerritoryChanged;
     }
 }

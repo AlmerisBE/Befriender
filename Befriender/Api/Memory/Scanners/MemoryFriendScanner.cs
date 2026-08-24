@@ -78,4 +78,23 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
 
         return friends;
     }
+
+    public int GetCurrentFriendCount() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return 0;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return 0;
+        }
+
+        var friendProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FriendList);
+        if (friendProxy == null) {
+            return 0;
+        }
+
+        return (int)friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+    }
 }

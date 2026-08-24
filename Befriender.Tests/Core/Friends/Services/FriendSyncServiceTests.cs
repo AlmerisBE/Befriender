@@ -19,6 +19,7 @@ public class FriendSyncServiceTests {
         var mockConfigService = Substitute.For<IConfigurationService>();
         var mockScanner = Substitute.For<IFriendScanner>();
         var mockRepository = Substitute.For<IFriendRepository>();
+        var mockClientState = Substitute.For<IClientState>();
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncIntervalMinutes = 15 });
 
@@ -36,7 +37,7 @@ public class FriendSyncServiceTests {
 
         mockScanner.ScanActiveFriends().Returns(dummyFriends);
 
-        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner, mockRepository);
+        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner, mockRepository, mockClientState);
 
         // Act
         service.ForceSync();
