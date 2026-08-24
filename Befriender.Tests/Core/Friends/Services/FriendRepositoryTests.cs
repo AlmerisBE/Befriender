@@ -5,70 +5,12 @@ using Befriender.Core.Friends.Models;
 using Befriender.Core.Friends.Services;
 using Dalamud.Plugin.Services;
 using NSubstitute;
-using System;
 using System.Collections.Generic;
 using Xunit;
 
 public class FriendRepositoryTests {
     [Fact]
-    public void FriendRepository_UpdateFriends_PreservesMetadataForExistingFriends() {
-        // Arrange
-        var mockStorage = Substitute.For<IFriendStorage>();
-        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
-        var mockClientState = Substitute.For<IClientState>();
-
-        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
-        mockClientState.TerritoryType.Returns((ushort)130);
-
-        var originalDate = new DateTime(2023, 1, 1);
-        var existingFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Old Friend", AddedAt = originalDate, AddedLocationId = 129 }
-        };
-        mockStorage.Load("Almeris_33").Returns(existingFriends);
-
-        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
-
-        // Simuler un nouveau scan où l'ami est toujours là, mais sans métadonnées (le scanner n'a pas cette info)
-        var scannedFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Old Friend" }
-        };
-
-        // Act
-        repository.UpdateFriends(scannedFriends);
-        var result = repository.GetFriends();
-
-        // Assert
-        Assert.Single(result);
-        Assert.Equal(originalDate, result[0].AddedAt);
-        Assert.Equal(129, result[0].AddedLocationId);
-    }
-
-    [Fact]
-    public void FriendRepository_UpdateFriends_AssignsMetadataToNewFriends() {
-        // Arrange
-        var mockStorage = Substitute.For<IFriendStorage>();
-        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
-        var mockClientState = Substitute.For<IClientState>();
-
-        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
-        mockClientState.TerritoryType.Returns((ushort)130); // Zone actuelle du joueur
-        mockStorage.Load("Almeris_33").Returns(new List<FriendProfile>());
-
-        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
-        var scannedFriends = new List<FriendProfile> { new FriendProfile { ContentId = 2, Name = "New Friend" } };
-
-        // Act
-        repository.UpdateFriends(scannedFriends);
-        var result = repository.GetFriends();
-
-        // Assert
-        Assert.Single(result);
-        Assert.NotEqual(DateTime.MinValue, result[0].AddedAt); // Doit avoir été assigné à DateTime.Now
-        Assert.Equal(130, result[0].AddedLocationId); // Doit correspondre à la zone actuelle
-    }
-
-    [Fact]
-    public void FriendRepository_UpdateFriends_PreservesLastKnownDataWhenOffline() {
+    public void FriendRepository_UpdateFriends_UpsertsDataWithoutRemovingMissingFriends() {
         // Arrange
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
@@ -77,27 +19,44 @@ public class FriendRepositoryTests {
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
         var existingFriends = new List<FriendProfile> {
-            new FriendProfile {
-                ContentId = 1,
-                Name = "Offline Friend",
-                IsOnline = true,
-                JobId = 24, // WHM
-                FcTag = "TEST"
-            }
+            new FriendProfile { ContentId = 1, Name = "Persisted Friend", IsOnline = true, JobId = 24 }
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
 
-        // Simuler un scan où l'ami est désormais déconnecté, la mémoire renvoie un job à 0 et pas de FC
+        // Simulating an empty scan (e.g., during character switch or vanilla list opening)
+        var scannedFriends = new List<FriendProfile>();
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        Assert.Single(result); // The friend is NOT removed
+        Assert.False(result[0].IsOnline); // But they are marked offline
+        Assert.Equal(24, result[0].JobId); // And their last known job is preserved
+    }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_OverwritesVolatileDataOnlyIfValid() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = true, JobId = 24, FcTag = "TEST" }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+
+        // Scan returns the same friend, but offline and with cleared game data
         var scannedFriends = new List<FriendProfile> {
-            new FriendProfile {
-                ContentId = 1,
-                Name = "Offline Friend",
-                IsOnline = false,
-                JobId = 0,
-                FcTag = string.Empty
-            }
+            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = false, JobId = 0, FcTag = string.Empty }
         };
 
         // Act
@@ -107,7 +66,27 @@ public class FriendRepositoryTests {
         // Assert
         Assert.Single(result);
         Assert.False(result[0].IsOnline);
-        Assert.Equal(24, result[0].JobId); // Le dernier job connu doit être conservé
-        Assert.Equal("TEST", result[0].FcTag); // Le dernier FC connu doit être conservé
+        Assert.Equal(24, result[0].JobId); // Should not be overwritten by 0
+        Assert.Equal("TEST", result[0].FcTag); // Should not be overwritten by empty
+    }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_IgnoresUpdatesIfCharacterIsNotLoggedIn() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+
+        // Simulating logout or loading screen where character is undetermined
+        mockIdentityService.GetCurrentCharacterId().Returns(string.Empty);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+        var scannedFriends = new List<FriendProfile> { new FriendProfile { ContentId = 2, Name = "Ghost Friend" } };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+
+        // Assert
+        mockStorage.DidNotReceive().Save(Arg.Any<string>(), Arg.Any<IEnumerable<FriendProfile>>());
     }
 }

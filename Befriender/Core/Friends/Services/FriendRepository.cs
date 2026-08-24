@@ -36,49 +36,60 @@ public class FriendRepository : IFriendRepository {
         }
     }
 
-    public void UpdateFriends(IEnumerable<FriendProfile> newFriends) {
+    public void UpdateFriends(IEnumerable<FriendProfile> scannedFriends) {
         lock (this.lockObj) {
+            var currentId = this.identityService.GetCurrentCharacterId();
+
+            // Guard: Do not process or wipe anything if the player is not fully logged in
+            if (string.IsNullOrEmpty(currentId)) {
+                return;
+            }
+
             this.EnsureLoaded();
 
-            var incoming = newFriends.ToList();
             var currentTerritory = (ushort)this.clientState.TerritoryType;
             var now = DateTime.Now;
+            var scannedList = scannedFriends.ToList();
 
-            foreach (var friend in incoming) {
-                var existing = this.friends.FirstOrDefault(f => f.ContentId == friend.ContentId);
+            // Fast lookup for existing friends to merge data
+            var repositoryDict = this.friends.ToDictionary(f => f.ContentId);
 
-                if (existing != null) {
-                    if (existing.AddedAt != DateTime.MinValue) {
-                        friend.AddedAt = existing.AddedAt;
-                        friend.AddedLocationId = existing.AddedLocationId;
+            foreach (var scanned in scannedList) {
+                if (repositoryDict.TryGetValue(scanned.ContentId, out var existing)) {
+                    existing.IsOnline = scanned.IsOnline;
+                    existing.Name = scanned.Name;
+                    existing.HomeWorldId = scanned.HomeWorldId;
+
+                    // Only overwrite volatile data if the scanned data contains valid active info
+                    if (scanned.JobId > 0) {
+                        existing.JobId = scanned.JobId;
                     }
 
-                    // Preserve last known volatile data if the friend goes offline or if memory clears it
-                    if (!friend.IsOnline) {
-                        if (friend.JobId == 0 && existing.JobId != 0) {
-                            friend.JobId = existing.JobId;
-                        }
+                    if (scanned.LocationId > 0) {
+                        existing.LocationId = scanned.LocationId;
+                    }
 
-                        if (string.IsNullOrEmpty(friend.FcTag) && !string.IsNullOrEmpty(existing.FcTag)) {
-                            friend.FcTag = existing.FcTag;
-                        }
-
-                        if (friend.LocationId == 0 && existing.LocationId != 0) {
-                            friend.LocationId = existing.LocationId;
-                        }
+                    if (!string.IsNullOrEmpty(scanned.FcTag)) {
+                        existing.FcTag = scanned.FcTag;
                     }
                 }
                 else {
-                    friend.AddedAt = now;
-                    friend.AddedLocationId = currentTerritory;
+                    scanned.AddedAt = now;
+                    scanned.AddedLocationId = currentTerritory;
+                    repositoryDict[scanned.ContentId] = scanned;
                 }
             }
 
-            this.friends = incoming;
-
-            if (!string.IsNullOrEmpty(this.loadedCharacterId)) {
-                this.storage.Save(this.loadedCharacterId, this.friends);
+            // Flag friends as offline if they exist in the repository but were missing from the scan
+            var scannedIds = scannedList.Select(f => f.ContentId).ToHashSet();
+            foreach (var existing in repositoryDict.Values) {
+                if (!scannedIds.Contains(existing.ContentId)) {
+                    existing.IsOnline = false;
+                }
             }
+
+            this.friends = repositoryDict.Values.ToList();
+            this.storage.Save(this.loadedCharacterId, this.friends);
         }
     }
 }
