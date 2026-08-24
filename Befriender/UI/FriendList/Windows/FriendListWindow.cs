@@ -29,8 +29,12 @@ public class FriendListWindow : Window {
     }
 
     public override void OnOpen() {
-        // Automatically request fresh server data when the window is opened
+        this.syncService.IsWindowOpen = true;
         this.syncService.RequestServerRefresh();
+    }
+
+    public override void OnClose() {
+        this.syncService.IsWindowOpen = false;
     }
 
     public override void Draw() {

@@ -3,11 +3,9 @@
 using Befriender.Core.Configuration.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
-using System;
 
 public class ConfigTab : ITab {
     private IConfigurationService configurationService;
-    private readonly int[] availableIntervals = { 5, 15, 30 };
 
     public string Name => "Configuration";
 
@@ -41,30 +39,25 @@ public class ConfigTab : ITab {
         }
 
         ImGui.Spacing();
-        ImGui.Text("Background Synchronization");
+        ImGui.Text("Background Synchronization (When Window is Open)");
         ImGui.Separator();
 
-        var currentInterval = config.SyncIntervalMinutes;
-        var currentIndex = Array.IndexOf(this.availableIntervals, currentInterval);
-        if (currentIndex == -1) {
-            currentIndex = 1;
+        int min = config.MinSyncIntervalMinutes;
+        if (ImGui.SliderInt("Min Interval (min)", ref min, 5, 45)) {
+            config.MinSyncIntervalMinutes = min;
+            if (config.MaxSyncIntervalMinutes - min < 15) {
+                config.MaxSyncIntervalMinutes = min + 15;
+            }
+            configChanged = true;
         }
 
-        var previewValue = $"{this.availableIntervals[currentIndex]} minutes";
-
-        if (ImGui.BeginCombo("Sync Interval", previewValue)) {
-            for (int i = 0; i < this.availableIntervals.Length; i++) {
-                bool isSelected = currentIndex == i;
-                if (ImGui.Selectable($"{this.availableIntervals[i]} minutes", isSelected)) {
-                    config.SyncIntervalMinutes = this.availableIntervals[i];
-                    configChanged = true;
-                }
-
-                if (isSelected) {
-                    ImGui.SetItemDefaultFocus();
-                }
+        int max = config.MaxSyncIntervalMinutes;
+        if (ImGui.SliderInt("Max Interval (min)", ref max, 20, 60)) {
+            config.MaxSyncIntervalMinutes = max;
+            if (max - config.MinSyncIntervalMinutes < 15) {
+                config.MinSyncIntervalMinutes = max - 15;
             }
-            ImGui.EndCombo();
+            configChanged = true;
         }
 
         if (configChanged) {

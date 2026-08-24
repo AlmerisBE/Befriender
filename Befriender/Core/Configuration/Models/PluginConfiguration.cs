@@ -7,7 +7,8 @@ using System;
 public class PluginConfiguration : IPluginConfiguration {
     public int Version { get; set; } = 0;
 
-    public int SyncIntervalMinutes { get; set; } = 15;
+    public int MinSyncIntervalMinutes { get; set; } = 15;
+    public int MaxSyncIntervalMinutes { get; set; } = 30;
 
     public bool SyncOnLogin { get; set; } = true;
     public bool SyncOnTerritoryChange { get; set; } = true;

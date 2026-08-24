@@ -16,9 +16,11 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     private ulong lastStateHash = ulong.MaxValue;
     private DateTime nextHashCheck = DateTime.MinValue;
     private DateTime pendingSyncTime = DateTime.MaxValue;
+    private DateTime nextAutoSyncTime = DateTime.MaxValue;
 
     public DateTime LastSyncTime { get; private set; } = DateTime.MinValue;
     public bool IsSyncPending => this.pendingSyncTime != DateTime.MaxValue;
+    public bool IsWindowOpen { get; set; } = false;
 
     public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository, IClientState clientState) {
         this.framework = framework;
@@ -44,18 +46,31 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         }
     }
 
+    public void RequestServerRefresh() {
+        this.friendScanner.RequestServerUpdate();
+        this.pendingSyncTime = DateTime.Now.AddSeconds(2);
+        this.ScheduleNextAutoSync();
+    }
+
+    private void ScheduleNextAutoSync() {
+        var config = this.configurationService.GetConfig();
+        int min = Math.Max(5, config.MinSyncIntervalMinutes);
+        int max = Math.Max(min + 15, config.MaxSyncIntervalMinutes);
+
+        int randomMinutes = Random.Shared.Next(min, max + 1);
+        this.nextAutoSyncTime = DateTime.Now.AddMinutes(randomMinutes);
+    }
+
     private void OnUpdate(IFramework framework) {
         var config = this.configurationService.GetConfig();
         var now = DateTime.Now;
 
-        // 1. Throttle memory polling to once per second
         if (config.SyncOnFriendListChange && now >= this.nextHashCheck) {
             this.nextHashCheck = now.AddSeconds(1);
 
             var currentCount = this.friendScanner.GetCurrentFriendCount();
             var currentHash = this.friendScanner.GetStateHash();
 
-            // Detect any variation in friend count OR any underlying status change
             if (this.lastFriendCount != -1 && (currentCount != this.lastFriendCount || currentHash != this.lastStateHash)) {
                 this.pendingSyncTime = now.AddSeconds(2);
             }
@@ -64,10 +79,9 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
             this.lastStateHash = currentHash;
         }
 
-        // 2. Interval fallback
-        var interval = TimeSpan.FromMinutes(config.SyncIntervalMinutes);
-        if (now - this.LastSyncTime >= interval) {
-            this.pendingSyncTime = now;
+        // Random automatic refresh ONLY if the window is currently open
+        if (this.IsWindowOpen && now >= this.nextAutoSyncTime) {
+            this.RequestServerRefresh();
         }
 
         if (now >= this.pendingSyncTime) {
@@ -80,15 +94,6 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         this.LastSyncTime = DateTime.Now;
         var scannedFriends = this.friendScanner.ScanActiveFriends();
         this.friendRepository.UpdateFriends(scannedFriends);
-    }
-
-    public void RequestServerRefresh() {
-        this.friendScanner.RequestServerUpdate();
-
-        // Sets a 2-second debounce. 
-        // This provides visual feedback ("Scanning...") and acts as a fallback sync trigger 
-        // in case the server responds but no statuses have actually changed (thus the hash remaining identical).
-        this.pendingSyncTime = DateTime.Now.AddSeconds(2);
     }
 
     public void Dispose() {

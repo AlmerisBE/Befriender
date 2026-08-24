@@ -8,24 +8,24 @@ using NSubstitute;
 using Xunit;
 
 public class ConfigurationServiceTests {
+
     [Fact]
     public void ConfigurationService_Initialization_LoadsExistingConfig() {
-        // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
         var existingConfig = new PluginConfiguration {
             Version = 1,
-            SyncIntervalMinutes = 30
+            MinSyncIntervalMinutes = 20,
+            MaxSyncIntervalMinutes = 40
         };
 
         mockPluginInterface.GetPluginConfig().Returns(existingConfig);
 
-        // Act
         var service = new ConfigurationService(mockPluginInterface);
         var config = service.GetConfig();
 
-        // Assert
         Assert.NotNull(config);
-        Assert.Equal(30, config.SyncIntervalMinutes);
+        Assert.Equal(20, config.MinSyncIntervalMinutes);
+        Assert.Equal(40, config.MaxSyncIntervalMinutes);
         Assert.Equal(1, config.Version);
     }
 
@@ -42,7 +42,8 @@ public class ConfigurationServiceTests {
 
         // Assert
         Assert.NotNull(config);
-        Assert.Equal(15, config.SyncIntervalMinutes); // 15 is the default expected value
+        Assert.Equal(15, config.MinSyncIntervalMinutes);
+        Assert.Equal(30, config.MaxSyncIntervalMinutes);
         Assert.Equal(0, config.Version);
     }
 
@@ -53,7 +54,8 @@ public class ConfigurationServiceTests {
         var service = new ConfigurationService(mockPluginInterface);
         var config = service.GetConfig();
 
-        config.SyncIntervalMinutes = 5;
+        config.MinSyncIntervalMinutes = 15;
+        config.MaxSyncIntervalMinutes = 30;
 
         // Act
         service.Save();
