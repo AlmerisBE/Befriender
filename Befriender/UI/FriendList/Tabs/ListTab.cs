@@ -58,12 +58,27 @@ public class ListTab : ITab {
                 foreach (var friend in this.cachedFriends) {
                     ImGui.TableNextRow();
 
+                    // 1. Colonne Statut (Pastille colorée)
                     ImGui.TableNextColumn();
-                    ImGui.Text(friend.IsOnline ? "Online" : "Offline");
+                    var statusColor = friend.IsOnline
+                        ? new Vector4(0.43f, 0.85f, 0.43f, 1.0f) // Vert vif
+                        : new Vector4(0.4f, 0.4f, 0.4f, 1.0f);   // Gris terne
 
+                    ImGui.TextColored(statusColor, "●");
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(friend.IsOnline ? "Online" : "Offline");
+                    }
+
+                    // Début de l'atténuation (dimming) pour les joueurs hors-ligne
+                    if (!friend.IsOnline) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
+                    }
+
+                    // 2. Colonne Nom
                     ImGui.TableNextColumn();
                     ImGui.Text(friend.Name);
 
+                    // 3. Colonne Job
                     ImGui.TableNextColumn();
                     if (friend.JobId > 0) {
                         var iconId = this.gameDataService.GetJobIconId(friend.JobId);
@@ -74,21 +89,21 @@ public class ListTab : ITab {
                             var iconLookup = new GameIconLookup { IconId = iconId };
                             var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 
-                            // If texture is loaded, render it
                             if (iconWrap != null) {
-                                // 24x24 is the standard comfortable icon size for Dalamud lists
                                 var iconSize = new Vector2(24, 24);
-                                ImGui.Image(iconWrap.Handle, iconSize);
+                                // On applique une teinte sombre sur l'image si le joueur est hors-ligne
+                                var imageTint = friend.IsOnline ? new Vector4(1, 1, 1, 1) : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
 
-                                // Show job abbreviation in tooltip on hover
+                                ImGui.Image(iconWrap.Handle, iconSize, Vector2.Zero, Vector2.One, imageTint);
+
                                 if (ImGui.IsItemHovered()) {
                                     ImGui.SetTooltip(jobAbbr);
                                 }
+
                                 iconDrawn = true;
                             }
                         }
 
-                        // Fallback text while texture is loading asynchronously
                         if (!iconDrawn) {
                             ImGui.Text(jobAbbr);
                         }
@@ -97,6 +112,7 @@ public class ListTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
+                    // 4. Colonne FC
                     ImGui.TableNextColumn();
                     if (!string.IsNullOrEmpty(friend.FcTag)) {
                         ImGui.Text($"<{friend.FcTag}>");
@@ -105,13 +121,20 @@ public class ListTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
+                    // 5. Colonne Monde
                     ImGui.TableNextColumn();
                     ImGui.Text(this.gameDataService.GetWorldName(friend.HomeWorldId));
 
+                    // 6. Colonne Ajout
                     ImGui.TableNextColumn();
                     var dateStr = friend.AddedAt == System.DateTime.MinValue ? "Unknown" : friend.AddedAt.ToShortDateString();
                     var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
                     ImGui.Text($"{dateStr} ({locStr})");
+
+                    // Fin de l'atténuation (Pop) obligatoire pour ne pas faire planter ImGui
+                    if (!friend.IsOnline) {
+                        ImGui.PopStyleColor();
+                    }
                 }
 
                 ImGui.EndTable();
