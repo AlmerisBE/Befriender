@@ -81,6 +81,7 @@ public class FriendRepository : IFriendRepository {
                     existing.IsOnline = scanned.IsOnline;
                     existing.Name = scanned.Name;
                     existing.HomeWorldId = scanned.HomeWorldId;
+                    existing.CurrentWorldId = scanned.CurrentWorldId;
 
                     if (scanned.IsOnline) {
                         existing.LastSeenAt = now;

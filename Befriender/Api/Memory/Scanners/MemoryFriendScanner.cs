@@ -70,6 +70,7 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 ContentId = entry->ContentId,
                 Name = name,
                 HomeWorldId = entry->HomeWorld,
+                CurrentWorldId = entry->CurrentWorld,
                 IsOnline = isOnline,
                 JobId = entry->Job,
                 LocationId = entry->Location,

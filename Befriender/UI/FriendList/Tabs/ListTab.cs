@@ -25,12 +25,10 @@ public class ListTab : ITab {
     private int lastFriendCount = -1;
     private bool forceRefresh = false;
 
-    // Profile Panel State
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
     private string notesBuffer = string.Empty;
 
-    // Deferred resizing state
     private float pendingWidthDelta = 0f;
 
     public string Name => "List";
@@ -44,11 +42,9 @@ public class ListTab : ITab {
     }
 
     private void ToggleProfilePanel(FriendProfile? friend) {
-        // Schedule window expansion when opening the panel
         if (this.selectedFriend == null && friend != null) {
             this.pendingWidthDelta = PanelWidth;
         }
-        // Schedule window shrinking when closing the panel
         else if (this.selectedFriend != null && friend == null) {
             this.pendingWidthDelta = -PanelWidth;
         }
@@ -71,13 +67,12 @@ public class ListTab : ITab {
 
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        // Reduced column count from 8 to 6
-        if (ImGui.BeginTable("FriendsTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
+        // Reduced column count from 6 to 5
+        if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
             ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Name");
             ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Location");
 
             ImGui.TableSetupScrollFreeze(0, 1);
@@ -195,15 +190,17 @@ public class ListTab : ITab {
                     ImGui.Text(string.Empty);
                 }
 
-                // 5. World Column
-                ImGui.TableNextColumn();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                ImGui.Text(this.gameDataService.GetWorldName(friend.HomeWorldId));
-
-                // 6. Location Column
+                /// 5. Location Column
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 var locationName = this.gameDataService.GetLocationName(friend.LocationId);
+
+                // Vanilla fallback logic: If location is 0 or unresolvable, but player is online, display their Current World
+                if ((string.IsNullOrEmpty(locationName) || locationName == friend.LocationId.ToString()) && friend.IsOnline) {
+                    uint displayWorld = friend.CurrentWorldId > 0 ? friend.CurrentWorldId : friend.HomeWorldId;
+                    locationName = this.gameDataService.GetWorldName(displayWorld);
+                }
+
                 ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? "Unknown" : locationName);
 
                 ImGui.PopStyleColor(); // Remove row color
@@ -217,6 +214,7 @@ public class ListTab : ITab {
             if (ImGui.BeginChild("ProfilePanel", new Vector2(PanelWidth, -footerHeight), true)) {
                 this.DrawProfilePanel();
             }
+
             ImGui.EndChild();
         }
 
@@ -265,7 +263,6 @@ public class ListTab : ITab {
         ImGui.SetCursorPosX(Math.Max(rightAlignPos, ImGui.GetCursorPosX()));
         ImGui.Text(statusText);
 
-        // Safely apply deferred window resizing outside of all ImGui child/table scopes
         if (this.pendingWidthDelta != 0f) {
             var currentSize = ImGui.GetWindowSize();
             ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));

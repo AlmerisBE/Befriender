@@ -59,14 +59,25 @@ public class GameDataService : IGameDataService {
         }
 
         var territoryRow = territorySheet.GetRowOrDefault(territoryId);
-        if (territoryRow.HasValue && territoryRow.Value.PlaceName.RowId > 0) {
-            var placeNameSheet = this.dataManager.GetExcelSheet<PlaceName>();
-            if (placeNameSheet == null) {
-                return territoryId.ToString();
+        if (territoryRow.HasValue) {
+            // Fallback chain natively used by FFXIV for instances like Housing or Island Sanctuary
+            uint placeNameId = territoryRow.Value.PlaceName.RowId;
+            if (placeNameId == 0) {
+                placeNameId = territoryRow.Value.PlaceNameZone.RowId;
+            }
+            if (placeNameId == 0) {
+                placeNameId = territoryRow.Value.PlaceNameRegion.RowId;
             }
 
-            var placeNameRow = placeNameSheet.GetRowOrDefault(territoryRow.Value.PlaceName.RowId);
-            return placeNameRow.HasValue ? placeNameRow.Value.Name.ToString() : territoryId.ToString();
+            if (placeNameId > 0) {
+                var placeNameSheet = this.dataManager.GetExcelSheet<PlaceName>();
+                if (placeNameSheet != null) {
+                    var placeNameRow = placeNameSheet.GetRowOrDefault(placeNameId);
+                    if (placeNameRow.HasValue) {
+                        return placeNameRow.Value.Name.ToString();
+                    }
+                }
+            }
         }
 
         return territoryId.ToString();

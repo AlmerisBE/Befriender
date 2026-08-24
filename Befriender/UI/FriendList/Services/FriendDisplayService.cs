@@ -25,8 +25,7 @@ public class FriendDisplayService : IFriendDisplayService {
             1 => isAscending ? query.OrderBy(f => f.Name) : query.OrderByDescending(f => f.Name),
             2 => isAscending ? query.OrderBy(f => this.gameDataService.GetJobAbbreviation(f.JobId)).ThenBy(f => f.Name) : query.OrderByDescending(f => this.gameDataService.GetJobAbbreviation(f.JobId)).ThenBy(f => f.Name),
             3 => isAscending ? query.OrderBy(f => f.FcTag).ThenBy(f => f.Name) : query.OrderByDescending(f => f.FcTag).ThenBy(f => f.Name),
-            4 => isAscending ? query.OrderBy(f => this.gameDataService.GetWorldName(f.HomeWorldId)).ThenBy(f => f.Name) : query.OrderByDescending(f => this.gameDataService.GetWorldName(f.HomeWorldId)).ThenBy(f => f.Name),
-            5 => isAscending ? query.OrderBy(f => this.gameDataService.GetLocationName(f.LocationId)).ThenBy(f => f.Name) : query.OrderByDescending(f => this.gameDataService.GetLocationName(f.LocationId)).ThenBy(f => f.Name),
+            4 => isAscending ? query.OrderBy(f => this.gameDataService.GetLocationName(f.LocationId)).ThenBy(f => f.Name) : query.OrderByDescending(f => this.gameDataService.GetLocationName(f.LocationId)).ThenBy(f => f.Name),
             _ => query
         };
 
