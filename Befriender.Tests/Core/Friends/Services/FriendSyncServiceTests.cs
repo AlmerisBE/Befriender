@@ -49,4 +49,25 @@ public class FriendSyncServiceTests {
             list.First().FcTag == "TEST"
         ));
     }
+
+    [Fact]
+    public void FriendSyncService_ForceSync_ResetsPendingStatus() {
+        // Arrange
+        var mockFramework = Substitute.For<IFramework>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        var mockScanner = Substitute.For<IFriendScanner>();
+        var mockRepository = Substitute.For<IFriendRepository>();
+        var mockClientState = Substitute.For<IClientState>();
+
+        mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncIntervalMinutes = 15 });
+
+        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner, mockRepository, mockClientState);
+
+        // Act
+        service.ForceSync();
+
+        // Assert
+        Assert.False(service.IsSyncPending);
+        Assert.NotEqual(DateTime.MinValue, service.LastSyncTime);
+    }
 }

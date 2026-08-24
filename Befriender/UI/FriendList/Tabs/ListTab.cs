@@ -192,16 +192,58 @@ public class ListTab : ITab {
         }
 
         ImGui.Separator();
+
+        // 1. Checkbox aligned to the left
         if (ImGui.Checkbox("Show Online Only", ref this.showOnlineOnly)) {
             this.forceRefresh = true;
         }
 
         ImGui.SameLine();
-        var syncText = this.syncService.LastSyncTime == System.DateTime.MinValue
-            ? "Syncing..."
-            : $"Last Sync: {this.syncService.LastSyncTime.ToShortTimeString()}";
 
-        ImGui.Text($"| {syncText} | Total: {rawFriends.Count}");
+        // 2. Count online friends
+        int onlineCount = 0;
+        foreach (var f in rawFriends) {
+            if (f.IsOnline) {
+                onlineCount++;
+            }
+        }
+
+        // 3. Determine the status text (duration vs scanning state)
+        string syncText;
+        if (this.syncService.IsSyncPending || this.syncService.LastSyncTime == DateTime.MinValue) {
+            syncText = "Scanning...";
+        }
+        else {
+            var diff = DateTime.Now - this.syncService.LastSyncTime;
+            string timeStr;
+
+            if (diff.TotalDays >= 1) {
+                timeStr = $"{(int)diff.TotalDays}d ago";
+            }
+            else if (diff.TotalHours >= 1) {
+                timeStr = $"{(int)diff.TotalHours}h ago";
+            }
+            else if (diff.TotalMinutes >= 1) {
+                timeStr = $"{(int)diff.TotalMinutes}m ago";
+            }
+            else {
+                timeStr = "Just now";
+            }
+
+            syncText = $"Last Sync: {timeStr}";
+        }
+
+        // 4. Combine into final status string
+        var statusText = $"{syncText} | Online: {onlineCount} / Total: {rawFriends.Count}";
+
+        // 5. Right align calculation
+        var textSize = ImGui.CalcTextSize(statusText);
+        var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - ImGui.GetStyle().WindowPadding.X;
+        var currentCursorPos = ImGui.GetCursorPosX();
+
+        // Math.Max ensures it doesn't overlap the checkbox if the window is too narrow
+        ImGui.SetCursorPosX(Math.Max(rightAlignPos, currentCursorPos));
+        ImGui.Text(statusText);
     }
 
     private void HandleSortingAndFiltering(IReadOnlyList<FriendProfile> rawFriends) {

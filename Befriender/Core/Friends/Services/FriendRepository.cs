@@ -13,12 +13,14 @@ public class FriendRepository : IFriendRepository {
     private IFriendStorage storage;
     private ICharacterIdentityService identityService;
     private IClientState clientState;
+    private IObjectTable objectTable;
     private string loadedCharacterId = string.Empty;
 
-    public FriendRepository(IFriendStorage storage, ICharacterIdentityService identityService, IClientState clientState) {
+    public FriendRepository(IFriendStorage storage, ICharacterIdentityService identityService, IClientState clientState, IObjectTable objectTable) {
         this.storage = storage;
         this.identityService = identityService;
         this.clientState = clientState;
+        this.objectTable = objectTable;
     }
 
     private void EnsureLoaded() {
@@ -39,8 +41,6 @@ public class FriendRepository : IFriendRepository {
     public void UpdateFriends(IEnumerable<FriendProfile> scannedFriends) {
         lock (this.lockObj) {
             var currentId = this.identityService.GetCurrentCharacterId();
-
-            // Guard: Do not process or wipe anything if the player is not fully logged in
             if (string.IsNullOrEmpty(currentId)) {
                 return;
             }
@@ -51,10 +51,24 @@ public class FriendRepository : IFriendRepository {
             var now = DateTime.Now;
             var scannedList = scannedFriends.ToList();
 
-            // Fast lookup for existing friends to merge data
             var repositoryDict = this.friends.ToDictionary(f => f.ContentId);
 
+            // Build a fast lookup dictionary of players physically present around us
+            var visiblePlayers = new Dictionary<(string, uint), Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter>();
+            foreach (var obj in this.objectTable) {
+                if (obj is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter player) {
+                    visiblePlayers[(player.Name.TextValue, player.HomeWorld.RowId)] = player;
+                }
+            }
+
             foreach (var scanned in scannedList) {
+                // Physical presence completely overrides offline proxy data
+                if (visiblePlayers.TryGetValue((scanned.Name, scanned.HomeWorldId), out var presentPlayer)) {
+                    scanned.IsOnline = true;
+                    scanned.LocationId = currentTerritory;
+                    scanned.JobId = (byte)presentPlayer.ClassJob.RowId;
+                }
+
                 if (repositoryDict.TryGetValue(scanned.ContentId, out var existing)) {
                     existing.IsOnline = scanned.IsOnline;
                     existing.Name = scanned.Name;
@@ -85,11 +99,19 @@ public class FriendRepository : IFriendRepository {
                 }
             }
 
-            // Flag friends as offline if they exist in the repository but were missing from the scan
             var scannedIds = scannedList.Select(f => f.ContentId).ToHashSet();
             foreach (var existing in repositoryDict.Values) {
                 if (!scannedIds.Contains(existing.ContentId)) {
-                    existing.IsOnline = false;
+                    // Ultimate safeguard: if they are missing from proxy but physically rendered on screen, they are online!
+                    if (visiblePlayers.TryGetValue((existing.Name, existing.HomeWorldId), out var presentPlayer)) {
+                        existing.IsOnline = true;
+                        existing.LocationId = currentTerritory;
+                        existing.JobId = (byte)presentPlayer.ClassJob.RowId;
+                        existing.LastSeenAt = now;
+                    }
+                    else {
+                        existing.IsOnline = false;
+                    }
                 }
             }
 

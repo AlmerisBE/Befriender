@@ -17,6 +17,7 @@ public class FriendRepositoryTests {
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
         var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
 
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
@@ -25,7 +26,7 @@ public class FriendRepositoryTests {
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
-        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
         // Simulating an empty scan (e.g., during character switch or vanilla list opening)
         var scannedFriends = new List<FriendProfile>();
@@ -47,6 +48,7 @@ public class FriendRepositoryTests {
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
         var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
 
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
@@ -55,7 +57,7 @@ public class FriendRepositoryTests {
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
-        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
         // Scan returns the same friend, but offline and with cleared game data
         var scannedFriends = new List<FriendProfile> {
@@ -79,11 +81,12 @@ public class FriendRepositoryTests {
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
         var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
 
         // Simulating logout or loading screen where character is undetermined
         mockIdentityService.GetCurrentCharacterId().Returns(string.Empty);
 
-        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
         var scannedFriends = new List<FriendProfile> { new FriendProfile { ContentId = 2, Name = "Ghost Friend" } };
 
         // Act
@@ -99,6 +102,7 @@ public class FriendRepositoryTests {
         var mockStorage = Substitute.For<IFriendStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
         var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
 
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
@@ -109,7 +113,7 @@ public class FriendRepositoryTests {
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
-        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
         // Friend A comes online, Friend B stays offline
         var scannedFriends = new List<FriendProfile> {

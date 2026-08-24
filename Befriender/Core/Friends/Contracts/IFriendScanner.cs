@@ -6,4 +6,5 @@ using System.Collections.Generic;
 public interface IFriendScanner {
     IEnumerable<FriendProfile> ScanActiveFriends();
     int GetCurrentFriendCount();
+    ulong GetStateHash();
 }

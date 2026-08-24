@@ -99,4 +99,34 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
 
         return (int)friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
     }
+
+    public ulong GetStateHash() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return 0;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return 0;
+        }
+
+        var friendProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FriendList);
+        if (friendProxy == null) {
+            return 0;
+        }
+
+        var count = friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+        ulong hash = count;
+
+        for (uint i = 0; i < count; i++) {
+            var entry = friendProxy->GetEntry(i);
+            if (entry != null) {
+                // Creates a unique fast hash based on the State flag of all entries
+                hash = unchecked(hash * 314159 + (ulong)entry->State);
+            }
+        }
+
+        return hash;
+    }
 }

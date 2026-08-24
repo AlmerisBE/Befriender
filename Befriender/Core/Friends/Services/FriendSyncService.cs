@@ -13,9 +13,12 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     private IClientState clientState;
 
     private int lastFriendCount = -1;
+    private ulong lastStateHash = ulong.MaxValue;
+    private DateTime nextHashCheck = DateTime.MinValue;
     private DateTime pendingSyncTime = DateTime.MaxValue;
 
     public DateTime LastSyncTime { get; private set; } = DateTime.MinValue;
+    public bool IsSyncPending => this.pendingSyncTime != DateTime.MaxValue;
 
     public FriendSyncService(IFramework framework, IConfigurationService configurationService, IFriendScanner friendScanner, IFriendRepository friendRepository, IClientState clientState) {
         this.framework = framework;
@@ -45,15 +48,23 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         var config = this.configurationService.GetConfig();
         var now = DateTime.Now;
 
-        if (config.SyncOnFriendListChange) {
+        // 1. Throttle memory polling to once per second
+        if (config.SyncOnFriendListChange && now >= this.nextHashCheck) {
+            this.nextHashCheck = now.AddSeconds(1);
+
             var currentCount = this.friendScanner.GetCurrentFriendCount();
-            if (this.lastFriendCount != -1 && currentCount != this.lastFriendCount) {
-                // Debounce: Wait 2 seconds for vanilla chunk loading to finish
+            var currentHash = this.friendScanner.GetStateHash();
+
+            // Detect any variation in friend count OR any underlying status change
+            if (this.lastFriendCount != -1 && (currentCount != this.lastFriendCount || currentHash != this.lastStateHash)) {
                 this.pendingSyncTime = now.AddSeconds(2);
             }
+
             this.lastFriendCount = currentCount;
+            this.lastStateHash = currentHash;
         }
 
+        // 2. Interval fallback
         var interval = TimeSpan.FromMinutes(config.SyncIntervalMinutes);
         if (now - this.LastSyncTime >= interval) {
             this.pendingSyncTime = now;
