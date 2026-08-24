@@ -56,6 +56,9 @@ public class ListTab : ITab {
             ImGui.TableSetupColumn("Location");
             ImGui.TableSetupColumn("Added", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Last Seen", ImGuiTableColumnFlags.WidthFixed);
+
+            ImGui.TableSetupScrollFreeze(0, 1);
+
             ImGui.TableHeadersRow();
 
             this.HandleSortingAndFiltering(rawFriends);
