@@ -127,4 +127,10 @@ public class FriendRepository : IFriendRepository {
             this.storage.Save(this.loadedCharacterId, this.friends);
         }
     }
+
+    public void Save() {
+        lock (this.lockObj) {
+            this.storage.Save(this.loadedCharacterId, this.friends);
+        }
+    }
 }

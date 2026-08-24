@@ -21,4 +21,7 @@ public class FriendProfile {
 
     // History of previous names detected for this character
     public List<string> PreviousNames { get; set; } = new();
+
+    public string Notes { get; set; } = string.Empty;
+    public bool IsArchived { get; set; } = false;
 }

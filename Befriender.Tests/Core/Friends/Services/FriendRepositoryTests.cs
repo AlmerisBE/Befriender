@@ -164,4 +164,24 @@ public class FriendRepositoryTests {
         Assert.NotNull(result[0].PreviousNames);
         Assert.Contains("Old Name", result[0].PreviousNames);
     }
+
+    [Fact]
+    public void FriendRepository_Save_PersistsCurrentStateToStorage() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        // Act
+        repository.Save();
+
+        // Assert
+        // Verifies that Save was called manually for metadata persistence
+        mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendProfile>>());
+    }
 }
