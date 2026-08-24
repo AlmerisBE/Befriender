@@ -89,4 +89,39 @@ public class FriendRepositoryTests {
         // Assert
         mockStorage.DidNotReceive().Save(Arg.Any<string>(), Arg.Any<IEnumerable<FriendProfile>>());
     }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_UpdatesLastSeenOnlyWhenOnline() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var pastDate = DateTime.Now.AddDays(-2);
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Friend A", IsOnline = false, LastSeenAt = pastDate },
+            new FriendProfile { ContentId = 2, Name = "Friend B", IsOnline = false, LastSeenAt = pastDate }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState);
+
+        // Friend A comes online, Friend B stays offline
+        var scannedFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Friend A", IsOnline = true }
+        };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        var friendA = result.First(f => f.ContentId == 1);
+        var friendB = result.First(f => f.ContentId == 2);
+
+        Assert.True(friendA.LastSeenAt > pastDate); // Updated to ~now
+        Assert.Equal(pastDate, friendB.LastSeenAt); // Preserved
+    }
 }

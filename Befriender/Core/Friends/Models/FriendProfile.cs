@@ -13,4 +13,5 @@ public class FriendProfile {
 
     public DateTime AddedAt { get; set; }
     public ushort AddedLocationId { get; set; }
+    public DateTime LastSeenAt { get; set; }
 }

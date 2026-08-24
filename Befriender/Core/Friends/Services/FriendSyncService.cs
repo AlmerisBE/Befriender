@@ -13,6 +13,7 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     private IClientState clientState;
 
     private int lastFriendCount = -1;
+    private DateTime pendingSyncTime = DateTime.MaxValue;
 
     public DateTime LastSyncTime { get; private set; } = DateTime.MinValue;
 
@@ -42,20 +43,24 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
 
     private void OnUpdate(IFramework framework) {
         var config = this.configurationService.GetConfig();
+        var now = DateTime.Now;
 
-        // 1. Event trigger: Friend count changed
         if (config.SyncOnFriendListChange) {
             var currentCount = this.friendScanner.GetCurrentFriendCount();
             if (this.lastFriendCount != -1 && currentCount != this.lastFriendCount) {
-                this.ForceSync();
+                // Debounce: Wait 2 seconds for vanilla chunk loading to finish
+                this.pendingSyncTime = now.AddSeconds(2);
             }
-
             this.lastFriendCount = currentCount;
         }
 
-        // 2. Time trigger: Interval passed (independent from count changes)
         var interval = TimeSpan.FromMinutes(config.SyncIntervalMinutes);
-        if (DateTime.Now - this.LastSyncTime >= interval) {
+        if (now - this.LastSyncTime >= interval) {
+            this.pendingSyncTime = now;
+        }
+
+        if (now >= this.pendingSyncTime) {
+            this.pendingSyncTime = DateTime.MaxValue;
             this.ForceSync();
         }
     }

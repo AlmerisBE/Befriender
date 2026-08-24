@@ -60,7 +60,10 @@ public class FriendRepository : IFriendRepository {
                     existing.Name = scanned.Name;
                     existing.HomeWorldId = scanned.HomeWorldId;
 
-                    // Only overwrite volatile data if the scanned data contains valid active info
+                    if (scanned.IsOnline) {
+                        existing.LastSeenAt = now;
+                    }
+
                     if (scanned.JobId > 0) {
                         existing.JobId = scanned.JobId;
                     }
@@ -76,6 +79,7 @@ public class FriendRepository : IFriendRepository {
                 else {
                     scanned.AddedAt = now;
                     scanned.AddedLocationId = currentTerritory;
+                    scanned.LastSeenAt = scanned.IsOnline ? now : DateTime.MinValue;
                     repositoryDict[scanned.ContentId] = scanned;
                 }
             }

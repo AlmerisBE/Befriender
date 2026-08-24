@@ -44,13 +44,14 @@ public class ListTab : ITab {
         float footerHeight = ImGui.GetFrameHeightWithSpacing();
 
         if (ImGui.BeginChild("TableChild", new Vector2(0, -footerHeight), false)) {
-            if (ImGui.BeginTable("FriendsTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
+            if (ImGui.BeginTable("FriendsTable", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
                 ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Name");
                 ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Added", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Last Seen", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
 
                 this.HandleSortingAndFiltering(rawFriends);
@@ -131,7 +132,30 @@ public class ListTab : ITab {
                     var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
                     ImGui.Text($"{dateStr} ({locStr})");
 
-                    // Fin de l'atténuation (Pop) obligatoire pour ne pas faire planter ImGui
+                    // 7. Colonne Dernière connexion
+                    ImGui.TableNextColumn();
+                    if (friend.IsOnline) {
+                        ImGui.Text("Online");
+                    }
+                    else if (friend.LastSeenAt == System.DateTime.MinValue) {
+                        ImGui.Text("Unknown");
+                    }
+                    else {
+                        var diff = System.DateTime.Now - friend.LastSeenAt;
+                        if (diff.TotalDays >= 1) {
+                            ImGui.Text($"{(int)diff.TotalDays}d");
+                        }
+                        else if (diff.TotalHours >= 1) {
+                            ImGui.Text($"{(int)diff.TotalHours}h");
+                        }
+                        else if (diff.TotalMinutes >= 1) {
+                            ImGui.Text($"{(int)diff.TotalMinutes}m");
+                        }
+                        else {
+                            ImGui.Text("Just now");
+                        }
+                    }
+
                     if (!friend.IsOnline) {
                         ImGui.PopStyleColor();
                     }
