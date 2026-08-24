@@ -71,15 +71,14 @@ public class ListTab : ITab {
 
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        if (ImGui.BeginTable("FriendsTable", 8, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
+        // Reduced column count from 8 to 6
+        if (ImGui.BeginTable("FriendsTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
             ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Name");
             ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Location");
-            ImGui.TableSetupColumn("Added", ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn("Last Seen", ImGuiTableColumnFlags.WidthFixed);
 
             ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
@@ -206,38 +205,6 @@ public class ListTab : ITab {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 var locationName = this.gameDataService.GetLocationName(friend.LocationId);
                 ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? "Unknown" : locationName);
-
-                // 7. Added Column
-                ImGui.TableNextColumn();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                var dateStr = friend.AddedAt == DateTime.MinValue ? "Unknown" : friend.AddedAt.ToShortDateString();
-                var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
-                ImGui.Text($"{dateStr} ({locStr})");
-
-                // 8. Last Seen Column
-                ImGui.TableNextColumn();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                if (friend.IsOnline) {
-                    ImGui.Text("Online");
-                }
-                else if (friend.LastSeenAt == DateTime.MinValue) {
-                    ImGui.Text("Unknown");
-                }
-                else {
-                    var diff = DateTime.Now - friend.LastSeenAt;
-                    if (diff.TotalDays >= 1) {
-                        ImGui.Text($"{(int)diff.TotalDays}d");
-                    }
-                    else if (diff.TotalHours >= 1) {
-                        ImGui.Text($"{(int)diff.TotalHours}h");
-                    }
-                    else if (diff.TotalMinutes >= 1) {
-                        ImGui.Text($"{(int)diff.TotalMinutes}m");
-                    }
-                    else {
-                        ImGui.Text("Just now");
-                    }
-                }
 
                 ImGui.PopStyleColor(); // Remove row color
             }
