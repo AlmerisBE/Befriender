@@ -86,48 +86,34 @@ public class ListTab : ITab {
                 ImGui.TableNextColumn();
                 float statusColWidth = ImGui.GetColumnWidth();
 
-                if (!friend.IsOnline) {
-                    float textWidth = ImGui.CalcTextSize("●").X;
-                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                    ImGui.Text("●");
+                // By feeding a 0 mask when offline, GameDataService naturally falls back to icon 61504 and "Offline"
+                ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
+                var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask);
+
+                var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
+                var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+
+                if (iconWrap != null) {
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
+                    ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
 
                     if (ImGui.IsItemHovered()) {
-                        ImGui.SetTooltip("Offline");
+                        ImGui.SetTooltip(statusInfo.Name);
                     }
                 }
                 else {
-                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(friend.OnlineStateMask);
-                    bool statusIconDrawn = false;
+                    // Fallback to text circle if texture is unavailable
+                    float textWidth = ImGui.CalcTextSize("●").X;
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
-                    if (statusInfo.IconId > 0 && statusInfo.IconId != 61505) {
-                        var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
-                        var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+                    Vector4 fallbackColor = friend.IsOnline ? new Vector4(0.43f, 0.85f, 0.43f, 1.0f) : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                    ImGui.PushStyleColor(ImGuiCol.Text, fallbackColor);
+                    ImGui.Text("●");
+                    ImGui.PopStyleColor();
 
-                        if (iconWrap != null) {
-                            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
-                            ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
-
-                            if (ImGui.IsItemHovered()) {
-                                ImGui.SetTooltip(statusInfo.Name);
-                            }
-
-                            statusIconDrawn = true;
-                        }
-                    }
-
-                    if (!statusIconDrawn) {
-                        float textWidth = ImGui.CalcTextSize("●").X;
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
-                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-
-                        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.43f, 0.85f, 0.43f, 1.0f));
-                        ImGui.Text("●");
-                        ImGui.PopStyleColor();
-
-                        if (ImGui.IsItemHovered()) {
-                            ImGui.SetTooltip(statusInfo.Name);
-                        }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(statusInfo.Name);
                     }
                 }
 
@@ -146,8 +132,8 @@ public class ListTab : ITab {
                     bool iconDrawn = false;
 
                     if (iconId > 0) {
-                        var iconLookup = new GameIconLookup { IconId = iconId };
-                        var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+                        iconLookup = new GameIconLookup { IconId = iconId };
+                        iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 
                         if (iconWrap != null) {
                             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));

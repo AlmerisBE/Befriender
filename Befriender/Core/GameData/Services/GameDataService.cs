@@ -193,8 +193,8 @@ public class GameDataService : IGameDataService {
     public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask) {
         var iconId = this.GetOnlineStatusIconId(stateMask);
 
-        if (iconId == 0) {
-            return (0, "Offline");
+        if (iconId == 61504) {
+            return (61504, "Offline");
         }
 
         if (iconId == 61505) {
