@@ -212,4 +212,22 @@ public class GameDataService : IGameDataService {
 
         return (iconId, "Unknown");
     }
+
+    public bool IsFriendAvailable(ulong stateMask) {
+        var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
+
+        // If the character has any of these restrictive statuses, they are online but unavailable
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.ViewingCutscene) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Busy) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AwayFromKeyboard) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.CameraMode)) {
+            return false;
+        }
+
+        return true;
+    }
 }

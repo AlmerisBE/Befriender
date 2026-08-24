@@ -6,6 +6,7 @@ public interface IGameDataService {
     uint GetJobIconId(byte jobId);
     string GetLocationName(ushort territoryId);
 
-    // We only expose the combined info method to the UI
     (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask);
+
+    bool IsFriendAvailable(ulong stateMask);
 }

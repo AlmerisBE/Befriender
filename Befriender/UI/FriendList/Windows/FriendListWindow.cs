@@ -28,13 +28,17 @@ public class FriendListWindow : Window {
         });
     }
 
-    public override void OnOpen() {
-        this.syncService.IsWindowOpen = true;
-        this.syncService.RequestServerRefresh();
-    }
+    public override void Update() {
+        // Dalamud's state restoration bypasses OnOpen(). 
+        // We monitor the state explicitly every frame to ensure perfect synchronization.
+        if (this.syncService.IsWindowOpen != this.IsOpen) {
+            this.syncService.IsWindowOpen = this.IsOpen;
 
-    public override void OnClose() {
-        this.syncService.IsWindowOpen = false;
+            if (this.IsOpen) {
+                // Mimic the opening behavior reliably
+                this.syncService.RequestServerRefresh();
+            }
+        }
     }
 
     public override void Draw() {
