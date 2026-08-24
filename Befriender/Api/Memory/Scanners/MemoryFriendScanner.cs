@@ -129,4 +129,24 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
 
         return hash;
     }
+
+    public void RequestServerUpdate() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return;
+        }
+
+        var friendProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FriendList);
+        if (friendProxy == null) {
+            return;
+        }
+
+        // Triggers the native server data request mimicking the vanilla friend list opening
+        friendProxy->RequestData();
+    }
 }

@@ -24,8 +24,13 @@ public class FriendListWindow : Window {
         this.TitleBarButtons.Add(new TitleBarButton {
             Icon = FontAwesomeIcon.Sync,
             IconOffset = new Vector2(1, 1),
-            Click = (mouseButton) => this.syncService.ForceSync()
+            Click = (mouseButton) => this.syncService.RequestServerRefresh()
         });
+    }
+
+    public override void OnOpen() {
+        // Automatically request fresh server data when the window is opened
+        this.syncService.RequestServerRefresh();
     }
 
     public override void Draw() {

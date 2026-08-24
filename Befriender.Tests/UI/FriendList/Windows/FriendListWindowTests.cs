@@ -20,4 +20,18 @@ public class FriendListWindowTests {
         Assert.Equal("Befriender", window.WindowName);
         Assert.Single(window.TitleBarButtons);
     }
+
+    [Fact]
+    public void FriendListWindow_OnOpen_RequestsServerRefresh() {
+        // Arrange
+        var mockTabs = new List<ITab>();
+        var mockSync = Substitute.For<IFriendSyncService>();
+        var window = new FriendListWindow(mockTabs, mockSync);
+
+        // Act
+        window.OnOpen();
+
+        // Assert
+        mockSync.Received(1).RequestServerRefresh();
+    }
 }

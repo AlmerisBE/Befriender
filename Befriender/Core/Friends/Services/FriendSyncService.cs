@@ -82,6 +82,15 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         this.friendRepository.UpdateFriends(scannedFriends);
     }
 
+    public void RequestServerRefresh() {
+        this.friendScanner.RequestServerUpdate();
+
+        // Sets a 2-second debounce. 
+        // This provides visual feedback ("Scanning...") and acts as a fallback sync trigger 
+        // in case the server responds but no statuses have actually changed (thus the hash remaining identical).
+        this.pendingSyncTime = DateTime.Now.AddSeconds(2);
+    }
+
     public void Dispose() {
         this.framework.Update -= this.OnUpdate;
         this.clientState.Login -= this.OnLogin;
