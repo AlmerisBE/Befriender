@@ -16,6 +16,9 @@ public class FriendProfile {
     // Holds the bitmask from CharacterData.OnlineStatus
     public ulong OnlineStateMask { get; set; }
 
+    // Holds the bitmask for the client languages (JA, EN, DE, FR)
+    public byte ClientLanguages { get; set; }
+
     public DateTime AddedAt { get; set; }
     public ushort AddedLocationId { get; set; }
     public DateTime LastSeenAt { get; set; }

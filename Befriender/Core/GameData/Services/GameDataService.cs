@@ -241,4 +241,31 @@ public class GameDataService : IGameDataService {
 
         return true;
     }
+
+    public string GetClientLanguageString(byte languageMask) {
+        if (languageMask == 0) {
+            return "None";
+        }
+
+        var languages = new System.Collections.Generic.List<string>();
+
+        // Bitwise evaluation based on standard FFXIV language flags
+        if ((languageMask & 1) != 0) {
+            languages.Add("JA");
+        }
+
+        if ((languageMask & 2) != 0) {
+            languages.Add("EN");
+        }
+
+        if ((languageMask & 4) != 0) {
+            languages.Add("DE");
+        }
+
+        if ((languageMask & 8) != 0) {
+            languages.Add("FR");
+        }
+
+        return languages.Count > 0 ? string.Join(" ", languages) : "None";
+    }
 }

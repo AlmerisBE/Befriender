@@ -53,15 +53,15 @@ public class FriendRepositoryTests {
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
         var existingFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = true, JobId = 24, FcTag = "TEST" }
+            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = true, JobId = 24, FcTag = "TEST", ClientLanguages = 2 }
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
-        // Scan returns the same friend, but offline and with cleared game data
+        // Scan returns the same friend, but offline, with cleared game data, but updated languages
         var scannedFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = false, JobId = 0, FcTag = string.Empty }
+            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = false, JobId = 0, FcTag = string.Empty, ClientLanguages = 10 }
         };
 
         // Act
@@ -73,6 +73,7 @@ public class FriendRepositoryTests {
         Assert.False(result[0].IsOnline);
         Assert.Equal(24, result[0].JobId); // Should not be overwritten by 0
         Assert.Equal("TEST", result[0].FcTag); // Should not be overwritten by empty
+        Assert.Equal(10, result[0].ClientLanguages); // Languages should update (e.g. EN -> EN+FR)
     }
 
     [Fact]

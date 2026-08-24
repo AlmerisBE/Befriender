@@ -283,12 +283,15 @@ public class ListTab : ITab {
         ImGui.Separator();
         ImGui.Spacing();
 
+        // Details
         var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : "None";
         ImGui.Text($"Job: {jobAbbr}");
         ImGui.Text($"World: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
         if (!string.IsNullOrEmpty(friend.FcTag)) {
             ImGui.Text($"Free Company: <{friend.FcTag}>");
         }
+
+        ImGui.Text($"Languages: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
 
         ImGui.Spacing();
         ImGui.Text("--- Metadata ---");

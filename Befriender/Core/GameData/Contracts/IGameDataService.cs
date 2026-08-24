@@ -9,4 +9,6 @@ public interface IGameDataService {
     (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask);
 
     bool IsFriendAvailable(ulong stateMask);
+
+    string GetClientLanguageString(byte languageMask);
 }

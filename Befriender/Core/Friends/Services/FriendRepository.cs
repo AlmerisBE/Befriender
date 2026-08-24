@@ -82,6 +82,7 @@ public class FriendRepository : IFriendRepository {
                     existing.Name = scanned.Name;
                     existing.HomeWorldId = scanned.HomeWorldId;
                     existing.CurrentWorldId = scanned.CurrentWorldId;
+                    existing.ClientLanguages = scanned.ClientLanguages; // Persist client languages
 
                     if (scanned.IsOnline) {
                         existing.LastSeenAt = now;
