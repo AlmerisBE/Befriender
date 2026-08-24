@@ -11,6 +11,9 @@ public class FriendProfile {
     public ushort LocationId { get; set; }
     public string FcTag { get; set; } = string.Empty;
 
+    // Holds the bitmask from CharacterData.OnlineStatus
+    public ulong OnlineStateMask { get; set; }
+
     public DateTime AddedAt { get; set; }
     public ushort AddedLocationId { get; set; }
     public DateTime LastSeenAt { get; set; }

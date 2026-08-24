@@ -64,6 +64,7 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
             }
 
             bool isOnline = entry->State != 0;
+            ulong onlineStateMask = (ulong)entry->State;
 
             friends.Add(new FriendProfile {
                 ContentId = entry->ContentId,
@@ -72,7 +73,8 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 IsOnline = isOnline,
                 JobId = entry->Job,
                 LocationId = entry->Location,
-                FcTag = fcTag
+                FcTag = fcTag,
+                OnlineStateMask = onlineStateMask
             });
         }
 

@@ -62,6 +62,7 @@ public class FriendRepository : IFriendRepository {
 
                     if (scanned.IsOnline) {
                         existing.LastSeenAt = now;
+                        existing.OnlineStateMask = scanned.OnlineStateMask;
                     }
 
                     if (scanned.JobId > 0) {

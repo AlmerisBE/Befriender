@@ -5,7 +5,9 @@ using Befriender.Core.Friends.Models;
 using Befriender.Core.Friends.Services;
 using Dalamud.Plugin.Services;
 using NSubstitute;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 public class FriendRepositoryTests {
@@ -19,7 +21,7 @@ public class FriendRepositoryTests {
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
         var existingFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Persisted Friend", IsOnline = true, JobId = 24 }
+            new FriendProfile { ContentId = 1, Name = "Persisted Friend", IsOnline = true, JobId = 24, OnlineStateMask = 61510 }
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
@@ -36,6 +38,7 @@ public class FriendRepositoryTests {
         Assert.Single(result); // The friend is NOT removed
         Assert.False(result[0].IsOnline); // But they are marked offline
         Assert.Equal(24, result[0].JobId); // And their last known job is preserved
+        Assert.Equal(61510u, result[0].OnlineStateMask);
     }
 
     [Fact]

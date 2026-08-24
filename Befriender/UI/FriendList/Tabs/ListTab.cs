@@ -46,12 +46,14 @@ public class ListTab : ITab {
         float footerHeight = ImGui.GetFrameHeightWithSpacing();
 
         if (ImGui.BeginChild("TableChild", new Vector2(0, -footerHeight), false)) {
-            if (ImGui.BeginTable("FriendsTable", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
+            // Updated to 8 columns
+            if (ImGui.BeginTable("FriendsTable", 8, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable)) {
                 ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Name");
                 ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("World", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Location"); // New column, no WidthFixed to let it expand
                 ImGui.TableSetupColumn("Added", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Last Seen", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
@@ -61,27 +63,48 @@ public class ListTab : ITab {
                 foreach (var friend in this.cachedFriends) {
                     ImGui.TableNextRow();
 
-                    // 1. Colonne Statut (Pastille colorée)
+                    // 1. Colonne Statut
                     ImGui.TableNextColumn();
-                    var statusColor = friend.IsOnline
-                        ? new Vector4(0.43f, 0.85f, 0.43f, 1.0f) // Vert vif
-                        : new Vector4(0.4f, 0.4f, 0.4f, 1.0f);   // Gris terne
+                    if (!friend.IsOnline) {
+                        ImGui.TextColored(new Vector4(0.4f, 0.4f, 0.4f, 1.0f), "●");
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Offline");
+                        }
+                    }
+                    else {
+                        var statusInfo = this.gameDataService.GetOnlineStatusInfo(friend.OnlineStateMask);
+                        bool statusIconDrawn = false;
 
-                    ImGui.TextColored(statusColor, "●");
-                    if (ImGui.IsItemHovered()) {
-                        ImGui.SetTooltip(friend.IsOnline ? "Online" : "Offline");
+                        if (statusInfo.IconId > 0 && statusInfo.IconId != 61505) {
+                            var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
+                            var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+
+                            if (iconWrap != null) {
+                                var iconSize = new Vector2(ImGui.GetTextLineHeight(), ImGui.GetTextLineHeight());
+                                ImGui.Image(iconWrap.Handle, iconSize);
+                                if (ImGui.IsItemHovered()) {
+                                    ImGui.SetTooltip(statusInfo.Name);
+                                }
+
+                                statusIconDrawn = true;
+                            }
+                        }
+
+                        if (!statusIconDrawn) {
+                            ImGui.TextColored(new Vector4(0.43f, 0.85f, 0.43f, 1.0f), "●");
+                            if (ImGui.IsItemHovered()) {
+                                ImGui.SetTooltip(statusInfo.Name);
+                            }
+                        }
                     }
 
-                    // Début de l'atténuation (dimming) pour les joueurs hors-ligne
                     if (!friend.IsOnline) {
                         ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
                     }
 
-                    // 2. Colonne Nom
                     ImGui.TableNextColumn();
                     ImGui.Text(friend.Name);
 
-                    // 3. Colonne Job
                     ImGui.TableNextColumn();
                     if (friend.JobId > 0) {
                         var iconId = this.gameDataService.GetJobIconId(friend.JobId);
@@ -94,7 +117,6 @@ public class ListTab : ITab {
 
                             if (iconWrap != null) {
                                 var iconSize = new Vector2(24, 24);
-                                // On applique une teinte sombre sur l'image si le joueur est hors-ligne
                                 var imageTint = friend.IsOnline ? new Vector4(1, 1, 1, 1) : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
 
                                 ImGui.Image(iconWrap.Handle, iconSize, Vector2.Zero, Vector2.One, imageTint);
@@ -115,7 +137,6 @@ public class ListTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
-                    // 4. Colonne FC
                     ImGui.TableNextColumn();
                     if (!string.IsNullOrEmpty(friend.FcTag)) {
                         ImGui.Text($"<{friend.FcTag}>");
@@ -124,17 +145,19 @@ public class ListTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
-                    // 5. Colonne Monde
                     ImGui.TableNextColumn();
                     ImGui.Text(this.gameDataService.GetWorldName(friend.HomeWorldId));
 
-                    // 6. Colonne Ajout
+                    // 6. Colonne Location (Nouvelle)
+                    ImGui.TableNextColumn();
+                    var locationName = this.gameDataService.GetLocationName(friend.LocationId);
+                    ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? "Unknown" : locationName);
+
                     ImGui.TableNextColumn();
                     var dateStr = friend.AddedAt == System.DateTime.MinValue ? "Unknown" : friend.AddedAt.ToShortDateString();
                     var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
                     ImGui.Text($"{dateStr} ({locStr})");
 
-                    // 7. Colonne Dernière connexion
                     ImGui.TableNextColumn();
                     if (friend.IsOnline) {
                         ImGui.Text("Online");
