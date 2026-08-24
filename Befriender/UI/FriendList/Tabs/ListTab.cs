@@ -8,6 +8,7 @@ using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -17,6 +18,7 @@ public class ListTab : ITab {
     private IFriendSyncService syncService;
     private IGameDataService gameDataService;
     private ITextureProvider textureProvider;
+    private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
     private bool showOnlineOnly = false;
     private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
@@ -181,8 +183,9 @@ public class ListTab : ITab {
 
     private void HandleSortingAndFiltering(IReadOnlyList<FriendProfile> rawFriends) {
         var sortSpecs = ImGui.TableGetSortSpecs();
+        bool dataUpdated = this.syncService.LastSyncTime != this.lastProcessedSyncTime;
 
-        if (sortSpecs.SpecsDirty || this.forceRefresh || rawFriends.Count != this.lastFriendCount) {
+        if (sortSpecs.SpecsDirty || this.forceRefresh || rawFriends.Count != this.lastFriendCount || dataUpdated) {
             int sortColumn = -1;
             bool isAscending = true;
 
@@ -197,6 +200,7 @@ public class ListTab : ITab {
             sortSpecs.SpecsDirty = false;
             this.forceRefresh = false;
             this.lastFriendCount = rawFriends.Count;
+            this.lastProcessedSyncTime = this.syncService.LastSyncTime;
         }
     }
 }
