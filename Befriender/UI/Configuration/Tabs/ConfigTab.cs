@@ -2,24 +2,38 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
+using Befriender.UI.Theme.Contracts;
+using Befriender.UI.Theme.Models;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 
 public class ConfigTab : ITab {
     private IConfigurationService configurationService;
     private ILocalizationService loc;
+    private IThemeService themeService;
 
     public string Name => this.loc.Translate("Tab_Config");
 
-    public ConfigTab(IConfigurationService configurationService, ILocalizationService loc) {
+    public ConfigTab(IConfigurationService configurationService, ILocalizationService loc, IThemeService themeService) {
         this.configurationService = configurationService;
         this.loc = loc;
+        this.themeService = themeService;
     }
 
     public void Draw() {
         var config = this.configurationService.GetConfig();
         bool configChanged = false;
 
+        ImGui.Text(this.loc.Translate("Config_ThemeSettings"));
+        ImGui.Separator();
+
+        int currentTheme = (int)this.themeService.CurrentStyle;
+        var themeNames = new string[] { this.loc.Translate("Config_ThemeDark"), this.loc.Translate("Config_ThemeLight") };
+        if (ImGui.Combo(this.loc.Translate("Config_Theme"), ref currentTheme, themeNames, themeNames.Length)) {
+            this.themeService.SetTheme((ThemeStyle)currentTheme);
+        }
+
+        ImGui.Spacing();
         ImGui.Text(this.loc.Translate("Config_AutomationSettings"));
         ImGui.Separator();
 

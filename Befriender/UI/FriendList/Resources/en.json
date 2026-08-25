@@ -45,5 +45,9 @@
   "Config_SyncOnFriendListChange": "Sync on Friend Added/Removed",
   "Config_BackgroundSync": "Background Synchronization (When Window is Open)",
   "Config_MinInterval": "Min Interval (min)",
-  "Config_MaxInterval": "Max Interval (min)"
+  "Config_MaxInterval": "Max Interval (min)",
+  "Config_ThemeSettings": "Theme Settings",
+  "Config_Theme": "Theme",
+  "Config_ThemeDark": "Dark",
+  "Config_ThemeLight": "Light"
 }

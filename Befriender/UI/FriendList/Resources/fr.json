@@ -45,5 +45,9 @@
   "Config_SyncOnFriendListChange": "Synchroniser lors d'un ajout/retrait d'ami",
   "Config_BackgroundSync": "Synchronisation en arrière-plan (Fenêtre ouverte)",
   "Config_MinInterval": "Intervalle min (min)",
-  "Config_MaxInterval": "Intervalle max (min)"
+  "Config_MaxInterval": "Intervalle max (min)",
+  "Config_ThemeSettings": "Paramètres d'apparence",
+  "Config_Theme": "Thème",
+  "Config_ThemeDark": "Sombre",
+  "Config_ThemeLight": "Clair"
 }

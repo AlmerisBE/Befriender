@@ -2,6 +2,7 @@
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.UI.FriendList.Windows;
+using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using NSubstitute;
 using System.Collections.Generic;
@@ -13,9 +14,10 @@ public class FriendListWindowTests {
         // Arrange
         var mockTabs = new List<ITab>();
         var mockSync = Substitute.For<IFriendSyncService>();
+        var mockTheme = Substitute.For<IThemeService>();
 
         // Act
-        var window = new FriendListWindow(mockTabs, mockSync);
+        var window = new FriendListWindow(mockTabs, mockSync, mockTheme);
 
         // Assert
         Assert.Equal("Befriender", window.WindowName);
@@ -27,11 +29,12 @@ public class FriendListWindowTests {
         // Arrange
         var mockTabs = new List<ITab>();
         var mockSync = Substitute.For<IFriendSyncService>();
+        var mockTheme = Substitute.For<IThemeService>();
 
         // Assume the service thinks the window is closed initially
         mockSync.IsWindowOpen.Returns(false);
 
-        var window = new FriendListWindow(mockTabs, mockSync);
+        var window = new FriendListWindow(mockTabs, mockSync, mockTheme);
 
         // Simulate the window being opened by Dalamud or a command
         window.IsOpen = true;
@@ -40,7 +43,6 @@ public class FriendListWindowTests {
         window.Update();
 
         // Assert
-        // We verify that the property was updated and the server refresh was requested
         mockSync.Received().IsWindowOpen = true;
         mockSync.Received(1).RequestServerRefresh();
     }

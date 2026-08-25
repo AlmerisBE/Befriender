@@ -45,5 +45,9 @@
   "Config_SyncOnFriendListChange": "Bei Freundeslistenänderung synchronisieren",
   "Config_BackgroundSync": "Hintergrundsynchronisierung (wenn Fenster offen)",
   "Config_MinInterval": "Min. Intervall (Min.)",
-  "Config_MaxInterval": "Max. Intervall (Min.)"
+  "Config_MaxInterval": "Max. Intervall (Min.)",
+  "Config_ThemeSettings": "Design-Einstellungen",
+  "Config_Theme": "Design",
+  "Config_ThemeDark": "Dunkel",
+  "Config_ThemeLight": "Hell"
 }

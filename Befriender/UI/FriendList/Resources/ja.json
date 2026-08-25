@@ -45,5 +45,9 @@
   "Config_SyncOnFriendListChange": "フレンド追加/削除時に同期",
   "Config_BackgroundSync": "バックグラウンド同期（ウィンドウが開いている場合）",
   "Config_MinInterval": "最小間隔（分）",
-  "Config_MaxInterval": "最大間隔（分）"
+  "Config_MaxInterval": "最大間隔（分）",
+  "Config_ThemeSettings": "テーマ設定",
+  "Config_Theme": "テーマ",
+  "Config_ThemeDark": "ダーク",
+  "Config_ThemeLight": "ライト"
 }

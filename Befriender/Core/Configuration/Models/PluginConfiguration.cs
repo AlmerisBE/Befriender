@@ -13,4 +13,5 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool SyncOnLogin { get; set; } = true;
     public bool SyncOnTerritoryChange { get; set; } = true;
     public bool SyncOnFriendListChange { get; set; } = true;
+    public int SelectedTheme { get; set; } = 0;
 }

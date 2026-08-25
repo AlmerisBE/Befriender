@@ -88,7 +88,7 @@ public class FriendListTableComponent {
 
                     if (iconWrap != null) {
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
-                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, palette.IconOfflineTint);
+                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, palette.IconDeletedTint);
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip(this.loc.Translate("Tooltip_MissingDeleted"));
                         }
@@ -113,7 +113,7 @@ public class FriendListTableComponent {
 
                     if (iconWrap != null) {
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
-                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
+                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, palette.IconDefaultTint);
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip(statusInfo.Name);
                         }
@@ -151,7 +151,8 @@ public class FriendListTableComponent {
 
                         if (iconWrap != null) {
                             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));
-                            var imageTint = friend.IsOnline && !friend.IsCharacterDeleted && !friend.IsArchived ? rowColor : palette.TextOffline;
+                            // Ensure image remains fully colored if active, or dimmed if offline, never completely black
+                            var imageTint = friend.IsOnline && !friend.IsCharacterDeleted && !friend.IsArchived ? palette.IconDefaultTint : palette.IconDimmedTint;
                             ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, imageTint);
                             if (ImGui.IsItemHovered()) {
                                 ImGui.SetTooltip(jobAbbr);
