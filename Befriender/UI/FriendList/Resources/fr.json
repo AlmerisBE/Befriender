@@ -60,5 +60,6 @@
   "Action_ViewAdventurerPlate": "Voir la carte de personnage",
   "Action_ViewSearchInfo": "Voir les informations de recherche",
   "Action_EstateTeleportation": "Se téléporter au logement",
-  "Action_ViewPartyFinder": "Voir l'annonce de recrutement"
+  "Action_ViewPartyFinder": "Voir l'annonce de recrutement",
+  "Action_JoinFriend": "Rejoindre (Téléportation vers la région)"
 }

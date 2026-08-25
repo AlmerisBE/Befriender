@@ -60,5 +60,6 @@
   "Action_ViewAdventurerPlate": "View Adventurer Plate",
   "Action_ViewSearchInfo": "View Search Info",
   "Action_EstateTeleportation": "Teleport to Estate",
-  "Action_ViewPartyFinder": "View Party Finder Listing"
+  "Action_ViewPartyFinder": "View Party Finder Listing",
+  "Action_JoinFriend": "Join (Teleport to Region)"
 }

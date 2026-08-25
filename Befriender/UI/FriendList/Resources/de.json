@@ -60,5 +60,6 @@
   "Action_ViewAdventurerPlate": "Abenteurerpass ansehen",
   "Action_ViewSearchInfo": "Suchinfo ansehen",
   "Action_EstateTeleportation": "Zum Grundstück teleportieren",
-  "Action_ViewPartyFinder": "Gruppensuche-Eintrag ansehen"
+  "Action_ViewPartyFinder": "Gruppensuche-Eintrag ansehen",
+  "Action_JoinFriend": "Beitreten (In Region teleportieren)"
 }

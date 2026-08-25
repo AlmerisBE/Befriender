@@ -60,5 +60,6 @@
   "Action_ViewAdventurerPlate": "アドベンチャラープレートを見る",
   "Action_ViewSearchInfo": "サーチ情報を見る",
   "Action_EstateTeleportation": "ハウジングへテレポ",
-  "Action_ViewPartyFinder": "パーティ募集を見る"
+  "Action_ViewPartyFinder": "パーティ募集を見る",
+  "Action_JoinFriend": "合流する（エリアへテレポ）"
 }

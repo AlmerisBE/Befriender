@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 public class ActionsFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
-        // Register concrete actions
         services.AddSingleton<IFriendAction, CopyNameAction>();
         services.AddSingleton<IFriendAction, SendTellAction>();
         services.AddSingleton<IFriendAction, NativeInviteToPartyAction>();
@@ -16,8 +15,8 @@ public class ActionsFeature : IFeatureModule {
         services.AddSingleton<IFriendAction, ViewSearchInfoAction>();
         services.AddSingleton<IFriendAction, EstateTeleportationAction>();
         services.AddSingleton<IFriendAction, ViewPartyFinderListingAction>();
+        services.AddSingleton<IFriendAction, JoinFriendAction>();
 
-        // Register the registry service
         services.AddSingleton<IFriendActionService, FriendActionService>();
     }
 }
