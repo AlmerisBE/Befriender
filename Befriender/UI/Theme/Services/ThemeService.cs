@@ -2,42 +2,103 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.UI.Theme.Contracts;
+using Befriender.UI.Theme.Converters;
 using Befriender.UI.Theme.Models;
+using Dalamud.Plugin;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Numerics;
+using System.Text.Json;
 
 public class ThemeService : IThemeService {
     private IConfigurationService configurationService;
-    private Dictionary<ThemeStyle, ThemePalette> palettes;
+    private IDalamudPluginInterface pluginInterface;
+    private Dictionary<string, ThemePalette> palettes;
+    private JsonSerializerOptions jsonOptions;
 
     public ThemePalette CurrentPalette { get; private set; } = null!;
-    public ThemeStyle CurrentStyle { get; private set; }
+    public string CurrentThemeName { get; private set; } = "Dark";
 
-    public ThemeService(IConfigurationService configurationService) {
+    public ThemeService(IConfigurationService configurationService, IDalamudPluginInterface pluginInterface) {
         this.configurationService = configurationService;
-        this.palettes = new Dictionary<ThemeStyle, ThemePalette>();
-        this.InitializePalettes();
+        this.pluginInterface = pluginInterface;
+        this.palettes = new Dictionary<string, ThemePalette>(StringComparer.OrdinalIgnoreCase);
 
-        var savedStyle = (ThemeStyle)this.configurationService.GetConfig().SelectedTheme;
-        this.SetTheme(savedStyle);
+        this.jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        this.jsonOptions.Converters.Add(new Vector4HexJsonConverter());
+
+        this.LoadThemesFromDisk();
+
+        var savedTheme = this.configurationService.GetConfig().SelectedThemeName;
+        this.SetTheme(string.IsNullOrEmpty(savedTheme) ? "Dark" : savedTheme);
     }
 
-    private void InitializePalettes() {
-        this.palettes[ThemeStyle.Dark] = new ThemePalette {
+    private void LoadThemesFromDisk() {
+        var themeDirectory = Path.Combine(this.pluginInterface.ConfigDirectory.FullName, "Themes");
+        if (!Directory.Exists(themeDirectory)) {
+            Directory.CreateDirectory(themeDirectory);
+        }
+
+        this.EnsureDefaultThemeExists(themeDirectory, "Dark", "Almeris", this.GetDefaultDarkPalette());
+        this.EnsureDefaultThemeExists(themeDirectory, "Light", "Almeris", this.GetDefaultLightPalette());
+
+        foreach (var file in Directory.GetFiles(themeDirectory, "*.json")) {
+            try {
+                var json = File.ReadAllText(file);
+                var definition = JsonSerializer.Deserialize<ThemeDefinition>(json, this.jsonOptions);
+                if (definition != null && !string.IsNullOrEmpty(definition.Name)) {
+                    this.palettes[definition.Name] = definition.Palette;
+                }
+            }
+            catch {
+                // Silently skip malformed JSON files
+            }
+        }
+    }
+
+    private void EnsureDefaultThemeExists(string directory, string name, string author, ThemePalette palette) {
+        var filePath = Path.Combine(directory, $"{name}.json");
+        if (!File.Exists(filePath)) {
+            var definition = new ThemeDefinition { Name = name, Author = author, Palette = palette };
+            var json = JsonSerializer.Serialize(definition, this.jsonOptions);
+            File.WriteAllText(filePath, json);
+        }
+    }
+
+    public IReadOnlyList<string> GetAvailableThemes() {
+        return this.palettes.Keys.OrderBy(k => k).ToList();
+    }
+
+    public void SetTheme(string themeName) {
+        if (!this.palettes.ContainsKey(themeName)) {
+            themeName = this.palettes.ContainsKey("Dark") ? "Dark" : this.palettes.Keys.FirstOrDefault() ?? "Dark";
+        }
+
+        this.CurrentThemeName = themeName;
+        this.CurrentPalette = this.palettes[themeName];
+
+        var config = this.configurationService.GetConfig();
+        if (config.SelectedThemeName != themeName) {
+            config.SelectedThemeName = themeName;
+            this.configurationService.Save();
+        }
+    }
+
+    private ThemePalette GetDefaultDarkPalette() {
+        return new ThemePalette {
             TextOnline = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
             TextOffline = new Vector4(0.5f, 0.5f, 0.5f, 1.0f),
             TextBusy = new Vector4(0.75f, 0.75f, 0.75f, 1.0f),
             TextArchived = new Vector4(0.45f, 0.45f, 0.6f, 1.0f),
             TextDeleted = new Vector4(0.8f, 0.4f, 0.4f, 1.0f),
-
             IconDeletedTint = new Vector4(1.0f, 0.2f, 0.2f, 1.0f),
-            IconDefaultTint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f), // Pure white for native colors
+            IconDefaultTint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
             IconDimmedTint = new Vector4(0.5f, 0.5f, 0.5f, 1.0f),
-
             StatusFallbackOnline = new Vector4(0.43f, 0.85f, 0.43f, 1.0f),
             StatusFallbackOffline = new Vector4(0.5f, 0.5f, 0.5f, 1.0f),
             StatusFallbackDeleted = new Vector4(0.8f, 0.2f, 0.2f, 1.0f),
-
             WindowBg = new Vector4(0.15f, 0.14f, 0.14f, 0.95f),
             Text = new Vector4(0.90f, 0.90f, 0.90f, 1.0f),
             ChildBg = new Vector4(0.12f, 0.11f, 0.11f, 0.50f),
@@ -61,22 +122,21 @@ public class ThemeService : IThemeService {
             ButtonHovered = new Vector4(0.35f, 0.25f, 0.25f, 1.0f),
             ButtonActive = new Vector4(0.40f, 0.30f, 0.30f, 1.0f)
         };
+    }
 
-        this.palettes[ThemeStyle.Light] = new ThemePalette {
+    private ThemePalette GetDefaultLightPalette() {
+        return new ThemePalette {
             TextOnline = new Vector4(0.1f, 0.1f, 0.1f, 1.0f),
             TextOffline = new Vector4(0.5f, 0.5f, 0.5f, 1.0f),
             TextBusy = new Vector4(0.4f, 0.4f, 0.4f, 1.0f),
             TextArchived = new Vector4(0.5f, 0.4f, 0.6f, 1.0f),
             TextDeleted = new Vector4(0.8f, 0.1f, 0.1f, 1.0f),
-
             IconDeletedTint = new Vector4(1.0f, 0.2f, 0.2f, 1.0f),
-            IconDefaultTint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f), // Pure white for native colors
+            IconDefaultTint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
             IconDimmedTint = new Vector4(0.5f, 0.5f, 0.5f, 1.0f),
-
             StatusFallbackOnline = new Vector4(0.2f, 0.7f, 0.2f, 1.0f),
             StatusFallbackOffline = new Vector4(0.6f, 0.6f, 0.6f, 1.0f),
             StatusFallbackDeleted = new Vector4(0.8f, 0.1f, 0.1f, 1.0f),
-
             WindowBg = new Vector4(0.91f, 0.86f, 0.77f, 0.98f),
             Text = new Vector4(0.15f, 0.11f, 0.07f, 1.0f),
             ChildBg = new Vector4(0.88f, 0.82f, 0.73f, 0.50f),
@@ -100,20 +160,5 @@ public class ThemeService : IThemeService {
             ButtonHovered = new Vector4(0.90f, 0.82f, 0.70f, 1.0f),
             ButtonActive = new Vector4(0.80f, 0.72f, 0.60f, 1.0f)
         };
-    }
-
-    public void SetTheme(ThemeStyle style) {
-        if (!this.palettes.ContainsKey(style)) {
-            style = ThemeStyle.Dark;
-        }
-
-        this.CurrentStyle = style;
-        this.CurrentPalette = this.palettes[style];
-
-        var config = this.configurationService.GetConfig();
-        if (config.SelectedTheme != (int)style) {
-            config.SelectedTheme = (int)style;
-            this.configurationService.Save();
-        }
     }
 }

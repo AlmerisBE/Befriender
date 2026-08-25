@@ -2,42 +2,49 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;
-using Befriender.UI.Theme.Models;
 using Befriender.UI.Theme.Services;
+using Dalamud.Plugin;
 using NSubstitute;
+using System.IO;
 using Xunit;
 
 public class ThemeServiceTests {
     [Fact]
-    public void ThemeService_Initialization_LoadsThemeFromConfiguration() {
+    public void ThemeService_Initialization_GeneratesAndLoadsThemesFromDisk() {
         // Arrange
         var mockConfigService = Substitute.For<IConfigurationService>();
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { SelectedTheme = (int)ThemeStyle.Light });
+        mockConfigService.GetConfig().Returns(new PluginConfiguration { SelectedThemeName = "Light" });
+
+        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
+        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(Path.GetTempPath()));
 
         // Act
-        var service = new ThemeService(mockConfigService);
+        var service = new ThemeService(mockConfigService, mockPluginInterface);
 
         // Assert
-        Assert.Equal(ThemeStyle.Light, service.CurrentStyle);
-        // Validates specific Light theme parameter applied (Text color)
-        Assert.Equal(0.15f, service.CurrentPalette.Text.X);
+        Assert.Equal("Light", service.CurrentThemeName);
+        Assert.Contains("Dark", service.GetAvailableThemes());
+        Assert.Contains("Light", service.GetAvailableThemes());
     }
 
     [Fact]
     public void ThemeService_SetTheme_ChangesPaletteAndSavesConfig() {
         // Arrange
         var mockConfigService = Substitute.For<IConfigurationService>();
-        var config = new PluginConfiguration { SelectedTheme = (int)ThemeStyle.Dark };
+        var config = new PluginConfiguration { SelectedThemeName = "Dark" };
         mockConfigService.GetConfig().Returns(config);
 
-        var service = new ThemeService(mockConfigService);
+        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
+        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(Path.GetTempPath()));
+
+        var service = new ThemeService(mockConfigService, mockPluginInterface);
 
         // Act
-        service.SetTheme(ThemeStyle.Light);
+        service.SetTheme("Light");
 
         // Assert
-        Assert.Equal(ThemeStyle.Light, service.CurrentStyle);
-        Assert.Equal(1, config.SelectedTheme);
+        Assert.Equal("Light", service.CurrentThemeName);
+        Assert.Equal("Light", config.SelectedThemeName);
         mockConfigService.Received(1).Save();
     }
 }

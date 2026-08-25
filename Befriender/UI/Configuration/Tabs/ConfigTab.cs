@@ -3,9 +3,10 @@
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Theme.Contracts;
-using Befriender.UI.Theme.Models;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
+using System;
+using System.Linq;
 
 public class ConfigTab : ITab {
     private IConfigurationService configurationService;
@@ -27,10 +28,12 @@ public class ConfigTab : ITab {
         ImGui.Text(this.loc.Translate("Config_ThemeSettings"));
         ImGui.Separator();
 
-        int currentTheme = (int)this.themeService.CurrentStyle;
-        var themeNames = new string[] { this.loc.Translate("Config_ThemeDark"), this.loc.Translate("Config_ThemeLight") };
-        if (ImGui.Combo(this.loc.Translate("Config_Theme"), ref currentTheme, themeNames, themeNames.Length)) {
-            this.themeService.SetTheme((ThemeStyle)currentTheme);
+        var themes = this.themeService.GetAvailableThemes();
+        var themeArray = themes.ToArray();
+        int currentIndex = Math.Max(0, Array.IndexOf(themeArray, this.themeService.CurrentThemeName));
+
+        if (ImGui.Combo(this.loc.Translate("Config_Theme"), ref currentIndex, themeArray, themeArray.Length)) {
+            this.themeService.SetTheme(themeArray[currentIndex]);
         }
 
         ImGui.Spacing();
