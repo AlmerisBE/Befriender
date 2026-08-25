@@ -25,7 +25,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         IFramework framework,
         IObjectTable objectTable,
         IDataManager dataManager,
-        ITextureProvider textureProvider) {
+        ITextureProvider textureProvider,
+        IGameInteropProvider gameInteropProvider) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -41,6 +42,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(objectTable);
         services.AddSingleton(dataManager);
         services.AddSingleton(textureProvider);
+        services.AddSingleton(gameInteropProvider);
 
         services.AddPluginFeatures();
 

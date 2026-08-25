@@ -16,7 +16,7 @@ public class DeleteFriendDataAction : IFriendAction {
     }
 
     public bool CanExecute(FriendProfile friend) {
-        return friend.IsArchived || friend.IsCharacterDeleted;
+        return friend.IsArchived;
     }
 
     public void Execute(FriendProfile friend) {

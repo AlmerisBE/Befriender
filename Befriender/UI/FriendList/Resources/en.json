@@ -68,5 +68,9 @@
   "Archive_Empty": "No contacts are currently archived.",
   "Status_CompactCounts": "{0} | {1}/{2} Online",
   "Status_TooltipCounts": "Online: {0}\nVanilla List: {1}\nArchived: {2}\nDeleted: {3}\nGrand Total: {4}",
-  "Action_DeleteData": "Permanently Delete"
+  "Action_DeleteData": "Permanently Delete",
+  "Action_RemoveFriend": "Remove Friend",
+  "Action_Confirm": "Confirm",
+  "Action_Cancel": "Cancel",
+  "Modal_RemoveConfirmText": "Are you sure you want to remove {0} from your friend list?"
 }

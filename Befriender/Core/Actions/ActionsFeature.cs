@@ -4,6 +4,9 @@ using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Actions.Implementations;
 using Befriender.Core.Actions.Services;
 using Befriender.Core.Framework;
+using Befriender.Core.Interop.Contracts;
+using Befriender.Core.Interop.Services;
+using Befriender.UI.FriendList.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 public class ActionsFeature : IFeatureModule {
@@ -18,6 +21,18 @@ public class ActionsFeature : IFeatureModule {
         services.AddSingleton<IFriendAction, JoinFriendAction>();
         services.AddSingleton<IFriendAction, DeleteFriendDataAction>();
         services.AddSingleton<IFriendAction, RestoreFriendAction>();
+
+        // Interop
+        services.AddSingleton<INativeFriendService, NativeFriendService>();
+
+        // Services
+        services.AddSingleton<IRemoveFriendRequestService, RemoveFriendRequestService>();
+
+        // Actions
+        services.AddSingleton<IFriendAction, RequestRemoveFriendAction>();
+
+        // UI
+        services.AddSingleton<RemoveConfirmationModalComponent>();
 
         services.AddSingleton<IFriendActionService, FriendActionService>();
     }

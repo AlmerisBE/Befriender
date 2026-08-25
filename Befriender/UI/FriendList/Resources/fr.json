@@ -68,5 +68,9 @@
   "Archive_Empty": "Aucun contact n'est archivé.",
   "Status_CompactCounts": "{0} | {1}/{2} En ligne",
   "Status_TooltipCounts": "En ligne : {0}\nListe native : {1}\nArchivés : {2}\nSupprimés : {3}\nTotal global : {4}",
-  "Action_DeleteData": "Supprimer définitivement"
+  "Action_DeleteData": "Supprimer définitivement",
+  "Action_RemoveFriend": "Retirer de la liste d'amis",
+  "Action_Confirm": "Confirmer",
+  "Action_Cancel": "Annuler",
+  "Modal_RemoveConfirmText": "Voulez-vous vraiment retirer {0} de votre liste d'amis ?"
 }

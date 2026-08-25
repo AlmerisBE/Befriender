@@ -25,16 +25,18 @@ public class ListTab : ITab, IDisposable {
     private FriendProfile? selectedFriend = null;
     private float pendingWidthDelta = 0f;
     private bool isFirstFrame = true;
+    private RemoveConfirmationModalComponent removeConfirmationModal;
 
     public string Name => this.loc.Translate("Tab_List");
 
-    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
+    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService, RemoveConfirmationModalComponent removeConfirmationModal) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
         this.statusBarComponent = statusBarComponent;
         this.loc = loc;
         this.configurationService = configurationService;
+        this.removeConfirmationModal = removeConfirmationModal;
 
         this.friendRepository.CacheCleared += this.OnCacheCleared;
     }
@@ -117,6 +119,8 @@ public class ListTab : ITab, IDisposable {
             ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
             this.pendingWidthDelta = 0f;
         }
+
+        this.removeConfirmationModal.Draw();
     }
 
     public void Dispose() {
