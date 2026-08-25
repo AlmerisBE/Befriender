@@ -51,5 +51,9 @@
   "Config_ThemeDark": "Sombre",
   "Config_ThemeLight": "Clair",
   "Config_ThemesDirectory": "Répertoire des thèmes",
-  "Config_OpenDirectory": "Ouvrir"
+  "Config_OpenDirectory": "Ouvrir",
+  "Action_NoneAvailable": "Aucune action disponible",
+  "Action_CopyName": "Copier le nom",
+  "Action_InviteToParty": "Préparer l'invitation d'équipe",
+  "Action_SendTell": "Préparer le message privé"
 }

@@ -51,5 +51,9 @@
   "Config_ThemeDark": "Dunkel",
   "Config_ThemeLight": "Hell",
   "Config_ThemesDirectory": "Design-Verzeichnis",
-  "Config_OpenDirectory": "Ordner öffnen"
+  "Config_OpenDirectory": "Ordner öffnen",
+  "Action_NoneAvailable": "Keine Aktionen verfügbar",
+  "Action_CopyName": "Namen kopieren",
+  "Action_InviteToParty": "Gruppeneinladung vorbereiten",
+  "Action_SendTell": "Private Nachricht vorbereiten"
 }

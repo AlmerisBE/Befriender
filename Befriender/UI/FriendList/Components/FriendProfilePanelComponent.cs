@@ -1,10 +1,12 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
+using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Components;
 using System;
 using System.Numerics;
 
@@ -12,13 +14,15 @@ public class FriendProfilePanelComponent {
     private IGameDataService gameDataService;
     private IFriendRepository friendRepository;
     private ILocalizationService loc;
+    private IFriendActionService actionService;
     private string notesBuffer = string.Empty;
     private ulong currentFriendId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc) {
+    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService) {
         this.gameDataService = gameDataService;
         this.friendRepository = friendRepository;
         this.loc = loc;
+        this.actionService = actionService;
     }
 
     public void Draw(float panelWidth, float footerHeight, FriendProfile friend, Action onClose) {
@@ -36,6 +40,24 @@ public class FriendProfilePanelComponent {
 
             ImGui.Separator();
             ImGui.Spacing();
+
+            var actions = this.actionService.GetAvailableActions(friend);
+            if (actions.Count > 0) {
+                foreach (var action in actions) {
+                    // Safe and unique int ID generation
+                    int buttonId = unchecked((int)action.Icon ^ friend.ContentId.GetHashCode());
+                    if (ImGuiComponents.IconButton(buttonId, action.Icon)) {
+                        action.Execute(friend);
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(this.loc.Translate(action.InternalName));
+                    }
+
+                    ImGui.SameLine();
+                }
+                ImGui.NewLine();
+                ImGui.Spacing();
+            }
 
             var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : "None";
             ImGui.Text($"{this.loc.Translate("Profile_Job")}: {jobAbbr}");

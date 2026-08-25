@@ -1,5 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
+using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
@@ -19,18 +20,20 @@ public class FriendListTableComponent {
     private ITextureProvider textureProvider;
     private ILocalizationService loc;
     private IThemeService themeService;
+    private IFriendActionService actionService;
 
     private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
     private int lastFriendCount = -1;
     private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
-    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService) {
+    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService, IFriendActionService actionService) {
         this.displayService = displayService;
         this.syncService = syncService;
         this.gameDataService = gameDataService;
         this.textureProvider = textureProvider;
         this.loc = loc;
         this.themeService = themeService;
+        this.actionService = actionService;
     }
 
     public void Draw(float tableWidth, float footerHeight, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
@@ -81,6 +84,20 @@ public class FriendListTableComponent {
                     onRowSelected(friend);
                 }
                 ImGui.SetCursorPos(cursorStart);
+
+                if (ImGui.BeginPopupContextItem($"ContextMenu_{friend.ContentId}")) {
+                    var actions = this.actionService.GetAvailableActions(friend);
+                    if (actions.Count == 0) {
+                        ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
+                    }
+
+                    foreach (var action in actions) {
+                        if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
+                            action.Execute(friend);
+                        }
+                    }
+                    ImGui.EndPopup();
+                }
 
                 if (friend.IsMissing) {
                     var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = 61504 };

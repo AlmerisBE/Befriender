@@ -51,5 +51,9 @@
   "Config_ThemeDark": "Dark",
   "Config_ThemeLight": "Light",
   "Config_ThemesDirectory": "Themes Directory",
-  "Config_OpenDirectory": "Open Folder"
+  "Config_OpenDirectory": "Open Folder",
+  "Action_NoneAvailable": "No actions available",
+  "Action_CopyName": "Copy Name",
+  "Action_InviteToParty": "Prepare Party Invite",
+  "Action_SendTell": "Prepare Private Message"
 }

@@ -51,5 +51,9 @@
   "Config_ThemeDark": "ダーク",
   "Config_ThemeLight": "ライト",
   "Config_ThemesDirectory": "テーマディレクトリ",
-  "Config_OpenDirectory": "開く"
+  "Config_OpenDirectory": "開く",
+  "Action_NoneAvailable": "利用可能なアクションはありません",
+  "Action_CopyName": "名前をコピー",
+  "Action_InviteToParty": "パーティに誘う準備",
+  "Action_SendTell": "Tellを準備"
 }
