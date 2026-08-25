@@ -4,18 +4,17 @@ using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Dalamud.Interface;
-using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
-public class SendTellAction : IFriendAction {
+public unsafe class SendTellAction : IFriendAction {
     private IGameDataService gameDataService;
-    private IChatGui chatGui;
 
     public string InternalName => "Action_SendTell";
     public FontAwesomeIcon Icon => FontAwesomeIcon.CommentDots;
 
-    public SendTellAction(IGameDataService gameDataService, IChatGui chatGui) {
+    public SendTellAction(IGameDataService gameDataService) {
         this.gameDataService = gameDataService;
-        this.chatGui = chatGui;
     }
 
     public bool CanExecute(FriendProfile friend) {
@@ -26,7 +25,20 @@ public class SendTellAction : IFriendAction {
         var worldName = this.gameDataService.GetWorldName(friend.CurrentWorldId > 0 ? friend.CurrentWorldId : friend.HomeWorldId);
         string command = $"/tell {friend.Name}@{worldName} ";
 
-        Dalamud.Bindings.ImGui.ImGui.SetClipboardText(command);
-        this.chatGui.Print($"[Befriender] Ready to chat. Command copied to clipboard: {command}");
+        using var cmd = new Utf8String(command);
+
+        cmd.SanitizeString(
+            AllowedEntities.Unknown9 |
+            AllowedEntities.Payloads |
+            AllowedEntities.OtherCharacters |
+            AllowedEntities.SpecialCharacters |
+            AllowedEntities.Numbers |
+            AllowedEntities.LowercaseLetters |
+            AllowedEntities.UppercaseLetters);
+
+        var uiModule = UIModule.Instance();
+        if (uiModule != null) {
+            uiModule->ProcessChatBoxEntry(&cmd);
+        }
     }
 }
