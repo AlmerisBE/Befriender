@@ -28,7 +28,6 @@ public class FriendRepositoryTests {
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
-        // Simulating an empty scan (e.g., during character switch or vanilla list opening)
         var scannedFriends = new List<FriendProfile>();
 
         // Act
@@ -36,9 +35,9 @@ public class FriendRepositoryTests {
         var result = repository.GetFriends();
 
         // Assert
-        Assert.Single(result); // The friend is NOT removed
-        Assert.False(result[0].IsOnline); // But they are marked offline
-        Assert.Equal(24, result[0].JobId); // And their last known job is preserved
+        Assert.Single(result);
+        Assert.False(result[0].IsOnline);
+        Assert.Equal(24, result[0].JobId);
         Assert.Equal(61510u, result[0].OnlineStateMask);
     }
 
@@ -59,7 +58,6 @@ public class FriendRepositoryTests {
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
-        // Scan returns the same friend, but offline, with cleared game data, but updated languages
         var scannedFriends = new List<FriendProfile> {
             new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = false, JobId = 0, FcTag = string.Empty, ClientLanguages = 10 }
         };
@@ -71,9 +69,9 @@ public class FriendRepositoryTests {
         // Assert
         Assert.Single(result);
         Assert.False(result[0].IsOnline);
-        Assert.Equal(24, result[0].JobId); // Should not be overwritten by 0
-        Assert.Equal("TEST", result[0].FcTag); // Should not be overwritten by empty
-        Assert.Equal(10, result[0].ClientLanguages); // Languages should update (e.g. EN -> EN+FR)
+        Assert.Equal(24, result[0].JobId);
+        Assert.Equal("TEST", result[0].FcTag);
+        Assert.Equal(10, result[0].ClientLanguages);
     }
 
     [Fact]
@@ -84,7 +82,6 @@ public class FriendRepositoryTests {
         var mockClientState = Substitute.For<IClientState>();
         var mockObjectTable = Substitute.For<IObjectTable>();
 
-        // Simulating logout or loading screen where character is undetermined
         mockIdentityService.GetCurrentCharacterId().Returns(string.Empty);
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
@@ -116,7 +113,6 @@ public class FriendRepositoryTests {
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
-        // Friend A comes online, Friend B stays offline
         var scannedFriends = new List<FriendProfile> {
             new FriendProfile { ContentId = 1, Name = "Friend A", IsOnline = true }
         };
@@ -129,8 +125,8 @@ public class FriendRepositoryTests {
         var friendA = result.First(f => f.ContentId == 1);
         var friendB = result.First(f => f.ContentId == 2);
 
-        Assert.True(friendA.LastSeenAt > pastDate); // Updated to ~now
-        Assert.Equal(pastDate, friendB.LastSeenAt); // Preserved
+        Assert.True(friendA.LastSeenAt > pastDate);
+        Assert.Equal(pastDate, friendB.LastSeenAt);
     }
 
     [Fact]
@@ -150,7 +146,6 @@ public class FriendRepositoryTests {
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
-        // Simulate a scan where the same ContentId returns a new name
         var scannedFriends = new List<FriendProfile> {
             new FriendProfile { ContentId = 999, Name = "New Name", HomeWorldId = 33, IsOnline = true }
         };
@@ -167,6 +162,66 @@ public class FriendRepositoryTests {
     }
 
     [Fact]
+    public void FriendRepository_UpdateFriends_FlagsDeletedCharacterIfNameIsEmpty() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Good Friend" }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        var scannedFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = string.Empty }
+        };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        Assert.Single(result);
+        Assert.True(result[0].IsCharacterDeleted);
+        Assert.Equal("Good Friend", result[0].Name);
+    }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_AutoArchivesFriendIfMissingFromScan() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Removed Friend", IsArchived = false }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        var scannedFriends = new List<FriendProfile>();
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        Assert.Single(result);
+        Assert.True(result[0].IsArchived);
+        Assert.False(result[0].IsOnline);
+    }
+
+    [Fact]
     public void FriendRepository_Save_PersistsCurrentStateToStorage() {
         // Arrange
         var mockStorage = Substitute.For<IFriendStorage>();
@@ -179,10 +234,11 @@ public class FriendRepositoryTests {
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
         // Act
+        // We simulate reading data first, to initialize the internal loadedCharacterId
+        repository.GetFriends();
         repository.Save();
 
         // Assert
-        // Verifies that Save was called manually for metadata persistence
         mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendProfile>>());
     }
 }

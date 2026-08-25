@@ -64,10 +64,8 @@ public class ListTab : ITab {
         }
 
         float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
-
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        // Reduced column count from 6 to 5
         if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
             ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Name");
@@ -79,7 +77,6 @@ public class ListTab : ITab {
             ImGui.TableHeadersRow();
 
             this.HandleSortingAndFiltering(rawFriends);
-
             float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
 
             foreach (var friend in this.cachedFriends) {
@@ -88,7 +85,13 @@ public class ListTab : ITab {
                 bool isAvailable = this.gameDataService.IsFriendAvailable(friend.OnlineStateMask);
                 Vector4 rowColor;
 
-                if (!friend.IsOnline) {
+                if (friend.IsCharacterDeleted) {
+                    rowColor = new Vector4(0.8f, 0.4f, 0.4f, 1.0f); // Reddish tint
+                }
+                else if (friend.IsArchived) {
+                    rowColor = new Vector4(0.45f, 0.45f, 0.6f, 1.0f); // Purplish/Gray tint
+                }
+                else if (!friend.IsOnline) {
                     rowColor = new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
                 }
                 else if (!isAvailable) {
@@ -111,31 +114,57 @@ public class ListTab : ITab {
                 }
                 ImGui.SetCursorPos(cursorStart);
 
-                ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
-                var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask);
+                if (friend.IsMissing) {
+                    var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = 61504 };
+                    var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 
-                var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
-                var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
-
-                if (iconWrap != null) {
-                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
-                    ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
-                    if (ImGui.IsItemHovered()) {
-                        ImGui.SetTooltip(statusInfo.Name);
+                    if (iconWrap != null) {
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
+                        // Tint the offline icon in red
+                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, new Vector4(0.8f, 0.2f, 0.2f, 1.0f));
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Missing / Deleted");
+                        }
+                    }
+                    else {
+                        float textWidth = ImGui.CalcTextSize("X").X;
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+                        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.8f, 0.2f, 0.2f, 1.0f));
+                        ImGui.Text("X");
+                        ImGui.PopStyleColor();
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip("Missing / Deleted");
+                        }
                     }
                 }
                 else {
-                    float textWidth = ImGui.CalcTextSize("●").X;
-                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                    Vector4 fallbackColor = friend.IsOnline ? new Vector4(0.43f, 0.85f, 0.43f, 1.0f) : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                    ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
+                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask);
 
-                    ImGui.PushStyleColor(ImGuiCol.Text, fallbackColor);
-                    ImGui.Text("●");
-                    ImGui.PopStyleColor();
+                    var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
+                    var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 
-                    if (ImGui.IsItemHovered()) {
-                        ImGui.SetTooltip(statusInfo.Name);
+                    if (iconWrap != null) {
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
+                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip(statusInfo.Name);
+                        }
+                    }
+                    else {
+                        float textWidth = ImGui.CalcTextSize("●").X;
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+                        Vector4 fallbackColor = friend.IsOnline ? new Vector4(0.43f, 0.85f, 0.43f, 1.0f) : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+
+                        ImGui.PushStyleColor(ImGuiCol.Text, fallbackColor);
+                        ImGui.Text("●");
+                        ImGui.PopStyleColor();
+
+                        if (ImGui.IsItemHovered()) {
+                            ImGui.SetTooltip(statusInfo.Name);
+                        }
                     }
                 }
 
@@ -147,19 +176,18 @@ public class ListTab : ITab {
                 // 3. Job Column
                 ImGui.TableNextColumn();
                 float jobColWidth = ImGui.GetColumnWidth();
-
                 if (friend.JobId > 0) {
                     var iconId = this.gameDataService.GetJobIconId(friend.JobId);
                     var jobAbbr = this.gameDataService.GetJobAbbreviation(friend.JobId);
                     bool iconDrawn = false;
 
                     if (iconId > 0) {
-                        iconLookup = new GameIconLookup { IconId = iconId };
-                        iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+                        var iconLookup = new GameIconLookup { IconId = iconId };
+                        var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 
                         if (iconWrap != null) {
                             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));
-                            var imageTint = friend.IsOnline ? rowColor : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                            var imageTint = friend.IsOnline && !friend.IsCharacterDeleted && !friend.IsArchived ? rowColor : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
                             ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, imageTint);
                             if (ImGui.IsItemHovered()) {
                                 ImGui.SetTooltip(jobAbbr);
@@ -168,10 +196,8 @@ public class ListTab : ITab {
                             iconDrawn = true;
                         }
                     }
-
                     if (!iconDrawn) {
-                        float textWidth = ImGui.CalcTextSize(jobAbbr).X;
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - textWidth) * 0.5f));
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - ImGui.CalcTextSize(jobAbbr).X) * 0.5f));
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                         ImGui.Text(jobAbbr);
                     }
@@ -190,12 +216,11 @@ public class ListTab : ITab {
                     ImGui.Text(string.Empty);
                 }
 
-                /// 5. Location Column
+                // 5. Location Column
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 var locationName = this.gameDataService.GetLocationName(friend.LocationId);
 
-                // Vanilla fallback logic: If location is 0 or unresolvable, but player is online, display their Current World
                 if ((string.IsNullOrEmpty(locationName) || locationName == friend.LocationId.ToString()) && friend.IsOnline) {
                     uint displayWorld = friend.CurrentWorldId > 0 ? friend.CurrentWorldId : friend.HomeWorldId;
                     locationName = this.gameDataService.GetWorldName(displayWorld);
@@ -205,7 +230,6 @@ public class ListTab : ITab {
 
                 ImGui.PopStyleColor(); // Remove row color
             }
-
             ImGui.EndTable();
         }
 
@@ -214,7 +238,6 @@ public class ListTab : ITab {
             if (ImGui.BeginChild("ProfilePanel", new Vector2(PanelWidth, -footerHeight), true)) {
                 this.DrawProfilePanel();
             }
-
             ImGui.EndChild();
         }
 
@@ -226,10 +249,18 @@ public class ListTab : ITab {
 
         ImGui.SameLine();
 
-        int onlineCount = 0;
+        int onlineCount = 0, archivedCount = 0, deletedCount = 0;
         foreach (var f in rawFriends) {
-            if (f.IsOnline) {
+            if (f.IsOnline && !f.IsArchived && !f.IsCharacterDeleted) {
                 onlineCount++;
+            }
+
+            if (f.IsArchived) {
+                archivedCount++;
+            }
+
+            if (f.IsCharacterDeleted) {
+                deletedCount++;
             }
         }
 
@@ -240,6 +271,7 @@ public class ListTab : ITab {
         else {
             var diff = DateTime.Now - this.syncService.LastSyncTime;
             string timeStr;
+
             if (diff.TotalDays >= 1) {
                 timeStr = $"{(int)diff.TotalDays}d ago";
             }
@@ -256,7 +288,7 @@ public class ListTab : ITab {
             syncText = $"Last Sync: {timeStr}";
         }
 
-        var statusText = $"{syncText} | Online: {onlineCount} / Total: {rawFriends.Count}";
+        var statusText = $"{syncText} | Online: {onlineCount} | Archived: {archivedCount} | Deleted: {deletedCount} | Total: {rawFriends.Count}";
         var textSize = ImGui.CalcTextSize(statusText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2) - 30.0f;
 
@@ -273,7 +305,7 @@ public class ListTab : ITab {
     private void DrawProfilePanel() {
         var friend = this.selectedFriend!;
 
-        ImGui.TextUnformatted(friend.Name);
+        ImGui.TextUnformatted(string.IsNullOrEmpty(friend.Name) ? "(Deleted Character)" : friend.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
         if (ImGui.Button("X")) {
             this.ToggleProfilePanel(null);
@@ -283,14 +315,12 @@ public class ListTab : ITab {
         ImGui.Separator();
         ImGui.Spacing();
 
-        // Details
         var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : "None";
         ImGui.Text($"Job: {jobAbbr}");
         ImGui.Text($"World: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
         if (!string.IsNullOrEmpty(friend.FcTag)) {
             ImGui.Text($"Free Company: <{friend.FcTag}>");
         }
-
         ImGui.Text($"Languages: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
 
         ImGui.Spacing();
@@ -325,7 +355,8 @@ public class ListTab : ITab {
         ImGui.Text($"Last Seen: {lastSeenStr}");
 
         ImGui.Spacing();
-        ImGui.Text($"List Status: {(friend.IsArchived ? "Archived" : "Active")}");
+        string listStatus = friend.IsCharacterDeleted ? "Character Deleted" : (friend.IsArchived ? "Archived" : "Active");
+        ImGui.Text($"List Status: {listStatus}");
 
         ImGui.Spacing();
         ImGui.Text("--- Notes ---");

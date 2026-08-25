@@ -62,7 +62,6 @@ public class FriendRepository : IFriendRepository {
             }
 
             foreach (var scanned in scannedList) {
-                // Physical presence completely overrides offline proxy data
                 if (visiblePlayers.TryGetValue((scanned.Name, scanned.HomeWorldId), out var presentPlayer)) {
                     scanned.IsOnline = true;
                     scanned.LocationId = currentTerritory;
@@ -70,19 +69,25 @@ public class FriendRepository : IFriendRepository {
                 }
 
                 if (repositoryDict.TryGetValue(scanned.ContentId, out var existing)) {
-                    // Name change detection logic (US-2.1)
-                    if (!string.Equals(existing.Name, scanned.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
-                        existing.PreviousNames ??= new List<string>();
-                        if (!existing.PreviousNames.Contains(existing.Name)) {
-                            existing.PreviousNames.Add(existing.Name);
+                    bool isDeletedChar = string.IsNullOrWhiteSpace(scanned.Name);
+                    existing.IsCharacterDeleted = isDeletedChar;
+
+                    // Only process name changes if the character isn't deleted
+                    if (!isDeletedChar) {
+                        if (!string.Equals(existing.Name, scanned.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
+                            existing.PreviousNames ??= new List<string>();
+                            if (!existing.PreviousNames.Contains(existing.Name)) {
+                                existing.PreviousNames.Add(existing.Name);
+                            }
                         }
+                        existing.Name = scanned.Name;
                     }
 
+                    existing.IsArchived = false; // Re-detected in vanilla list
                     existing.IsOnline = scanned.IsOnline;
-                    existing.Name = scanned.Name;
                     existing.HomeWorldId = scanned.HomeWorldId;
                     existing.CurrentWorldId = scanned.CurrentWorldId;
-                    existing.ClientLanguages = scanned.ClientLanguages; // Persist client languages
+                    existing.ClientLanguages = scanned.ClientLanguages;
 
                     if (scanned.IsOnline) {
                         existing.LastSeenAt = now;
@@ -102,6 +107,7 @@ public class FriendRepository : IFriendRepository {
                     }
                 }
                 else {
+                    scanned.IsCharacterDeleted = string.IsNullOrWhiteSpace(scanned.Name);
                     scanned.AddedAt = now;
                     scanned.AddedLocationId = currentTerritory;
                     scanned.LastSeenAt = scanned.IsOnline ? now : DateTime.MinValue;
@@ -112,15 +118,16 @@ public class FriendRepository : IFriendRepository {
             var scannedIds = scannedList.Select(f => f.ContentId).ToHashSet();
             foreach (var existing in repositoryDict.Values) {
                 if (!scannedIds.Contains(existing.ContentId)) {
-                    // Ultimate safeguard: if they are missing from proxy but physically rendered on screen, they are online!
+                    // Character removed manually from vanilla list -> Auto-Archive (US-3.3)
+                    existing.IsArchived = true;
+                    existing.IsOnline = false;
+
+                    // Safeguard: physically rendered on screen despite not being in friends
                     if (visiblePlayers.TryGetValue((existing.Name, existing.HomeWorldId), out var presentPlayer)) {
                         existing.IsOnline = true;
                         existing.LocationId = currentTerritory;
                         existing.JobId = (byte)presentPlayer.ClassJob.RowId;
                         existing.LastSeenAt = now;
-                    }
-                    else {
-                        existing.IsOnline = false;
                     }
                 }
             }

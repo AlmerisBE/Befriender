@@ -28,4 +28,8 @@ public class FriendProfile {
 
     public string Notes { get; set; } = string.Empty;
     public bool IsArchived { get; set; } = false;
+    // True if the vanilla list returns an empty string (character deleted by owner)
+    public bool IsCharacterDeleted { get; set; } = false;
+    // Indicates if the friend is no longer found in the vanilla friend list
+    public bool IsMissing { get; set; } = false;
 }

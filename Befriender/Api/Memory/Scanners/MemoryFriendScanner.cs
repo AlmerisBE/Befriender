@@ -47,10 +47,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 name = Encoding.UTF8.GetString(nameSpan);
             }
 
-            if (string.IsNullOrWhiteSpace(name)) {
-                continue;
-            }
-
             string fcTag = string.Empty;
             var fcTagSpan = entry->FCTag;
 
