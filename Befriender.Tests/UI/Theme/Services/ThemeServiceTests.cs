@@ -9,6 +9,7 @@ using System.IO;
 using Xunit;
 
 public class ThemeServiceTests {
+
     [Fact]
     public void ThemeService_Initialization_GeneratesAndLoadsThemesFromDisk() {
         // Arrange
@@ -16,7 +17,8 @@ public class ThemeServiceTests {
         mockConfigService.GetConfig().Returns(new PluginConfiguration { SelectedThemeName = "Light" });
 
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(Path.GetTempPath()));
+        var fakePath = Path.GetTempPath();
+        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
 
         // Act
         var service = new ThemeService(mockConfigService, mockPluginInterface);
@@ -25,6 +27,7 @@ public class ThemeServiceTests {
         Assert.Equal("Light", service.CurrentThemeName);
         Assert.Contains("Dark", service.GetAvailableThemes());
         Assert.Contains("Light", service.GetAvailableThemes());
+        Assert.Equal(Path.Combine(fakePath, "Themes"), service.ThemesDirectory);
     }
 
     [Fact]

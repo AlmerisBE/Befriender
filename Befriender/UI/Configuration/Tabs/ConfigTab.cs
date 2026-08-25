@@ -6,7 +6,9 @@ using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 
 public class ConfigTab : ITab {
     private IConfigurationService configurationService;
@@ -34,6 +36,26 @@ public class ConfigTab : ITab {
 
         if (ImGui.Combo(this.loc.Translate("Config_Theme"), ref currentIndex, themeArray, themeArray.Length)) {
             this.themeService.SetTheme(themeArray[currentIndex]);
+        }
+
+        ImGui.Spacing();
+        ImGui.Text(this.loc.Translate("Config_ThemesDirectory"));
+
+        string themeDir = this.themeService.ThemesDirectory;
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 100f);
+        ImGui.InputText("##themeDir", ref themeDir, 1024, ImGuiInputTextFlags.ReadOnly);
+        ImGui.SameLine();
+
+        if (ImGui.Button(this.loc.Translate("Config_OpenDirectory"), new Vector2(90f, 0))) {
+            try {
+                Process.Start(new ProcessStartInfo {
+                    FileName = this.themeService.ThemesDirectory,
+                    UseShellExecute = true
+                });
+            }
+            catch {
+                // Ignore if the OS fails to open the directory
+            }
         }
 
         ImGui.Spacing();

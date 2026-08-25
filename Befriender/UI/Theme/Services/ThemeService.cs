@@ -20,6 +20,7 @@ public class ThemeService : IThemeService {
 
     public ThemePalette CurrentPalette { get; private set; } = null!;
     public string CurrentThemeName { get; private set; } = "Dark";
+    public string ThemesDirectory { get; private set; } = string.Empty;
 
     public ThemeService(IConfigurationService configurationService, IDalamudPluginInterface pluginInterface) {
         this.configurationService = configurationService;
@@ -36,15 +37,15 @@ public class ThemeService : IThemeService {
     }
 
     private void LoadThemesFromDisk() {
-        var themeDirectory = Path.Combine(this.pluginInterface.ConfigDirectory.FullName, "Themes");
-        if (!Directory.Exists(themeDirectory)) {
-            Directory.CreateDirectory(themeDirectory);
+        this.ThemesDirectory = Path.Combine(this.pluginInterface.ConfigDirectory.FullName, "Themes");
+        if (!Directory.Exists(this.ThemesDirectory)) {
+            Directory.CreateDirectory(this.ThemesDirectory);
         }
 
-        this.EnsureDefaultThemeExists(themeDirectory, "Dark", "Almeris", this.GetDefaultDarkPalette());
-        this.EnsureDefaultThemeExists(themeDirectory, "Light", "Almeris", this.GetDefaultLightPalette());
+        this.EnsureDefaultThemeExists(this.ThemesDirectory, "Dark", "Almeris", this.GetDefaultDarkPalette());
+        this.EnsureDefaultThemeExists(this.ThemesDirectory, "Light", "Almeris", this.GetDefaultLightPalette());
 
-        foreach (var file in Directory.GetFiles(themeDirectory, "*.json")) {
+        foreach (var file in Directory.GetFiles(this.ThemesDirectory, "*.json")) {
             try {
                 var json = File.ReadAllText(file);
                 var definition = JsonSerializer.Deserialize<ThemeDefinition>(json, this.jsonOptions);

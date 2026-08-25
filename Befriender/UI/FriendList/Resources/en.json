@@ -49,5 +49,7 @@
   "Config_ThemeSettings": "Theme Settings",
   "Config_Theme": "Theme",
   "Config_ThemeDark": "Dark",
-  "Config_ThemeLight": "Light"
+  "Config_ThemeLight": "Light",
+  "Config_ThemesDirectory": "Themes Directory",
+  "Config_OpenDirectory": "Open Folder"
 }

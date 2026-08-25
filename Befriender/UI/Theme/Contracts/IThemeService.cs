@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public interface IThemeService {
     ThemePalette CurrentPalette { get; }
     string CurrentThemeName { get; }
+    string ThemesDirectory { get; }
     IReadOnlyList<string> GetAvailableThemes();
     void SetTheme(string themeName);
 }

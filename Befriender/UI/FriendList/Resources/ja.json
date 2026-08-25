@@ -49,5 +49,7 @@
   "Config_ThemeSettings": "テーマ設定",
   "Config_Theme": "テーマ",
   "Config_ThemeDark": "ダーク",
-  "Config_ThemeLight": "ライト"
+  "Config_ThemeLight": "ライト",
+  "Config_ThemesDirectory": "テーマディレクトリ",
+  "Config_OpenDirectory": "開く"
 }

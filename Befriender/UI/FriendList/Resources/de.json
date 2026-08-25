@@ -49,5 +49,7 @@
   "Config_ThemeSettings": "Design-Einstellungen",
   "Config_Theme": "Design",
   "Config_ThemeDark": "Dunkel",
-  "Config_ThemeLight": "Hell"
+  "Config_ThemeLight": "Hell",
+  "Config_ThemesDirectory": "Design-Verzeichnis",
+  "Config_OpenDirectory": "Ordner öffnen"
 }

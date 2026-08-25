@@ -49,5 +49,7 @@
   "Config_ThemeSettings": "Paramètres d'apparence",
   "Config_Theme": "Thème",
   "Config_ThemeDark": "Sombre",
-  "Config_ThemeLight": "Clair"
+  "Config_ThemeLight": "Clair",
+  "Config_ThemesDirectory": "Répertoire des thèmes",
+  "Config_OpenDirectory": "Ouvrir"
 }
