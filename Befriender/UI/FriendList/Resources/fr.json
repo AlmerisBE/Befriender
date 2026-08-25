@@ -9,7 +9,6 @@
   "Status_HoursAgo": "Il y a {0}h",
   "Status_DaysAgo": "Il y a {0}j",
   "Status_LastSync": "Dernière synchro : {0}",
-  "Status_Counts": "{0} | En ligne : {1} | Archivés : {2} | Supprimés : {3} | Total : {4}",
   "Column_Status": "Statut",
   "Column_Name": "Nom",
   "Column_Job": "Classe",
@@ -62,5 +61,11 @@
   "Action_ViewPartyFinder": "Voir l'annonce de recrutement",
   "Action_JoinFriend": "Rejoindre (Téléportation vers la région)",
   "Profile_GrandCompany": "Grande Compagnie",
-  "Profile_None": "Aucune"
+  "Profile_None": "Aucune",
+  "Action_Archive": "Archiver l'ami",
+  "Action_Restore": "Restaurer l'ami",
+  "Tab_Archives": "Archives",
+  "Archive_Empty": "Aucun contact n'est archivé.",
+  "Status_Counts": "{0} | En ligne : {1} | Actifs : {2} | Archives : {3}",
+  "Action_DeleteData": "Supprimer définitivement"
 }

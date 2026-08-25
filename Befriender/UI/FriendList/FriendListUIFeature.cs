@@ -28,6 +28,7 @@ public class FriendListUIFeature : IFeatureModule {
 
         // Register the List tab orchestrator
         services.AddSingleton<ITab, ListTab>();
+        services.AddSingleton<ITab, ArchiveTab>();
 
         services.AddSingleton<FriendListWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<FriendListWindow>());

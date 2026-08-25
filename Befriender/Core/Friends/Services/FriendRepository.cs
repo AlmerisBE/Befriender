@@ -138,6 +138,13 @@ public class FriendRepository : IFriendRepository {
         }
     }
 
+    public void RemoveFriendData(ulong contentId) {
+        lock (this.lockObj) {
+            this.friends.RemoveAll(f => f.ContentId == contentId);
+            this.Save();
+        }
+    }
+
     public void Save() {
         lock (this.lockObj) {
             this.storage.Save(this.loadedCharacterId, this.friends);

@@ -16,6 +16,8 @@ public class ActionsFeature : IFeatureModule {
         services.AddSingleton<IFriendAction, EstateTeleportationAction>();
         services.AddSingleton<IFriendAction, ViewPartyFinderListingAction>();
         services.AddSingleton<IFriendAction, JoinFriendAction>();
+        services.AddSingleton<IFriendAction, DeleteFriendDataAction>();
+        services.AddSingleton<IFriendAction, RestoreFriendAction>();
 
         services.AddSingleton<IFriendActionService, FriendActionService>();
     }

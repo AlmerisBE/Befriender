@@ -11,7 +11,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-public class ListTab : ITab, IDisposable {
+public class ArchiveTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
     private FriendListTableComponent tableComponent;
     private FriendProfilePanelComponent profilePanelComponent;
@@ -26,9 +26,9 @@ public class ListTab : ITab, IDisposable {
     private float pendingWidthDelta = 0f;
     private bool isFirstFrame = true;
 
-    public string Name => this.loc.Translate("Tab_List");
+    public string Name => this.loc.Translate("Tab_Archives");
 
-    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
+    public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
@@ -43,29 +43,19 @@ public class ListTab : ITab, IDisposable {
         if (this.selectedFriend != null) {
             this.selectedFriend = null;
             this.pendingWidthDelta = -PanelWidth;
-
-            var config = this.configurationService.GetConfig();
-            config.IsProfilePanelOpen = false;
-            this.configurationService.Save();
         }
     }
 
     private void ToggleProfilePanel(FriendProfile? friend) {
-        var config = this.configurationService.GetConfig();
-
         if (this.selectedFriend != null && friend != null && this.selectedFriend.ContentId == friend.ContentId) {
             friend = null;
         }
 
         if (this.selectedFriend == null && friend != null) {
             this.pendingWidthDelta = PanelWidth;
-            config.IsProfilePanelOpen = true;
-            this.configurationService.Save();
         }
         else if (this.selectedFriend != null && friend == null) {
             this.pendingWidthDelta = -PanelWidth;
-            config.IsProfilePanelOpen = false;
-            this.configurationService.Save();
         }
 
         this.selectedFriend = friend;
@@ -74,27 +64,21 @@ public class ListTab : ITab, IDisposable {
     public void Draw() {
         if (this.isFirstFrame) {
             this.isFirstFrame = false;
-            var config = this.configurationService.GetConfig();
-
-            if (config.IsProfilePanelOpen) {
-                this.pendingWidthDelta = -PanelWidth;
-                config.IsProfilePanelOpen = false;
-                this.configurationService.Save();
-            }
+            this.pendingWidthDelta = this.configurationService.GetConfig().IsProfilePanelOpen ? -PanelWidth : 0f;
         }
 
         var rawFriends = this.friendRepository.GetFriends();
-        var activeFriends = rawFriends.Where(f => !f.IsArchived && !f.IsCharacterDeleted).ToList();
+        var archivedFriends = rawFriends.Where(f => f.IsArchived || f.IsCharacterDeleted).ToList();
 
-        if (activeFriends.Count == 0) {
-            ImGui.Text(this.loc.Translate("List_EmptyOrSyncing"));
+        if (archivedFriends.Count == 0) {
+            ImGui.Text(this.loc.Translate("Archive_Empty"));
             return;
         }
 
         float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, footerHeight, activeFriends, this.selectedFriend, this.showOnlineOnly, this.forceRefresh, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, footerHeight, archivedFriends, this.selectedFriend, this.showOnlineOnly, this.forceRefresh, this.ToggleProfilePanel);
         this.forceRefresh = false;
 
         if (this.selectedFriend != null) {
@@ -104,8 +88,7 @@ public class ListTab : ITab, IDisposable {
 
         ImGui.Separator();
 
-        bool refreshRequested = this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly);
-        if (refreshRequested) {
+        if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
             this.forceRefresh = true;
         }
 
@@ -116,7 +99,5 @@ public class ListTab : ITab, IDisposable {
         }
     }
 
-    public void Dispose() {
-        this.friendRepository.CacheCleared -= this.OnCacheCleared;
-    }
+    public void Dispose() => this.friendRepository.CacheCleared -= this.OnCacheCleared;
 }

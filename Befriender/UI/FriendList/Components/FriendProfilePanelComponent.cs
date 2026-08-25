@@ -144,19 +144,6 @@ public class FriendProfilePanelComponent {
 
             ImGui.Spacing();
             ImGui.Separator();
-
-            if (friend.IsArchived) {
-                if (ImGui.Button(this.loc.Translate("Profile_RestoreBtn"), new Vector2(-1, 0))) {
-                    friend.IsArchived = false;
-                    this.friendRepository.Save();
-                }
-            }
-            else {
-                if (ImGui.Button(this.loc.Translate("Profile_ArchiveBtn"), new Vector2(-1, 0))) {
-                    friend.IsArchived = true;
-                    this.friendRepository.Save();
-                }
-            }
         }
         ImGui.EndChild();
     }

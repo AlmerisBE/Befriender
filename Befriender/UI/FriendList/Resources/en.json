@@ -9,7 +9,6 @@
   "Status_HoursAgo": "{0}h ago",
   "Status_DaysAgo": "{0}d ago",
   "Status_LastSync": "Last Sync: {0}",
-  "Status_Counts": "{0} | Online: {1} | Archived: {2} | Deleted: {3} | Total: {4}",
   "Column_Status": "Status",
   "Column_Name": "Name",
   "Column_Job": "Job",
@@ -62,5 +61,11 @@
   "Action_ViewPartyFinder": "View Party Finder Listing",
   "Action_JoinFriend": "Join (Teleport to Region)",
   "Profile_GrandCompany": "Grand Company",
-  "Profile_None": "None"
+  "Profile_None": "None",
+  "Action_Archive": "Archive Friend",
+  "Action_Restore": "Restore Friend",
+  "Tab_Archives": "Archives",
+  "Archive_Empty": "No contacts are currently archived.",
+  "Status_Counts": "{0} | Online: {1} | Active: {2} | Archived: {3}",
+  "Action_DeleteData": "Permanently Delete"
 }

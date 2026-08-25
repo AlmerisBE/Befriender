@@ -9,6 +9,7 @@ public interface IFriendRepository {
 
     IReadOnlyList<FriendProfile> GetFriends();
     void UpdateFriends(IEnumerable<FriendProfile> friends);
+    void RemoveFriendData(ulong contentId);
     void Save();
     void ClearCache();
 }

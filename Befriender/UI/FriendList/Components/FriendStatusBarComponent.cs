@@ -25,18 +25,18 @@ public class FriendStatusBarComponent {
 
         ImGui.SameLine();
 
-        int onlineCount = 0, archivedCount = 0, deletedCount = 0;
+        int onlineCount = 0, activeCount = 0, archivedCount = 0;
         foreach (var f in rawFriends) {
             if (f.IsOnline && !f.IsArchived && !f.IsCharacterDeleted) {
                 onlineCount++;
             }
 
-            if (f.IsArchived) {
-                archivedCount++;
+            if (!f.IsArchived && !f.IsCharacterDeleted) {
+                activeCount++;
             }
 
-            if (f.IsCharacterDeleted) {
-                deletedCount++;
+            if (f.IsArchived || f.IsCharacterDeleted) {
+                archivedCount++;
             }
         }
 
@@ -64,7 +64,7 @@ public class FriendStatusBarComponent {
             syncText = this.loc.Translate("Status_LastSync", timeStr);
         }
 
-        var statusText = this.loc.Translate("Status_Counts", syncText, onlineCount, archivedCount, deletedCount, rawFriends.Count);
+        var statusText = this.loc.Translate("Status_Counts", syncText, onlineCount, activeCount, archivedCount);
         var textSize = ImGui.CalcTextSize(statusText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2) - 30.0f;
 

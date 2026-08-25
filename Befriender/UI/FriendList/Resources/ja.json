@@ -9,7 +9,6 @@
   "Status_HoursAgo": "{0}時間前",
   "Status_DaysAgo": "{0}日前",
   "Status_LastSync": "最終同期: {0}",
-  "Status_Counts": "{0} | オンライン: {1} | アーカイブ: {2} | 削除: {3} | 合計: {4}",
   "Column_Status": "ステータス",
   "Column_Name": "名前",
   "Column_Job": "クラス",
@@ -62,5 +61,11 @@
   "Action_ViewPartyFinder": "パーティ募集を見る",
   "Action_JoinFriend": "合流する（エリアへテレポ）",
   "Profile_GrandCompany": "グランドカンパニー",
-  "Profile_None": "なし"
+  "Profile_None": "なし",
+  "Action_Archive": "フレンドをアーカイブ",
+  "Action_Restore": "フレンドを復元",
+  "Tab_Archives": "アーカイブ",
+  "Archive_Empty": "現在アーカイブされている連絡先はありません。",
+  "Status_Counts": "{0} | オンライン: {1} | アクティブ: {2} | アーカイブ: {3}",
+  "Action_DeleteData": "完全に削除"
 }
