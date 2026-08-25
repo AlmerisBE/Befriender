@@ -5,6 +5,7 @@ using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.Theme.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Plugin.Services;
 using System;
@@ -17,17 +18,19 @@ public class FriendListTableComponent {
     private IGameDataService gameDataService;
     private ITextureProvider textureProvider;
     private ILocalizationService loc;
+    private IThemeService themeService;
 
     private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
     private int lastFriendCount = -1;
     private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
-    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc) {
+    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService) {
         this.displayService = displayService;
         this.syncService = syncService;
         this.gameDataService = gameDataService;
         this.textureProvider = textureProvider;
         this.loc = loc;
+        this.themeService = themeService;
     }
 
     public void Draw(float tableWidth, float footerHeight, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
@@ -43,6 +46,7 @@ public class FriendListTableComponent {
 
             this.HandleSortingAndFiltering(rawFriends, showOnlineOnly, forceRefresh);
             float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
+            var palette = this.themeService.CurrentPalette;
 
             foreach (var friend in this.cachedFriends) {
                 ImGui.TableNextRow();
@@ -51,19 +55,19 @@ public class FriendListTableComponent {
                 Vector4 rowColor;
 
                 if (friend.IsCharacterDeleted) {
-                    rowColor = new Vector4(0.8f, 0.4f, 0.4f, 1.0f);
+                    rowColor = palette.TextDeleted;
                 }
                 else if (friend.IsArchived) {
-                    rowColor = new Vector4(0.45f, 0.45f, 0.6f, 1.0f);
+                    rowColor = palette.TextArchived;
                 }
                 else if (!friend.IsOnline) {
-                    rowColor = new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                    rowColor = palette.TextOffline;
                 }
                 else if (!isAvailable) {
-                    rowColor = new Vector4(0.75f, 0.75f, 0.75f, 1.0f);
+                    rowColor = palette.TextBusy;
                 }
                 else {
-                    rowColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+                    rowColor = palette.TextOnline;
                 }
 
                 ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
@@ -84,7 +88,7 @@ public class FriendListTableComponent {
 
                     if (iconWrap != null) {
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
-                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, new Vector4(0.8f, 0.2f, 0.2f, 1.0f));
+                        ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, palette.IconOfflineTint);
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip(this.loc.Translate("Tooltip_MissingDeleted"));
                         }
@@ -93,7 +97,7 @@ public class FriendListTableComponent {
                         float textWidth = ImGui.CalcTextSize("X").X;
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.8f, 0.2f, 0.2f, 1.0f));
+                        ImGui.PushStyleColor(ImGuiCol.Text, palette.StatusFallbackDeleted);
                         ImGui.Text("X");
                         ImGui.PopStyleColor();
                         if (ImGui.IsItemHovered()) {
@@ -118,7 +122,7 @@ public class FriendListTableComponent {
                         float textWidth = ImGui.CalcTextSize("●").X;
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                        Vector4 fallbackColor = friend.IsOnline ? new Vector4(0.43f, 0.85f, 0.43f, 1.0f) : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                        Vector4 fallbackColor = friend.IsOnline ? palette.StatusFallbackOnline : palette.StatusFallbackOffline;
 
                         ImGui.PushStyleColor(ImGuiCol.Text, fallbackColor);
                         ImGui.Text("●");
@@ -147,7 +151,7 @@ public class FriendListTableComponent {
 
                         if (iconWrap != null) {
                             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));
-                            var imageTint = friend.IsOnline && !friend.IsCharacterDeleted && !friend.IsArchived ? rowColor : new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                            var imageTint = friend.IsOnline && !friend.IsCharacterDeleted && !friend.IsArchived ? rowColor : palette.TextOffline;
                             ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, imageTint);
                             if (ImGui.IsItemHovered()) {
                                 ImGui.SetTooltip(jobAbbr);
