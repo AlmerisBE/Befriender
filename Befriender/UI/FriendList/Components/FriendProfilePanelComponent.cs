@@ -6,6 +6,7 @@ using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface; // <-- Ajout de la directive pour FontAwesomeIcon
 using Dalamud.Interface.Components;
 using Dalamud.Plugin.Services;
 using System;
@@ -37,8 +38,13 @@ public class FriendProfilePanelComponent {
             }
 
             ImGui.TextUnformatted(string.IsNullOrEmpty(friend.Name) ? this.loc.Translate("Profile_DeletedCharacter") : friend.Name);
-            ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
-            if (ImGui.Button("X")) {
+
+            // Alignement dynamique et pixel-perfect du bouton de fermeture sur la droite
+            float closeButtonSize = ImGui.GetFrameHeight();
+            ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - closeButtonSize);
+
+            int closeBtnId = unchecked("ClosePanel".GetHashCode() ^ friend.ContentId.GetHashCode());
+            if (ImGuiComponents.IconButton(closeBtnId, FontAwesomeIcon.Times)) {
                 onClose();
             }
 
