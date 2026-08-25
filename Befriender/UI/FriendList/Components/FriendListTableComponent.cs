@@ -150,9 +150,24 @@ public class FriendListTableComponent {
                     }
                 }
 
+                // --- COLUMN: NAME ---
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                ImGui.Text(friend.Name);
+
+                if (friend.IsCharacterDeleted) {
+                    ImGui.PushStyleColor(ImGuiCol.Text, palette.IconDimmedTint);
+
+                    string displayName = this.loc.Translate("Profile_DeletedCharacter");
+                    if (friend.PreviousNames != null && friend.PreviousNames.Count > 0) {
+                        displayName += $" ({friend.PreviousNames[0]})";
+                    }
+
+                    ImGui.Text(displayName);
+                    ImGui.PopStyleColor();
+                }
+                else {
+                    ImGui.Text(friend.Name);
+                }
 
                 // Render note icon if the friend has a note
                 if (!string.IsNullOrWhiteSpace(friend.Notes)) {

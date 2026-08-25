@@ -67,6 +67,6 @@
   "Tab_Archives": "Archives",
   "Archive_Empty": "No contacts are currently archived.",
   "Status_CompactCounts": "{0} | {1}/{2} Online",
-  "Status_TooltipCounts": "Online: {0}\nActive: {1}\nArchived: {2}\nDeleted: {3}\nTotal: {4}",
+  "Status_TooltipCounts": "Online: {0}\nVanilla List: {1}\nArchived: {2}\nDeleted: {3}\nGrand Total: {4}",
   "Action_DeleteData": "Permanently Delete"
 }

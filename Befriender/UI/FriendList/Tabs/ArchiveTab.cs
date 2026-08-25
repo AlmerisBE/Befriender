@@ -68,7 +68,9 @@ public class ArchiveTab : ITab, IDisposable {
         }
 
         var rawFriends = this.friendRepository.GetFriends();
-        var archivedFriends = rawFriends.Where(f => f.IsArchived || f.IsCharacterDeleted).ToList();
+
+        // The archive tab is strictly for friends removed from the vanilla list
+        var archivedFriends = rawFriends.Where(f => f.IsArchived).ToList();
 
         if (archivedFriends.Count == 0) {
             ImGui.Text(this.loc.Translate("Archive_Empty"));

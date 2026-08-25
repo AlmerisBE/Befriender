@@ -67,6 +67,6 @@
   "Tab_Archives": "アーカイブ",
   "Archive_Empty": "現在アーカイブされている連絡先はありません。",
   "Status_CompactCounts": "{0} | {1}/{2} オンライン",
-  "Status_TooltipCounts": "オンライン: {0}\nアクティブ: {1}\nアーカイブ: {2}\n削除: {3}\n合計: {4}",
+  "Status_TooltipCounts": "オンライン: {0}\n公式リスト: {1}\nアーカイブ: {2}\n削除済み: {3}\n総合計: {4}",
   "Action_DeleteData": "完全に削除"
 }

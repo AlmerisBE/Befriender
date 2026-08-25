@@ -84,7 +84,10 @@ public class ListTab : ITab, IDisposable {
         }
 
         var rawFriends = this.friendRepository.GetFriends();
-        var activeFriends = rawFriends.Where(f => !f.IsArchived && !f.IsCharacterDeleted).ToList();
+
+        // We only hide archived friends from the main list.
+        // Deleted characters that are still taking a vanilla slot MUST be shown.
+        var activeFriends = rawFriends.Where(f => !f.IsArchived).ToList();
 
         if (activeFriends.Count == 0) {
             ImGui.Text(this.loc.Translate("List_EmptyOrSyncing"));

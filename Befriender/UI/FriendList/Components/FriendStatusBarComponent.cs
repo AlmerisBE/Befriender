@@ -25,11 +25,12 @@ public class FriendStatusBarComponent {
 
         ImGui.SameLine();
 
-        int onlineCount = 0, activeCount = 0, archivedCount = 0, deletedCount = 0;
+        int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;
         foreach (var f in rawFriends) {
-            if (!f.IsArchived && !f.IsCharacterDeleted) {
-                activeCount++;
-                if (f.IsOnline) {
+            // Contacts still registered on the official FFXIV list
+            if (!f.IsArchived) {
+                vanillaCount++;
+                if (f.IsOnline && !f.IsCharacterDeleted) {
                     onlineCount++;
                 }
             }
@@ -67,9 +68,9 @@ public class FriendStatusBarComponent {
             syncText = this.loc.Translate("Status_LastSync", timeStr);
         }
 
-        // Generate compact and detailed texts
-        var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, activeCount);
-        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, activeCount, archivedCount, deletedCount, rawFriends.Count);
+        // Compact text uses Grand Total (rawFriends.Count) instead of Active/Vanilla count
+        var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, rawFriends.Count);
+        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, rawFriends.Count);
 
         var textSize = ImGui.CalcTextSize(compactText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2) - 30.0f;
@@ -77,7 +78,6 @@ public class FriendStatusBarComponent {
         ImGui.SetCursorPosX(Math.Max(rightAlignPos, ImGui.GetCursorPosX()));
         ImGui.Text(compactText);
 
-        // Display full breakdown on hover
         if (ImGui.IsItemHovered()) {
             ImGui.SetTooltip(tooltipText);
         }
