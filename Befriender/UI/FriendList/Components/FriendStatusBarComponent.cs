@@ -25,18 +25,21 @@ public class FriendStatusBarComponent {
 
         ImGui.SameLine();
 
-        int onlineCount = 0, activeCount = 0, archivedCount = 0;
+        int onlineCount = 0, activeCount = 0, archivedCount = 0, deletedCount = 0;
         foreach (var f in rawFriends) {
-            if (f.IsOnline && !f.IsArchived && !f.IsCharacterDeleted) {
-                onlineCount++;
-            }
-
             if (!f.IsArchived && !f.IsCharacterDeleted) {
                 activeCount++;
+                if (f.IsOnline) {
+                    onlineCount++;
+                }
             }
 
-            if (f.IsArchived || f.IsCharacterDeleted) {
+            if (f.IsArchived) {
                 archivedCount++;
+            }
+
+            if (f.IsCharacterDeleted) {
+                deletedCount++;
             }
         }
 
@@ -64,12 +67,20 @@ public class FriendStatusBarComponent {
             syncText = this.loc.Translate("Status_LastSync", timeStr);
         }
 
-        var statusText = this.loc.Translate("Status_Counts", syncText, onlineCount, activeCount, archivedCount);
-        var textSize = ImGui.CalcTextSize(statusText);
+        // Generate compact and detailed texts
+        var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, activeCount);
+        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, activeCount, archivedCount, deletedCount, rawFriends.Count);
+
+        var textSize = ImGui.CalcTextSize(compactText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2) - 30.0f;
 
         ImGui.SetCursorPosX(Math.Max(rightAlignPos, ImGui.GetCursorPosX()));
-        ImGui.Text(statusText);
+        ImGui.Text(compactText);
+
+        // Display full breakdown on hover
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(tooltipText);
+        }
 
         return forceRefresh;
     }

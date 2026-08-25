@@ -66,6 +66,7 @@
   "Action_Restore": "Restore Friend",
   "Tab_Archives": "Archives",
   "Archive_Empty": "No contacts are currently archived.",
-  "Status_Counts": "{0} | Online: {1} | Active: {2} | Archived: {3}",
+  "Status_CompactCounts": "{0} | {1}/{2} Online",
+  "Status_TooltipCounts": "Online: {0}\nActive: {1}\nArchived: {2}\nDeleted: {3}\nTotal: {4}",
   "Action_DeleteData": "Permanently Delete"
 }
