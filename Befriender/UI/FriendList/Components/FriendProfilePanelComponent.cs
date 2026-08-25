@@ -7,6 +7,7 @@ using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Components;
+using Dalamud.Plugin.Services;
 using System;
 using System.Numerics;
 
@@ -15,14 +16,17 @@ public class FriendProfilePanelComponent {
     private IFriendRepository friendRepository;
     private ILocalizationService loc;
     private IFriendActionService actionService;
+    private ITextureProvider textureProvider;
+
     private string notesBuffer = string.Empty;
     private ulong currentFriendId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService) {
+    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider) {
         this.gameDataService = gameDataService;
         this.friendRepository = friendRepository;
         this.loc = loc;
         this.actionService = actionService;
+        this.textureProvider = textureProvider;
     }
 
     public void Draw(float panelWidth, float footerHeight, FriendProfile friend, Action onClose) {
@@ -62,8 +66,23 @@ public class FriendProfilePanelComponent {
             var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : "None";
             ImGui.Text($"{this.loc.Translate("Profile_Job")}: {jobAbbr}");
             ImGui.Text($"{this.loc.Translate("Profile_World")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
+
             if (!string.IsNullOrEmpty(friend.FcTag)) {
-                ImGui.Text($"{this.loc.Translate("Profile_FC")}: <{friend.FcTag}>");
+                ImGui.Text($"{this.loc.Translate("Profile_FC")}: ");
+                ImGui.SameLine();
+
+                var gcIconId = this.gameDataService.GetGrandCompanyIconId(friend.GrandCompany);
+                if (gcIconId > 0) {
+                    var gcIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = gcIconId };
+                    var gcIconWrap = this.textureProvider.GetFromGameIcon(gcIconLookup).GetWrapOrDefault();
+
+                    if (gcIconWrap != null) {
+                        float iconSize = ImGui.GetTextLineHeight();
+                        ImGui.Image(gcIconWrap.Handle, new Vector2(iconSize, iconSize));
+                        ImGui.SameLine(0, 4f);
+                    }
+                }
+                ImGui.Text(friend.FcTag);
             }
 
             ImGui.Text($"{this.loc.Translate("Profile_Languages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");

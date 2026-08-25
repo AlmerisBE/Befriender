@@ -193,7 +193,18 @@ public class FriendListTableComponent {
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 if (!string.IsNullOrEmpty(friend.FcTag)) {
-                    ImGui.Text($"<{friend.FcTag}>");
+                    var gcIconId = this.gameDataService.GetGrandCompanyIconId(friend.GrandCompany);
+                    if (gcIconId > 0) {
+                        var gcIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = gcIconId };
+                        var gcIconWrap = this.textureProvider.GetFromGameIcon(gcIconLookup).GetWrapOrDefault();
+
+                        if (gcIconWrap != null) {
+                            float iconSize = ImGui.GetTextLineHeight();
+                            ImGui.Image(gcIconWrap.Handle, new Vector2(iconSize, iconSize));
+                            ImGui.SameLine(0, 4f);
+                        }
+                    }
+                    ImGui.Text(friend.FcTag);
                 }
                 else {
                     ImGui.Text(string.Empty);

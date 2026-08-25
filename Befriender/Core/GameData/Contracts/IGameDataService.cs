@@ -11,4 +11,6 @@ public interface IGameDataService {
     bool IsFriendAvailable(ulong stateMask);
 
     string GetClientLanguageString(byte languageMask);
+
+    uint GetGrandCompanyIconId(byte grandCompanyId);
 }

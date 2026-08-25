@@ -32,4 +32,5 @@ public class FriendProfile {
     public bool IsCharacterDeleted { get; set; } = false;
     // Indicates if the friend is no longer found in the vanilla friend list
     public bool IsMissing { get; set; } = false;
+    public byte GrandCompany { get; set; }
 }

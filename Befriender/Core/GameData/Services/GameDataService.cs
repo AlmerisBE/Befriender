@@ -268,4 +268,13 @@ public class GameDataService : IGameDataService {
 
         return languages.Count > 0 ? string.Join(" ", languages) : "None";
     }
+
+    public uint GetGrandCompanyIconId(byte grandCompanyId) {
+        return grandCompanyId switch {
+            1 => 60501, // Maelstrom (Limsa Lominsa)
+            2 => 60502, // Order of the Twin Adder (Gridania)
+            3 => 60503, // Immortal Flames (Ul'dah)
+            _ => 0
+        };
+    }
 }
