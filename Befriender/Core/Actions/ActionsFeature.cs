@@ -10,8 +10,12 @@ public class ActionsFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         // Register concrete actions
         services.AddSingleton<IFriendAction, CopyNameAction>();
-        services.AddSingleton<IFriendAction, InviteToPartyAction>();
         services.AddSingleton<IFriendAction, SendTellAction>();
+        services.AddSingleton<IFriendAction, NativeInviteToPartyAction>();
+        services.AddSingleton<IFriendAction, ViewAdventurerPlateAction>();
+        services.AddSingleton<IFriendAction, ViewSearchInfoAction>();
+        services.AddSingleton<IFriendAction, EstateTeleportationAction>();
+        services.AddSingleton<IFriendAction, ViewPartyFinderListingAction>();
 
         // Register the registry service
         services.AddSingleton<IFriendActionService, FriendActionService>();

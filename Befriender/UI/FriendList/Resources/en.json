@@ -55,5 +55,10 @@
   "Action_NoneAvailable": "No actions available",
   "Action_CopyName": "Copy Name",
   "Action_InviteToParty": "Prepare Party Invite",
-  "Action_SendTell": "Prepare Private Message"
+  "Action_SendTell": "Prepare Private Message",
+  "Action_NativeInvite": "Invite to Party",
+  "Action_ViewAdventurerPlate": "View Adventurer Plate",
+  "Action_ViewSearchInfo": "View Search Info",
+  "Action_EstateTeleportation": "Teleport to Estate",
+  "Action_ViewPartyFinder": "View Party Finder Listing"
 }

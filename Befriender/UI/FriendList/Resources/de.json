@@ -55,5 +55,10 @@
   "Action_NoneAvailable": "Keine Aktionen verfügbar",
   "Action_CopyName": "Namen kopieren",
   "Action_InviteToParty": "Gruppeneinladung vorbereiten",
-  "Action_SendTell": "Private Nachricht vorbereiten"
+  "Action_SendTell": "Private Nachricht vorbereiten",
+  "Action_NativeInvite": "In Gruppe einladen",
+  "Action_ViewAdventurerPlate": "Abenteurerpass ansehen",
+  "Action_ViewSearchInfo": "Suchinfo ansehen",
+  "Action_EstateTeleportation": "Zum Grundstück teleportieren",
+  "Action_ViewPartyFinder": "Gruppensuche-Eintrag ansehen"
 }

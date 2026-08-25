@@ -55,5 +55,10 @@
   "Action_NoneAvailable": "Aucune action disponible",
   "Action_CopyName": "Copier le nom",
   "Action_InviteToParty": "Préparer l'invitation d'équipe",
-  "Action_SendTell": "Préparer le message privé"
+  "Action_SendTell": "Préparer le message privé",
+  "Action_NativeInvite": "Inviter dans l'équipe",
+  "Action_ViewAdventurerPlate": "Voir la carte de personnage",
+  "Action_ViewSearchInfo": "Voir les informations de recherche",
+  "Action_EstateTeleportation": "Se téléporter au logement",
+  "Action_ViewPartyFinder": "Voir l'annonce de recrutement"
 }

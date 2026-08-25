@@ -55,5 +55,10 @@
   "Action_NoneAvailable": "利用可能なアクションはありません",
   "Action_CopyName": "名前をコピー",
   "Action_InviteToParty": "パーティに誘う準備",
-  "Action_SendTell": "Tellを準備"
+  "Action_SendTell": "Tellを準備",
+  "Action_NativeInvite": "パーティに誘う",
+  "Action_ViewAdventurerPlate": "アドベンチャラープレートを見る",
+  "Action_ViewSearchInfo": "サーチ情報を見る",
+  "Action_EstateTeleportation": "ハウジングへテレポ",
+  "Action_ViewPartyFinder": "パーティ募集を見る"
 }
