@@ -10,7 +10,7 @@ using Dalamud.Bindings.ImGui;
 using System;
 using System.Numerics;
 
-public class ListTab : ITab {
+public class ListTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
     private FriendListTableComponent tableComponent;
     private FriendProfilePanelComponent profilePanelComponent;
@@ -34,12 +34,24 @@ public class ListTab : ITab {
         this.statusBarComponent = statusBarComponent;
         this.loc = loc;
         this.configurationService = configurationService;
+
+        this.friendRepository.CacheCleared += this.OnCacheCleared;
+    }
+
+    private void OnCacheCleared() {
+        if (this.selectedFriend != null) {
+            this.selectedFriend = null;
+            this.pendingWidthDelta = -PanelWidth;
+
+            var config = this.configurationService.GetConfig();
+            config.IsProfilePanelOpen = false;
+            this.configurationService.Save();
+        }
     }
 
     private void ToggleProfilePanel(FriendProfile? friend) {
         var config = this.configurationService.GetConfig();
 
-        // Si l'utilisateur clique sur la ligne de l'ami déjà ouvert, on ferme le panneau
         if (this.selectedFriend != null && friend != null && this.selectedFriend.ContentId == friend.ContentId) {
             friend = null;
         }
@@ -63,8 +75,6 @@ public class ListTab : ITab {
             this.isFirstFrame = false;
             var config = this.configurationService.GetConfig();
 
-            // Si Dalamud a restauré la fenêtre avec la largeur du panneau incluse, 
-            // mais que l'état local redémarre à zéro, on déduit immédiatement cette largeur.
             if (config.IsProfilePanelOpen) {
                 this.pendingWidthDelta = -PanelWidth;
                 config.IsProfilePanelOpen = false;
@@ -102,5 +112,9 @@ public class ListTab : ITab {
             ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
             this.pendingWidthDelta = 0f;
         }
+    }
+
+    public void Dispose() {
+        this.friendRepository.CacheCleared -= this.OnCacheCleared;
     }
 }

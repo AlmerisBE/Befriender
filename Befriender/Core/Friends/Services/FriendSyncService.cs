@@ -31,6 +31,7 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
 
         this.framework.Update += this.OnUpdate;
         this.clientState.Login += this.OnLogin;
+        this.clientState.Logout += this.OnLogout;
         this.clientState.TerritoryChanged += this.OnTerritoryChanged;
     }
 
@@ -38,6 +39,14 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         if (this.configurationService.GetConfig().SyncOnLogin) {
             this.ForceSync();
         }
+    }
+
+    private void OnLogout(int type, int code) {
+        this.friendRepository.ClearCache();
+        this.LastSyncTime = DateTime.MinValue;
+        this.lastFriendCount = -1;
+        this.lastStateHash = ulong.MaxValue;
+        this.pendingSyncTime = DateTime.MaxValue;
     }
 
     private void OnTerritoryChanged(uint territoryId) {
@@ -99,6 +108,7 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     public void Dispose() {
         this.framework.Update -= this.OnUpdate;
         this.clientState.Login -= this.OnLogin;
+        this.clientState.Logout -= this.OnLogout;
         this.clientState.TerritoryChanged -= this.OnTerritoryChanged;
     }
 }

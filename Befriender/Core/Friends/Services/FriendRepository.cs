@@ -15,6 +15,7 @@ public class FriendRepository : IFriendRepository {
     private IClientState clientState;
     private IObjectTable objectTable;
     private string loadedCharacterId = string.Empty;
+    public event Action? CacheCleared;
 
     public FriendRepository(IFriendStorage storage, ICharacterIdentityService identityService, IClientState clientState, IObjectTable objectTable) {
         this.storage = storage;
@@ -141,5 +142,14 @@ public class FriendRepository : IFriendRepository {
         lock (this.lockObj) {
             this.storage.Save(this.loadedCharacterId, this.friends);
         }
+    }
+
+    public void ClearCache() {
+        lock (this.lockObj) {
+            this.friends = new List<FriendProfile>();
+            this.loadedCharacterId = string.Empty;
+        }
+
+        this.CacheCleared?.Invoke();
     }
 }

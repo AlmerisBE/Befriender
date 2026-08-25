@@ -241,4 +241,32 @@ public class FriendRepositoryTests {
         // Assert
         mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendProfile>>());
     }
+
+    [Fact]
+    public void FriendRepository_ClearCache_EmptiesFriendsAndFiresEvent() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+        mockStorage.Load("Almeris_33").Returns(new List<FriendProfile> { new FriendProfile { ContentId = 1 } });
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+        repository.GetFriends();
+
+        bool eventFired = false;
+        repository.CacheCleared += () => eventFired = true;
+
+        // Act
+        repository.ClearCache();
+
+        mockIdentityService.GetCurrentCharacterId().Returns(string.Empty);
+        var result = repository.GetFriends();
+
+        // Assert
+        Assert.Empty(result);
+        Assert.True(eventFired);
+    }
 }
