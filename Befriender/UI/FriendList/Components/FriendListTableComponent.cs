@@ -154,6 +154,20 @@ public class FriendListTableComponent {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 ImGui.Text(friend.Name);
 
+                // Render note icon if the friend has a note
+                if (!string.IsNullOrWhiteSpace(friend.Notes)) {
+                    ImGui.SameLine();
+
+                    ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+                    ImGui.TextDisabled(((char)Dalamud.Interface.FontAwesomeIcon.StickyNote).ToString());
+                    ImGui.PopFont();
+
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(friend.Notes);
+                    }
+                }
+
+                // --- COLONNE : JOB ---
                 ImGui.TableNextColumn();
                 float jobColWidth = ImGui.GetColumnWidth();
 
@@ -168,7 +182,6 @@ public class FriendListTableComponent {
 
                         if (iconWrap != null) {
                             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));
-                            // Ensure image remains fully colored if active, or dimmed if offline, never completely black
                             var imageTint = friend.IsOnline && !friend.IsCharacterDeleted && !friend.IsArchived ? palette.IconDefaultTint : palette.IconDimmedTint;
                             ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, imageTint);
                             if (ImGui.IsItemHovered()) {
@@ -190,6 +203,7 @@ public class FriendListTableComponent {
                     ImGui.Text(string.Empty);
                 }
 
+                // --- COLONNE : COMPAGNIE LIBRE ---
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 if (!string.IsNullOrEmpty(friend.FcTag)) {
@@ -200,8 +214,12 @@ public class FriendListTableComponent {
 
                         if (gcIconWrap != null) {
                             float iconSize = ImGui.GetTextLineHeight();
+                            float currentY = ImGui.GetCursorPosY(); // Sauvegarde de l'alignement centré
+
                             ImGui.Image(gcIconWrap.Handle, new Vector2(iconSize, iconSize));
                             ImGui.SameLine(0, 4f);
+
+                            ImGui.SetCursorPosY(currentY); // Restauration pour le texte qui suit
                         }
                     }
                     ImGui.Text(friend.FcTag);
