@@ -2,21 +2,24 @@
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
+using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 
 public class FriendStatusBarComponent {
     private IFriendSyncService syncService;
+    private ILocalizationService loc;
 
-    public FriendStatusBarComponent(IFriendSyncService syncService) {
+    public FriendStatusBarComponent(IFriendSyncService syncService, ILocalizationService loc) {
         this.syncService = syncService;
+        this.loc = loc;
     }
 
     public bool Draw(IReadOnlyList<FriendProfile> rawFriends, ref bool showOnlineOnly) {
         bool forceRefresh = false;
 
-        if (ImGui.Checkbox("Show Online Only", ref showOnlineOnly)) {
+        if (ImGui.Checkbox(this.loc.Translate("List_ShowOnlineOnly"), ref showOnlineOnly)) {
             forceRefresh = true;
         }
 
@@ -39,29 +42,29 @@ public class FriendStatusBarComponent {
 
         string syncText;
         if (this.syncService.IsSyncPending || this.syncService.LastSyncTime == DateTime.MinValue) {
-            syncText = "Scanning...";
+            syncText = this.loc.Translate("Status_Scanning");
         }
         else {
             var diff = DateTime.Now - this.syncService.LastSyncTime;
             string timeStr;
 
             if (diff.TotalDays >= 1) {
-                timeStr = $"{(int)diff.TotalDays}d ago";
+                timeStr = this.loc.Translate("Status_DaysAgo", (int)diff.TotalDays);
             }
             else if (diff.TotalHours >= 1) {
-                timeStr = $"{(int)diff.TotalHours}h ago";
+                timeStr = this.loc.Translate("Status_HoursAgo", (int)diff.TotalHours);
             }
             else if (diff.TotalMinutes >= 1) {
-                timeStr = $"{(int)diff.TotalMinutes}m ago";
+                timeStr = this.loc.Translate("Status_MinutesAgo", (int)diff.TotalMinutes);
             }
             else {
-                timeStr = "Just now";
+                timeStr = this.loc.Translate("Status_JustNow");
             }
 
-            syncText = $"Last Sync: {timeStr}";
+            syncText = this.loc.Translate("Status_LastSync", timeStr);
         }
 
-        var statusText = $"{syncText} | Online: {onlineCount} | Archived: {archivedCount} | Deleted: {deletedCount} | Total: {rawFriends.Count}";
+        var statusText = this.loc.Translate("Status_Counts", syncText, onlineCount, archivedCount, deletedCount, rawFriends.Count);
         var textSize = ImGui.CalcTextSize(statusText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2) - 30.0f;
 

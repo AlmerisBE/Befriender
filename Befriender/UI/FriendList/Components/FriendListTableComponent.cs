@@ -3,6 +3,7 @@
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Plugin.Services;
@@ -15,25 +16,27 @@ public class FriendListTableComponent {
     private IFriendSyncService syncService;
     private IGameDataService gameDataService;
     private ITextureProvider textureProvider;
+    private ILocalizationService loc;
 
     private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
     private int lastFriendCount = -1;
     private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
-    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider) {
+    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc) {
         this.displayService = displayService;
         this.syncService = syncService;
         this.gameDataService = gameDataService;
         this.textureProvider = textureProvider;
+        this.loc = loc;
     }
 
     public void Draw(float tableWidth, float footerHeight, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
         if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
-            ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn("Name");
-            ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn("FC", ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn("Location");
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Name"));
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_FC"), ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Location"));
 
             ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
@@ -65,7 +68,6 @@ public class FriendListTableComponent {
 
                 ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
 
-                // 1. Status Column
                 ImGui.TableNextColumn();
                 float statusColWidth = ImGui.GetColumnWidth();
 
@@ -84,7 +86,7 @@ public class FriendListTableComponent {
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
                         ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, new Vector4(0.8f, 0.2f, 0.2f, 1.0f));
                         if (ImGui.IsItemHovered()) {
-                            ImGui.SetTooltip("Missing / Deleted");
+                            ImGui.SetTooltip(this.loc.Translate("Tooltip_MissingDeleted"));
                         }
                     }
                     else {
@@ -95,7 +97,7 @@ public class FriendListTableComponent {
                         ImGui.Text("X");
                         ImGui.PopStyleColor();
                         if (ImGui.IsItemHovered()) {
-                            ImGui.SetTooltip("Missing / Deleted");
+                            ImGui.SetTooltip(this.loc.Translate("Tooltip_MissingDeleted"));
                         }
                     }
                 }
@@ -121,19 +123,16 @@ public class FriendListTableComponent {
                         ImGui.PushStyleColor(ImGuiCol.Text, fallbackColor);
                         ImGui.Text("●");
                         ImGui.PopStyleColor();
-
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip(statusInfo.Name);
                         }
                     }
                 }
 
-                // 2. Name Column
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 ImGui.Text(friend.Name);
 
-                // 3. Job Column
                 ImGui.TableNextColumn();
                 float jobColWidth = ImGui.GetColumnWidth();
 
@@ -169,7 +168,6 @@ public class FriendListTableComponent {
                     ImGui.Text(string.Empty);
                 }
 
-                // 4. FC Column
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 if (!string.IsNullOrEmpty(friend.FcTag)) {
@@ -179,7 +177,6 @@ public class FriendListTableComponent {
                     ImGui.Text(string.Empty);
                 }
 
-                // 5. Location Column
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
                 var locationName = this.gameDataService.GetLocationName(friend.LocationId);
@@ -189,7 +186,7 @@ public class FriendListTableComponent {
                     locationName = this.gameDataService.GetWorldName(displayWorld);
                 }
 
-                ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? "Unknown" : locationName);
+                ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName);
 
                 ImGui.PopStyleColor();
             }

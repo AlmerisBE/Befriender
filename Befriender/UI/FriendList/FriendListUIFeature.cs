@@ -2,9 +2,11 @@
 
 using Befriender.Core.Command.Contracts;
 using Befriender.Core.Framework;
+using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Commands;
 using Befriender.UI.FriendList.Components;
 using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.FriendList.Providers;
 using Befriender.UI.FriendList.Services;
 using Befriender.UI.FriendList.Tabs;
 using Befriender.UI.FriendList.Windows;
@@ -15,6 +17,9 @@ using Microsoft.Extensions.DependencyInjection;
 public class FriendListUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IFriendDisplayService, FriendDisplayService>();
+
+        // Register feature-specific localization provider
+        services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
 
         // Register UI Components
         services.AddSingleton<FriendListTableComponent>();
