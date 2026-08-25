@@ -48,11 +48,11 @@ public class FriendProfilePanelComponent {
             var actions = this.actionService.GetAvailableActions(friend);
             if (actions.Count > 0) {
                 foreach (var action in actions) {
-                    // Safe and unique int ID generation
                     int buttonId = unchecked((int)action.Icon ^ friend.ContentId.GetHashCode());
                     if (ImGuiComponents.IconButton(buttonId, action.Icon)) {
                         action.Execute(friend);
                     }
+
                     if (ImGui.IsItemHovered()) {
                         ImGui.SetTooltip(this.loc.Translate(action.InternalName));
                     }
@@ -68,28 +68,31 @@ public class FriendProfilePanelComponent {
             ImGui.Text($"{this.loc.Translate("Profile_World")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
 
             if (!string.IsNullOrEmpty(friend.FcTag)) {
-                ImGui.Text($"{this.loc.Translate("Profile_FC")}: ");
-                ImGui.SameLine();
-
-                var gcIconId = this.gameDataService.GetGrandCompanyIconId(friend.GrandCompany);
-                if (gcIconId > 0) {
-                    var gcIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = gcIconId };
-                    var gcIconWrap = this.textureProvider.GetFromGameIcon(gcIconLookup).GetWrapOrDefault();
-
-                    if (gcIconWrap != null) {
-                        float iconSize = ImGui.GetTextLineHeight();
-                        ImGui.Image(gcIconWrap.Handle, new Vector2(iconSize, iconSize));
-                        ImGui.SameLine(0, 4f);
-                    }
-                }
-                ImGui.Text(friend.FcTag);
+                ImGui.Text($"{this.loc.Translate("Profile_FC")}: {friend.FcTag}");
             }
 
-            // Display Grand Company Name
-            string gcName = friend.GrandCompany > 0 ? this.gameDataService.GetGrandCompanyName(friend.GrandCompany) : this.loc.Translate("Profile_None");
-            ImGui.Text($"{this.loc.Translate("Profile_GrandCompany")}: {gcName}");
+            ImGui.Text($"{this.loc.Translate("Profile_GrandCompany")}: ");
+            ImGui.SameLine();
 
-            // Corrected duplicate language line
+            var gcIconId = this.gameDataService.GetGrandCompanyIconId(friend.GrandCompany);
+            if (gcIconId > 0) {
+                var gcIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = gcIconId };
+                var gcIconWrap = this.textureProvider.GetFromGameIcon(gcIconLookup).GetWrapOrDefault();
+
+                if (gcIconWrap != null) {
+                    float iconSize = ImGui.GetTextLineHeight();
+                    float currentY = ImGui.GetCursorPosY();
+
+                    ImGui.Image(gcIconWrap.Handle, new Vector2(iconSize, iconSize));
+                    ImGui.SameLine(0, 4f);
+
+                    ImGui.SetCursorPosY(currentY);
+                }
+            }
+
+            string gcName = friend.GrandCompany > 0 ? this.gameDataService.GetGrandCompanyName(friend.GrandCompany) : this.loc.Translate("Profile_None");
+            ImGui.Text(gcName);
+
             ImGui.Text($"{this.loc.Translate("Profile_Languages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
 
             ImGui.Spacing();

@@ -13,7 +13,7 @@
   "Column_Status": "Status",
   "Column_Name": "Name",
   "Column_Job": "Job",
-  "Column_FC": "FC",
+  "Column_FC": "Company",
   "Column_Location": "Location",
   "Tooltip_MissingDeleted": "Missing / Deleted",
   "Tooltip_Archived": "Archived",

@@ -13,7 +13,7 @@
   "Column_Status": "Statut",
   "Column_Name": "Nom",
   "Column_Job": "Classe",
-  "Column_FC": "CL",
+  "Column_FC": "Compagnie",
   "Column_Location": "Lieu",
   "Tooltip_MissingDeleted": "Introuvable / Supprimé",
   "Tooltip_Archived": "Archivé",

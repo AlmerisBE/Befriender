@@ -13,7 +13,7 @@
   "Column_Status": "ステータス",
   "Column_Name": "名前",
   "Column_Job": "クラス",
-  "Column_FC": "FC",
+  "Column_FC": "カンパニー",
   "Column_Location": "場所",
   "Tooltip_MissingDeleted": "行方不明 / 削除",
   "Tooltip_Archived": "アーカイブ",
