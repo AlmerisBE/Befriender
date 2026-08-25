@@ -13,5 +13,8 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool SyncOnLogin { get; set; } = true;
     public bool SyncOnTerritoryChange { get; set; } = true;
     public bool SyncOnFriendListChange { get; set; } = true;
+
     public string SelectedThemeName { get; set; } = "Dark";
+
+    public bool IsProfilePanelOpen { get; set; } = false;
 }

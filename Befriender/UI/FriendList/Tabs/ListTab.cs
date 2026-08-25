@@ -1,5 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Tabs;
 
+using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
@@ -15,35 +16,62 @@ public class ListTab : ITab {
     private FriendProfilePanelComponent profilePanelComponent;
     private FriendStatusBarComponent statusBarComponent;
     private ILocalizationService loc;
+    private IConfigurationService configurationService;
 
     private bool showOnlineOnly = false;
     private bool forceRefresh = false;
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
     private float pendingWidthDelta = 0f;
+    private bool isFirstFrame = true;
 
     public string Name => this.loc.Translate("Tab_List");
 
-    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc) {
+    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
         this.statusBarComponent = statusBarComponent;
         this.loc = loc;
+        this.configurationService = configurationService;
     }
 
     private void ToggleProfilePanel(FriendProfile? friend) {
+        var config = this.configurationService.GetConfig();
+
+        // Si l'utilisateur clique sur la ligne de l'ami déjà ouvert, on ferme le panneau
+        if (this.selectedFriend != null && friend != null && this.selectedFriend.ContentId == friend.ContentId) {
+            friend = null;
+        }
+
         if (this.selectedFriend == null && friend != null) {
             this.pendingWidthDelta = PanelWidth;
+            config.IsProfilePanelOpen = true;
+            this.configurationService.Save();
         }
         else if (this.selectedFriend != null && friend == null) {
             this.pendingWidthDelta = -PanelWidth;
+            config.IsProfilePanelOpen = false;
+            this.configurationService.Save();
         }
 
         this.selectedFriend = friend;
     }
 
     public void Draw() {
+        if (this.isFirstFrame) {
+            this.isFirstFrame = false;
+            var config = this.configurationService.GetConfig();
+
+            // Si Dalamud a restauré la fenêtre avec la largeur du panneau incluse, 
+            // mais que l'état local redémarre à zéro, on déduit immédiatement cette largeur.
+            if (config.IsProfilePanelOpen) {
+                this.pendingWidthDelta = -PanelWidth;
+                config.IsProfilePanelOpen = false;
+                this.configurationService.Save();
+            }
+        }
+
         var rawFriends = this.friendRepository.GetFriends();
 
         if (rawFriends.Count == 0) {
