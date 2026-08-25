@@ -60,5 +60,7 @@
   "Action_ViewSearchInfo": "Voir les informations de recherche",
   "Action_EstateTeleportation": "Se téléporter au logement",
   "Action_ViewPartyFinder": "Voir l'annonce de recrutement",
-  "Action_JoinFriend": "Rejoindre (Téléportation vers la région)"
+  "Action_JoinFriend": "Rejoindre (Téléportation vers la région)",
+  "Profile_GrandCompany": "Grande Compagnie",
+  "Profile_None": "Aucune"
 }

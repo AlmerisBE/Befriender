@@ -60,5 +60,7 @@
   "Action_ViewSearchInfo": "Suchinfo ansehen",
   "Action_EstateTeleportation": "Zum Grundstück teleportieren",
   "Action_ViewPartyFinder": "Gruppensuche-Eintrag ansehen",
-  "Action_JoinFriend": "Beitreten (In Region teleportieren)"
+  "Action_JoinFriend": "Beitreten (In Region teleportieren)",
+  "Profile_GrandCompany": "Staatliche Gesellschaft",
+  "Profile_None": "Keine"
 }

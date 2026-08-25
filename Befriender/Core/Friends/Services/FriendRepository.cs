@@ -73,7 +73,6 @@ public class FriendRepository : IFriendRepository {
                     bool isDeletedChar = string.IsNullOrWhiteSpace(scanned.Name);
                     existing.IsCharacterDeleted = isDeletedChar;
 
-                    // Only process name changes if the character isn't deleted
                     if (!isDeletedChar) {
                         if (!string.Equals(existing.Name, scanned.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
                             existing.PreviousNames ??= new List<string>();
@@ -84,11 +83,12 @@ public class FriendRepository : IFriendRepository {
                         existing.Name = scanned.Name;
                     }
 
-                    existing.IsArchived = false; // Re-detected in vanilla list
+                    existing.IsArchived = false;
                     existing.IsOnline = scanned.IsOnline;
                     existing.HomeWorldId = scanned.HomeWorldId;
                     existing.CurrentWorldId = scanned.CurrentWorldId;
                     existing.ClientLanguages = scanned.ClientLanguages;
+                    existing.GrandCompany = scanned.GrandCompany;
 
                     if (scanned.IsOnline) {
                         existing.LastSeenAt = now;

@@ -60,11 +60,11 @@ public class GameDataService : IGameDataService {
 
         var territoryRow = territorySheet.GetRowOrDefault(territoryId);
         if (territoryRow.HasValue) {
-            // Fallback chain natively used by FFXIV for instances like Housing or Island Sanctuary
             uint placeNameId = territoryRow.Value.PlaceName.RowId;
             if (placeNameId == 0) {
                 placeNameId = territoryRow.Value.PlaceNameZone.RowId;
             }
+
             if (placeNameId == 0) {
                 placeNameId = territoryRow.Value.PlaceNameRegion.RowId;
             }
@@ -227,7 +227,6 @@ public class GameDataService : IGameDataService {
     public bool IsFriendAvailable(ulong stateMask) {
         var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
-        // If the character has any of these restrictive statuses, they are online but unavailable
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty) ||
@@ -249,7 +248,6 @@ public class GameDataService : IGameDataService {
 
         var languages = new System.Collections.Generic.List<string>();
 
-        // Bitwise evaluation based on standard FFXIV language flags
         if ((languageMask & 1) != 0) {
             languages.Add("JA");
         }
@@ -271,10 +269,24 @@ public class GameDataService : IGameDataService {
 
     public uint GetGrandCompanyIconId(byte grandCompanyId) {
         return grandCompanyId switch {
-            1 => 60501, // Maelstrom (Limsa Lominsa)
-            2 => 60502, // Order of the Twin Adder (Gridania)
-            3 => 60503, // Immortal Flames (Ul'dah)
+            (byte)FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany.Maelstrom => 60871,
+            (byte)FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany.TwinAdder => 60872,
+            (byte)FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany.ImmortalFlames => 60873,
             _ => 0
         };
+    }
+
+    public string GetGrandCompanyName(byte grandCompanyId) {
+        if (grandCompanyId == 0) {
+            return string.Empty;
+        }
+
+        var sheet = this.dataManager.GetExcelSheet<Lumina.Excel.Sheets.GrandCompany>();
+        if (sheet == null) {
+            return grandCompanyId.ToString();
+        }
+
+        var row = sheet.GetRowOrDefault(grandCompanyId);
+        return row.HasValue ? row.Value.Name.ToString() : grandCompanyId.ToString();
     }
 }

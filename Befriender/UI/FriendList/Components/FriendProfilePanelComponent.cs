@@ -85,6 +85,11 @@ public class FriendProfilePanelComponent {
                 ImGui.Text(friend.FcTag);
             }
 
+            // Display Grand Company Name
+            string gcName = friend.GrandCompany > 0 ? this.gameDataService.GetGrandCompanyName(friend.GrandCompany) : this.loc.Translate("Profile_None");
+            ImGui.Text($"{this.loc.Translate("Profile_GrandCompany")}: {gcName}");
+
+            // Corrected duplicate language line
             ImGui.Text($"{this.loc.Translate("Profile_Languages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
 
             ImGui.Spacing();

@@ -60,5 +60,7 @@
   "Action_ViewSearchInfo": "View Search Info",
   "Action_EstateTeleportation": "Teleport to Estate",
   "Action_ViewPartyFinder": "View Party Finder Listing",
-  "Action_JoinFriend": "Join (Teleport to Region)"
+  "Action_JoinFriend": "Join (Teleport to Region)",
+  "Profile_GrandCompany": "Grand Company",
+  "Profile_None": "None"
 }

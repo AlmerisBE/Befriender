@@ -52,14 +52,14 @@ public class FriendRepositoryTests {
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
         var existingFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = true, JobId = 24, FcTag = "TEST", ClientLanguages = 2 }
+            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = true, JobId = 24, FcTag = "TEST", ClientLanguages = 2, GrandCompany = 0 }
         };
         mockStorage.Load("Almeris_33").Returns(existingFriends);
 
         var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
 
         var scannedFriends = new List<FriendProfile> {
-            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = false, JobId = 0, FcTag = string.Empty, ClientLanguages = 10 }
+            new FriendProfile { ContentId = 1, Name = "Existing Friend", IsOnline = false, JobId = 0, FcTag = string.Empty, ClientLanguages = 10, GrandCompany = 1 }
         };
 
         // Act
@@ -72,6 +72,7 @@ public class FriendRepositoryTests {
         Assert.Equal(24, result[0].JobId);
         Assert.Equal("TEST", result[0].FcTag);
         Assert.Equal(10, result[0].ClientLanguages);
+        Assert.Equal(1, result[0].GrandCompany);
     }
 
     [Fact]
