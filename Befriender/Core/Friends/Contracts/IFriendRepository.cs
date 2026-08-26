@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 public interface IFriendRepository {
     event Action CacheCleared;
+    event Action<FriendProfile>? FriendLoggedOn;
 
     IReadOnlyList<FriendProfile> GetFriends();
     void UpdateFriends(IEnumerable<FriendProfile> friends);

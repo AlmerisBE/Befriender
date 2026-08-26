@@ -19,6 +19,8 @@ public class ActionsFeature : IFeatureModule {
         services.AddSingleton<IFriendAction, JoinFriendAction>();
         services.AddSingleton<IFriendAction, DeleteFriendDataAction>();
         services.AddSingleton<IFriendAction, RestoreFriendAction>();
+        services.AddSingleton<IFriendAction, TrackFriendAction>();
+        services.AddSingleton<IFriendAction, UntrackFriendAction>();
 
         // Actions de gestion du marquage pour suppression
         services.AddSingleton<IRemoveFriendRequestService, RemoveFriendRequestService>();

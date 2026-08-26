@@ -16,6 +16,7 @@ public class FriendRepository : IFriendRepository {
     private IObjectTable objectTable;
     private string loadedCharacterId = string.Empty;
     public event Action? CacheCleared;
+    public event Action<FriendProfile>? FriendLoggedOn;
 
     public FriendRepository(IFriendStorage storage, ICharacterIdentityService identityService, IClientState clientState, IObjectTable objectTable) {
         this.storage = storage;
@@ -71,6 +72,8 @@ public class FriendRepository : IFriendRepository {
 
                 if (repositoryDict.TryGetValue(scanned.ContentId, out var existing)) {
                     bool isDeletedChar = string.IsNullOrWhiteSpace(scanned.Name);
+                    bool wasOffline = !existing.IsOnline;
+
                     existing.IsCharacterDeleted = isDeletedChar;
 
                     if (!isDeletedChar) {
@@ -105,6 +108,10 @@ public class FriendRepository : IFriendRepository {
 
                     if (!string.IsNullOrEmpty(scanned.FcTag)) {
                         existing.FcTag = scanned.FcTag;
+                    }
+
+                    if (wasOffline && existing.IsOnline) {
+                        this.FriendLoggedOn?.Invoke(existing);
                     }
                 }
                 else {
