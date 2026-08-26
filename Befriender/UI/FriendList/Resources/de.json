@@ -76,5 +76,8 @@
   "Modal_RemoveConfirmText": "Möchtest du {0} zum manuellen Entfernen von deiner Freundesliste markieren?",
   "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)",
   "Config_HotkeySettings": "Tastenkürzel-Einstellungen",
-  "Config_Hotkey": "Taste"
+  "Config_Hotkey": "Taste",
+  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
+  "Action_TrackFriend": "Anmeldebenachrichtigungen aktivieren",
+  "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren"
 }

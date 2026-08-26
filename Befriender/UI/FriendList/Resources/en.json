@@ -76,5 +76,8 @@
   "Modal_RemoveConfirmText": "Do you want to mark {0} for manual removal from your friend list?",
   "Tooltip_OpenNativeList": "Open Native Friend List (Vanilla)",
   "Config_HotkeySettings": "Hotkey Settings",
-  "Config_Hotkey": "Key"
+  "Config_Hotkey": "Key",
+  "Tooltip_Tracked": "Login alerts enabled",
+  "Action_TrackFriend": "Enable login alerts",
+  "Action_UntrackFriend": "Disable login alerts"
 }
