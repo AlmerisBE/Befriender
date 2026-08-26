@@ -2,12 +2,12 @@
   "Author": "Almeris",
   "Name": "Befriender",
   "InternalName": "Befriender",
-  "AssemblyVersion": "0.0.0.1",
+  "AssemblyVersion": "1.0.0.0",
   "Description": "An improved, responsive, and feature-rich friend list for Final Fantasy XIV.",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 15,
   "LoadRequiredState": 0,
   "LoadSync": false,
   "LoadPriority": 0,
-  "Punchline": "Your friends are worth it."
+  "Punchline": "Because your friends are worth it."
 }
