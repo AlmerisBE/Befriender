@@ -74,5 +74,7 @@
   "Action_Cancel": "Abbrechen",
   "Action_UnmarkForRemoval": "Entfernen abbrechen",
   "Modal_RemoveConfirmText": "Möchtest du {0} zum manuellen Entfernen von deiner Freundesliste markieren?",
-  "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)"
+  "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)",
+  "Config_HotkeySettings": "Tastenkürzel-Einstellungen",
+  "Config_Hotkey": "Taste"
 }

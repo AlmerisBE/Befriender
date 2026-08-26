@@ -5,6 +5,7 @@ using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Game.ClientState.Keys;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -101,6 +102,33 @@ public class ConfigTab : ITab {
                 config.MinSyncIntervalMinutes = max - 15;
             }
 
+            configChanged = true;
+        }
+
+        ImGui.Spacing();
+        ImGui.Text(this.loc.Translate("Config_HotkeySettings"));
+        ImGui.Separator();
+
+        bool ctrl = config.HotkeyCtrl;
+        if (ImGui.Checkbox("Ctrl", ref ctrl)) { config.HotkeyCtrl = ctrl; configChanged = true; }
+        ImGui.SameLine();
+
+        bool shift = config.HotkeyShift;
+        if (ImGui.Checkbox("Shift", ref shift)) { config.HotkeyShift = shift; configChanged = true; }
+        ImGui.SameLine();
+
+        bool alt = config.HotkeyAlt;
+        if (ImGui.Checkbox("Alt", ref alt)) { config.HotkeyAlt = alt; configChanged = true; }
+
+        var keys = Enum.GetValues<VirtualKey>();
+        var keyNames = keys.Select(k => k.ToString()).ToArray();
+        int currentKeyIndex = Array.IndexOf(keys, config.Hotkey);
+        if (currentKeyIndex < 0) {
+            currentKeyIndex = 0;
+        }
+
+        if (ImGui.Combo(this.loc.Translate("Config_Hotkey"), ref currentKeyIndex, keyNames, keyNames.Length)) {
+            config.Hotkey = keys[currentKeyIndex];
             configChanged = true;
         }
 

@@ -10,7 +10,7 @@ using Xunit;
 
 public class CommandDispatcherTests {
     [Fact]
-    public void CommandDispatcher_OnInitialization_RegistersMainCommand() {
+    public void CommandDispatcher_OnInitialization_RegistersMainCommands() {
         // Arrange
         var mockCommandManager = Substitute.For<ICommandManager>();
         var commands = new List<ICommand>();
@@ -19,6 +19,7 @@ public class CommandDispatcherTests {
         using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
 
         // Assert
+        mockCommandManager.Received(1).AddHandler("/befriender", Arg.Any<CommandInfo>());
         mockCommandManager.Received(1).AddHandler("/fl", Arg.Any<CommandInfo>());
     }
 
@@ -67,7 +68,7 @@ public class CommandDispatcherTests {
     }
 
     [Fact]
-    public void CommandDispatcher_OnDispose_RemovesCommandRegistration() {
+    public void CommandDispatcher_OnDispose_RemovesCommandRegistrations() {
         // Arrange
         var mockCommandManager = Substitute.For<ICommandManager>();
         var commands = new List<ICommand>();
@@ -77,6 +78,7 @@ public class CommandDispatcherTests {
         dispatcher.Dispose();
 
         // Assert
+        mockCommandManager.Received(1).RemoveHandler("/befriender");
         mockCommandManager.Received(1).RemoveHandler("/fl");
     }
 }

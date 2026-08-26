@@ -1,23 +1,29 @@
 ﻿namespace Befriender.UI.FriendList.Windows;
 
 using Befriender.Core.Friends.Contracts;
+using Befriender.Core.Input.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-public class FriendListWindow : Window {
+public class FriendListWindow : Window, IDisposable {
     private IEnumerable<ITab> tabs;
     private IFriendSyncService syncService;
     private IThemeService themeService;
+    private IHotkeyService hotkeyService;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, Befriender.Core.Input.Contracts.IHotkeyService hotkeyService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;
+        this.hotkeyService = hotkeyService;
+
+        this.hotkeyService.OnHotkeyPressed += this.Toggle;
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(500, 600),
@@ -83,5 +89,9 @@ public class FriendListWindow : Window {
             }
             ImGui.EndTabBar();
         }
+    }
+
+    public void Dispose() {
+        this.hotkeyService.OnHotkeyPressed -= this.Toggle;
     }
 }

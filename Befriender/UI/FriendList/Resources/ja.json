@@ -74,5 +74,7 @@
   "Action_Cancel": "キャンセル",
   "Action_UnmarkForRemoval": "削除をキャンセル",
   "Modal_RemoveConfirmText": "フレンドリストから手動で削除するために {0} にマークを付けますか？",
-  "Tooltip_OpenNativeList": "公式フレンドリストを開く（バニラ）"
+  "Tooltip_OpenNativeList": "公式フレンドリストを開く（バニラ）",
+  "Config_HotkeySettings": "ショートカット設定",
+  "Config_Hotkey": "キー"
 }

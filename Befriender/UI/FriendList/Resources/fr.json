@@ -73,5 +73,7 @@
   "Action_Confirm": "Confirmer",
   "Action_UnmarkForRemoval": "Annuler le retrait",
   "Modal_RemoveConfirmText": "Voulez-vous marquer {0} pour être retiré manuellement de votre liste d'amis ?",
-  "Tooltip_OpenNativeList": "Ouvrir la liste d'amis native (Vanilla)"
+  "Tooltip_OpenNativeList": "Ouvrir la liste d'amis native (Vanilla)",
+  "Config_HotkeySettings": "Paramètres des raccourcis",
+  "Config_Hotkey": "Touche"
 }
