@@ -3,6 +3,7 @@
 using Befriender.Core.Command.Services;
 using Befriender.Core.Framework;
 using Befriender.Core.Friends.Services;
+using Befriender.Core.Input.Services;
 using Befriender.UI.FriendList.Services;
 using Befriender.UI.FriendList.Windows;
 using Dalamud.Interface.Windowing;
@@ -28,7 +29,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         IDataManager dataManager,
         ITextureProvider textureProvider,
         IGameInteropProvider gameInteropProvider,
-        IAddonLifecycle addonLifecycle) {
+        IAddonLifecycle addonLifecycle,
+        IKeyState keyState) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -46,6 +48,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(textureProvider);
         services.AddSingleton(gameInteropProvider);
         services.AddSingleton(addonLifecycle);
+        services.AddSingleton(keyState);
 
         services.AddPluginFeatures();
 
@@ -54,6 +57,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
         this.serviceProvider.GetRequiredService<FriendSyncService>();
         this.serviceProvider.GetRequiredService<VanillaFriendListModifierService>();
+        this.serviceProvider.GetRequiredService<HotkeyService>();
 
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {

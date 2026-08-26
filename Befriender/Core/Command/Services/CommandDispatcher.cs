@@ -10,15 +10,17 @@ using System.Linq;
 public class CommandDispatcher : IDisposable {
     private ICommandManager commandManager;
     private IEnumerable<ICommand> commands;
-    private string mainCommand = "/fl";
+    private string[] mainCommands = { "/befriender", "/fl" };
 
     public CommandDispatcher(ICommandManager commandManager, IEnumerable<ICommand> commands) {
         this.commandManager = commandManager;
         this.commands = commands;
 
-        this.commandManager.AddHandler(this.mainCommand, new CommandInfo(this.OnCommand) {
-            HelpMessage = "Opens the friend list. Type '/fl config' to access settings."
-        });
+        foreach (var cmd in this.mainCommands) {
+            this.commandManager.AddHandler(cmd, new CommandInfo(this.OnCommand) {
+                HelpMessage = cmd == "/befriender" ? "Opens the friend list. Type '/befriender config' to access settings." : "Alias for /befriender"
+            });
+        }
     }
 
     private void OnCommand(string command, string arguments) {
@@ -38,6 +40,8 @@ public class CommandDispatcher : IDisposable {
     }
 
     public void Dispose() {
-        this.commandManager.RemoveHandler(this.mainCommand);
+        foreach (var cmd in this.mainCommands) {
+            this.commandManager.RemoveHandler(cmd);
+        }
     }
 }
