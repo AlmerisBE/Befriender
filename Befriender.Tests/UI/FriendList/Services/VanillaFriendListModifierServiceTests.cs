@@ -19,8 +19,8 @@ public class VanillaFriendListModifierServiceTests {
         using var service = new VanillaFriendListModifierService(mockLifecycle, mockRepo, mockLog);
 
         // Assert
-        // We expect the PreDraw event to be bound for consistent frame-by-frame rendering
-        mockLifecycle.Received(1).RegisterListener(AddonEvent.PreDraw, "SocialList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        // The addon name must perfectly match the production code implementation ("FriendList")
+        mockLifecycle.Received(1).RegisterListener(AddonEvent.PreDraw, "FriendList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
     }
 
     [Fact]
@@ -35,6 +35,6 @@ public class VanillaFriendListModifierServiceTests {
         service.Dispose();
 
         // Assert
-        mockLifecycle.Received(1).UnregisterListener(AddonEvent.PreDraw, "SocialList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        mockLifecycle.Received(1).UnregisterListener(AddonEvent.PreDraw, "FriendList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
     }
 }
