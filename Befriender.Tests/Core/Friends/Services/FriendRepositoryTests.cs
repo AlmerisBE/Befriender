@@ -270,4 +270,36 @@ public class FriendRepositoryTests {
         Assert.Empty(result);
         Assert.True(eventFired);
     }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_FiresFriendLoggedOnEventWhenFriendComesOnline() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Offline Friend", IsOnline = false }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        FriendProfile? notifiedFriend = null;
+        repository.FriendLoggedOn += f => notifiedFriend = f;
+
+        var scannedFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Offline Friend", IsOnline = true }
+        };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+
+        // Assert
+        Assert.NotNull(notifiedFriend);
+        Assert.Equal(1ul, notifiedFriend.ContentId);
+    }
 }

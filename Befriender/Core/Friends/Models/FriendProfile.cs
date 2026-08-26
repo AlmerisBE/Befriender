@@ -35,4 +35,7 @@ public class FriendProfile {
     // Indicates if the friend is no longer found in the vanilla friend list
     public bool IsMissing { get; set; } = false;
     public byte GrandCompany { get; set; }
+
+    // Determines if the user wants to be notified when this friend logs in (US-9.1)
+    public bool IsTrackedForNotifications { get; set; } = false;
 }

@@ -6,7 +6,7 @@ using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface; // <-- Ajout de la directive pour FontAwesomeIcon
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Plugin.Services;
 using System;
@@ -53,8 +53,13 @@ public class FriendProfilePanelComponent {
 
             var actions = this.actionService.GetAvailableActions(friend);
             if (actions.Count > 0) {
-                foreach (var action in actions) {
+                var style = ImGui.GetStyle();
+                float windowVisibleX2 = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+
+                for (int i = 0; i < actions.Count; i++) {
+                    var action = actions[i];
                     int buttonId = unchecked((int)action.Icon ^ friend.ContentId.GetHashCode());
+
                     if (ImGuiComponents.IconButton(buttonId, action.Icon)) {
                         action.Execute(friend);
                     }
@@ -63,9 +68,17 @@ public class FriendProfilePanelComponent {
                         ImGui.SetTooltip(this.loc.Translate(action.InternalName));
                     }
 
-                    ImGui.SameLine();
+                    // On applique SameLine uniquement si le prochain bouton a assez de place pour s'afficher
+                    if (i + 1 < actions.Count) {
+                        float lastItemX2 = ImGui.GetItemRectMax().X;
+                        float nextItemX2 = lastItemX2 + style.ItemSpacing.X + ImGui.GetItemRectSize().X;
+
+                        if (nextItemX2 < windowVisibleX2) {
+                            ImGui.SameLine();
+                        }
+                    }
                 }
-                ImGui.NewLine();
+
                 ImGui.Spacing();
             }
 

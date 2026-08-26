@@ -157,6 +157,19 @@ public class FriendListTableComponent {
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
+                // Display tracking bell indicator if notifications are enabled
+                if (friend.IsTrackedForNotifications) {
+                    ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+                    ImGui.Text(((char)Dalamud.Interface.FontAwesomeIcon.Bell).ToString());
+                    ImGui.PopFont();
+
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(this.loc.Translate("Tooltip_Tracked"));
+                    }
+
+                    ImGui.SameLine();
+                }
+
                 if (friend.IsCharacterDeleted) {
                     ImGui.PushStyleColor(ImGuiCol.Text, palette.IconDimmedTint);
 

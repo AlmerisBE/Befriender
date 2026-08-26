@@ -75,5 +75,8 @@
   "Modal_RemoveConfirmText": "Voulez-vous marquer {0} pour être retiré manuellement de votre liste d'amis ?",
   "Tooltip_OpenNativeList": "Ouvrir la liste d'amis native (Vanilla)",
   "Config_HotkeySettings": "Paramètres des raccourcis",
-  "Config_Hotkey": "Touche"
+  "Config_Hotkey": "Touche",
+  "Tooltip_Tracked": "Alertes de connexion activées",
+  "Action_TrackFriend": "Activer les alertes de connexion",
+  "Action_UntrackFriend": "Désactiver les alertes de connexion"
 }
