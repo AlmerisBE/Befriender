@@ -4,6 +4,9 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System;
 using System.Collections.Generic;
 
@@ -21,6 +24,21 @@ public class FriendStatusBarComponent {
 
         if (ImGui.Checkbox(this.loc.Translate("List_ShowOnlineOnly"), ref showOnlineOnly)) {
             forceRefresh = true;
+        }
+
+        ImGui.SameLine();
+
+        // Native Friend List Quick Access Button
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.AddressBook)) {
+            unsafe {
+                var agent = AgentFriendlist.Instance();
+                if (agent != null) {
+                    agent->Show();
+                }
+            }
+        }
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(this.loc.Translate("Tooltip_OpenNativeList"));
         }
 
         ImGui.SameLine();

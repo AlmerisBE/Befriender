@@ -20,5 +20,6 @@
 
 	<ItemGroup>
 	  <Folder Include="UI\FriendList\Resources\" />
+	  <Folder Include="UI\Vanilla\Services\" />
 	</ItemGroup>
 </Project>

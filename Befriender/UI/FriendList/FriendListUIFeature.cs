@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 public class FriendListUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IFriendDisplayService, FriendDisplayService>();
+        services.AddSingleton<VanillaFriendListModifierService>();
 
         // Register feature-specific localization provider
         services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();

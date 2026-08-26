@@ -73,5 +73,6 @@
   "Action_Confirm": "Confirm",
   "Action_Cancel": "Cancel",
   "Action_UnmarkForRemoval": "Cancel Removal",
-  "Modal_RemoveConfirmText": "Do you want to mark {0} for manual removal from your friend list?"
+  "Modal_RemoveConfirmText": "Do you want to mark {0} for manual removal from your friend list?",
+  "Tooltip_OpenNativeList": "Open Native Friend List (Vanilla)"
 }

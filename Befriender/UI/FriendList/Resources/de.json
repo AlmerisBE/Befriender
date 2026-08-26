@@ -73,5 +73,6 @@
   "Action_Confirm": "Bestätigen",
   "Action_Cancel": "Abbrechen",
   "Action_UnmarkForRemoval": "Entfernen abbrechen",
-  "Modal_RemoveConfirmText": "Möchtest du {0} zum manuellen Entfernen von deiner Freundesliste markieren?"
+  "Modal_RemoveConfirmText": "Möchtest du {0} zum manuellen Entfernen von deiner Freundesliste markieren?",
+  "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)"
 }
