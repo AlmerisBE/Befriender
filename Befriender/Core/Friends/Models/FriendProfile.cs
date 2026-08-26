@@ -30,6 +30,8 @@ public class FriendProfile {
     public bool IsArchived { get; set; } = false;
     // True if the vanilla list returns an empty string (character deleted by owner)
     public bool IsCharacterDeleted { get; set; } = false;
+    // Indicates if the player has marked this friend for manual removal in the vanilla UI
+    public bool IsMarkedForRemoval { get; set; } = false;
     // Indicates if the friend is no longer found in the vanilla friend list
     public bool IsMissing { get; set; } = false;
     public byte GrandCompany { get; set; }

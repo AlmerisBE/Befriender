@@ -15,9 +15,7 @@ public class RequestRemoveFriendAction : IFriendAction {
     }
 
     public bool CanExecute(FriendProfile friend) {
-        // We allow native removal as long as the friend occupies a vanilla slot (not archived),
-        // regardless of whether the character has been deleted by its owner.
-        return !friend.IsArchived;
+        return !friend.IsArchived && !friend.IsMarkedForRemoval;
     }
 
     public void Execute(FriendProfile friend) {

@@ -1,8 +1,8 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
 using Befriender.Core.Actions.Contracts;
+using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
-using Befriender.Core.Interop.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
@@ -10,16 +10,15 @@ using System.Numerics;
 
 public class RemoveConfirmationModalComponent : IDisposable {
     private IRemoveFriendRequestService requestService;
-    private INativeFriendService nativeService;
+    private IFriendRepository friendRepository;
     private ILocalizationService loc;
     private FriendProfile? pendingFriend = null;
-    private bool triggerOpen = false; // Dedicated flag to trigger the popup opening
+    private bool triggerOpen = false;
 
-    public RemoveConfirmationModalComponent(IRemoveFriendRequestService requestService, INativeFriendService nativeService, ILocalizationService loc) {
+    public RemoveConfirmationModalComponent(IRemoveFriendRequestService requestService, IFriendRepository friendRepository, ILocalizationService loc) {
         this.requestService = requestService;
-        this.nativeService = nativeService;
+        this.friendRepository = friendRepository;
         this.loc = loc;
-
         this.requestService.OnRemoveRequested += this.HandleRemoveRequested;
     }
 
@@ -37,7 +36,7 @@ public class RemoveConfirmationModalComponent : IDisposable {
         Vector2 center = ImGui.GetMainViewport().GetCenter();
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
 
-        bool isModalOpen = true; // Local variable to maintain the popup open state
+        bool isModalOpen = true;
         if (ImGui.BeginPopupModal("ConfirmRemovalPopup", ref isModalOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove)) {
             if (this.pendingFriend == null) {
                 ImGui.CloseCurrentPopup();
@@ -45,7 +44,6 @@ public class RemoveConfirmationModalComponent : IDisposable {
                 return;
             }
 
-            // Safely resolve the display name, especially for deleted characters
             string displayName = this.pendingFriend.Name;
             if (this.pendingFriend.IsCharacterDeleted || string.IsNullOrEmpty(displayName)) {
                 displayName = this.loc.Translate("Profile_DeletedCharacter");
@@ -59,7 +57,8 @@ public class RemoveConfirmationModalComponent : IDisposable {
             ImGui.Spacing();
 
             if (ImGui.Button(this.loc.Translate("Action_Confirm"), new Vector2(120, 0))) {
-                this.nativeService.RemoveFriend(this.pendingFriend.ContentId);
+                this.pendingFriend.IsMarkedForRemoval = true;
+                this.friendRepository.Save();
                 ImGui.CloseCurrentPopup();
                 this.pendingFriend = null;
             }
@@ -75,7 +74,6 @@ public class RemoveConfirmationModalComponent : IDisposable {
             ImGui.EndPopup();
         }
 
-        // Handle case where user closes the modal using the 'X' button or Escape key
         if (!isModalOpen) {
             this.pendingFriend = null;
         }

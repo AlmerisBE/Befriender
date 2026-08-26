@@ -122,6 +122,7 @@ public class FriendRepository : IFriendRepository {
                     // Character removed manually from vanilla list -> Auto-Archive (US-3.3)
                     existing.IsArchived = true;
                     existing.IsOnline = false;
+                    existing.IsMarkedForRemoval = false; // Reset the marker upon successful archival
 
                     // Safeguard: physically rendered on screen despite not being in friends
                     if (visiblePlayers.TryGetValue((existing.Name, existing.HomeWorldId), out var presentPlayer)) {

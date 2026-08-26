@@ -8,6 +8,7 @@ public class ThemePalette {
     public Vector4 TextBusy { get; set; }
     public Vector4 TextArchived { get; set; }
     public Vector4 TextDeleted { get; set; }
+    public Vector4 TextMarkedForRemoval { get; set; }
 
     public Vector4 IconDeletedTint { get; set; }
     public Vector4 IconDefaultTint { get; set; }

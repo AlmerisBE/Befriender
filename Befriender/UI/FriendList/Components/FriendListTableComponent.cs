@@ -57,7 +57,10 @@ public class FriendListTableComponent {
                 bool isAvailable = this.gameDataService.IsFriendAvailable(friend.OnlineStateMask);
                 Vector4 rowColor;
 
-                if (friend.IsCharacterDeleted) {
+                if (friend.IsMarkedForRemoval) {
+                    rowColor = palette.TextMarkedForRemoval;
+                }
+                else if (friend.IsCharacterDeleted) {
                     rowColor = palette.TextDeleted;
                 }
                 else if (friend.IsArchived) {

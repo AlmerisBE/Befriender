@@ -72,5 +72,6 @@
   "Action_RemoveFriend": "Freund entfernen",
   "Action_Confirm": "Bestätigen",
   "Action_Cancel": "Abbrechen",
-  "Modal_RemoveConfirmText": "Bist du sicher, dass du {0} von deiner Freundesliste entfernen möchtest?"
+  "Action_UnmarkForRemoval": "Entfernen abbrechen",
+  "Modal_RemoveConfirmText": "Möchtest du {0} zum manuellen Entfernen von deiner Freundesliste markieren?"
 }

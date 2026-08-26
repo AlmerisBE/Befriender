@@ -72,5 +72,6 @@
   "Action_RemoveFriend": "フレンドを解除",
   "Action_Confirm": "確認",
   "Action_Cancel": "キャンセル",
-  "Modal_RemoveConfirmText": "本当に {0} をフレンドリストから外しますか？"
+  "Action_UnmarkForRemoval": "削除をキャンセル",
+  "Modal_RemoveConfirmText": "フレンドリストから手動で削除するために {0} にマークを付けますか？"
 }

@@ -71,6 +71,6 @@
   "Action_DeleteData": "Supprimer définitivement",
   "Action_RemoveFriend": "Retirer de la liste d'amis",
   "Action_Confirm": "Confirmer",
-  "Action_Cancel": "Annuler",
-  "Modal_RemoveConfirmText": "Voulez-vous vraiment retirer {0} de votre liste d'amis ?"
+  "Action_UnmarkForRemoval": "Annuler le retrait",
+  "Modal_RemoveConfirmText": "Voulez-vous marquer {0} pour être retiré manuellement de votre liste d'amis ?"
 }
