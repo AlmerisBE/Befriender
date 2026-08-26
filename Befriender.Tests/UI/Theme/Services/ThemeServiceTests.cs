@@ -5,10 +5,20 @@ using Befriender.Core.Configuration.Models;
 using Befriender.UI.Theme.Services;
 using Dalamud.Plugin;
 using NSubstitute;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using Xunit;
 
-public class ThemeServiceTests {
+public class ThemeServiceTests : IDisposable {
+    private List<string> createdDirectories = new();
+
+    private string GetUniqueTempPath() {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(path);
+        this.createdDirectories.Add(path);
+        return path;
+    }
 
     [Fact]
     public void ThemeService_Initialization_GeneratesAndLoadsThemesFromDisk() {
@@ -17,7 +27,7 @@ public class ThemeServiceTests {
         mockConfigService.GetConfig().Returns(new PluginConfiguration { SelectedThemeName = "Light" });
 
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var fakePath = Path.GetTempPath();
+        var fakePath = this.GetUniqueTempPath(); // Utilisation d'un chemin unique
         mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
 
         // Act
@@ -38,7 +48,8 @@ public class ThemeServiceTests {
         mockConfigService.GetConfig().Returns(config);
 
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(Path.GetTempPath()));
+        var fakePath = this.GetUniqueTempPath(); // Utilisation d'un chemin unique
+        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
 
         var service = new ThemeService(mockConfigService, mockPluginInterface);
 
@@ -49,5 +60,19 @@ public class ThemeServiceTests {
         Assert.Equal("Light", service.CurrentThemeName);
         Assert.Equal("Light", config.SelectedThemeName);
         mockConfigService.Received(1).Save();
+    }
+
+    public void Dispose() {
+        // Nettoyage des dossiers temporaires après l'exécution des tests
+        foreach (var dir in this.createdDirectories) {
+            if (Directory.Exists(dir)) {
+                try {
+                    Directory.Delete(dir, true);
+                }
+                catch {
+                    // Ignore de potentielles erreurs de nettoyage dans l'environnement de test
+                }
+            }
+        }
     }
 }
