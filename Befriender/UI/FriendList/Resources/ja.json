@@ -19,6 +19,8 @@
   "Profile_DeletedCharacter": "(削除されたキャラクター)",
   "Profile_Job": "クラス/ジョブ",
   "Profile_World": "ワールド",
+  "Profile_HomeWorld": "ホームワールド",
+  "Profile_ClientLanguages": "クライアント言語",
   "Profile_FC": "フリーカンパニー",
   "Profile_Languages": "言語",
   "Profile_MetadataHeader": "--- メタデータ ---",

@@ -19,6 +19,8 @@
   "Profile_DeletedCharacter": "(Gelöschter Charakter)",
   "Profile_Job": "Job",
   "Profile_World": "Welt",
+  "Profile_HomeWorld": "Stammwelt",
+  "Profile_ClientLanguages": "Client-Sprachen",
   "Profile_FC": "Freie Gesellschaft",
   "Profile_Languages": "Sprachen",
   "Profile_MetadataHeader": "--- Metadaten ---",
