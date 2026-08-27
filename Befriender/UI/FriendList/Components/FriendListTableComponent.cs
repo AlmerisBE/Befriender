@@ -127,7 +127,8 @@ public class FriendListTableComponent {
                 }
                 else {
                     ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
-                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask);
+                    // Ajout de friend.LocationId à la fin des arguments
+                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, friend.CurrentWorldId, friend.HomeWorldId, friend.LocationId);
                     var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
                     var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 
@@ -259,13 +260,13 @@ public class FriendListTableComponent {
                     ImGui.Text(string.Empty);
                 }
 
+                // --- COLONNE : LIEU ---
                 ImGui.TableNextColumn();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
-                var locationName = this.gameDataService.GetLocationName(friend.LocationId);
 
-                if ((string.IsNullOrEmpty(locationName) || locationName == friend.LocationId.ToString()) && friend.IsOnline) {
-                    uint displayWorld = friend.CurrentWorldId > 0 ? friend.CurrentWorldId : friend.HomeWorldId;
-                    locationName = this.gameDataService.GetWorldName(displayWorld);
+                string locationName = string.Empty;
+                if (friend.IsOnline) {
+                    locationName = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
                 }
 
                 ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName);

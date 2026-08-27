@@ -79,5 +79,9 @@
   "Config_Hotkey": "キー",
   "Tooltip_Tracked": "ログイン通知が有効です",
   "Action_TrackFriend": "ログイン通知を有効にする",
-  "Action_UntrackFriend": "ログイン通知を無効にする"
+  "Action_UntrackFriend": "ログイン通知を無効にする",
+  "Status_Offline": "オフライン",
+  "Status_Online": "オンライン",
+  "Status_CrossWorld": "他ワールドに遊びに来ています",
+  "Status_Unknown": "不明"
 }

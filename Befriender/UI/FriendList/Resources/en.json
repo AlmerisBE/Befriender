@@ -79,5 +79,9 @@
   "Config_Hotkey": "Key",
   "Tooltip_Tracked": "Login alerts enabled",
   "Action_TrackFriend": "Enable login alerts",
-  "Action_UntrackFriend": "Disable login alerts"
+  "Action_UntrackFriend": "Disable login alerts",
+  "Status_Offline": "Offline",
+  "Status_Online": "Online",
+  "Status_CrossWorld": "Cross-world Visitor",
+  "Status_Unknown": "Unknown"
 }

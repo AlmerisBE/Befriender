@@ -79,5 +79,9 @@
   "Config_Hotkey": "Taste",
   "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
   "Action_TrackFriend": "Anmeldebenachrichtigungen aktivieren",
-  "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren"
+  "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren",
+  "Status_Offline": "Offline",
+  "Status_Online": "Online",
+  "Status_CrossWorld": "Weltenreise",
+  "Status_Unknown": "Unbekannt"
 }

@@ -66,7 +66,6 @@ public class FriendRepository : IFriendRepository {
             foreach (var scanned in scannedList) {
                 if (visiblePlayers.TryGetValue((scanned.Name, scanned.HomeWorldId), out var presentPlayer)) {
                     scanned.IsOnline = true;
-                    scanned.LocationId = currentTerritory;
                     scanned.JobId = (byte)presentPlayer.ClassJob.RowId;
                 }
 
@@ -96,14 +95,11 @@ public class FriendRepository : IFriendRepository {
                     if (scanned.IsOnline) {
                         existing.LastSeenAt = now;
                         existing.OnlineStateMask = scanned.OnlineStateMask;
+                        existing.LocationId = scanned.LocationId;
                     }
 
                     if (scanned.JobId > 0) {
                         existing.JobId = scanned.JobId;
-                    }
-
-                    if (scanned.LocationId > 0) {
-                        existing.LocationId = scanned.LocationId;
                     }
 
                     if (!string.IsNullOrEmpty(scanned.FcTag)) {
@@ -126,15 +122,13 @@ public class FriendRepository : IFriendRepository {
             var scannedIds = scannedList.Select(f => f.ContentId).ToHashSet();
             foreach (var existing in repositoryDict.Values) {
                 if (!scannedIds.Contains(existing.ContentId)) {
-                    // Character removed manually from vanilla list -> Auto-Archive (US-3.3)
                     existing.IsArchived = true;
                     existing.IsOnline = false;
-                    existing.IsMarkedForRemoval = false; // Reset the marker upon successful archival
+                    existing.IsMarkedForRemoval = false;
 
-                    // Safeguard: physically rendered on screen despite not being in friends
                     if (visiblePlayers.TryGetValue((existing.Name, existing.HomeWorldId), out var presentPlayer)) {
                         existing.IsOnline = true;
-                        existing.LocationId = currentTerritory;
+                        // Retrait de existing.LocationId = currentTerritory;
                         existing.JobId = (byte)presentPlayer.ClassJob.RowId;
                         existing.LastSeenAt = now;
                     }

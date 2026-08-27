@@ -6,7 +6,6 @@ using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System;
 using System.Collections.Generic;
 
@@ -31,9 +30,10 @@ public class FriendStatusBarComponent {
         // Native Friend List Quick Access Button
         if (ImGuiComponents.IconButton(FontAwesomeIcon.AddressBook)) {
             unsafe {
-                var agent = AgentFriendlist.Instance();
-                if (agent != null) {
-                    agent->Show();
+                // Execute main command 38, which officially opens the Social window to the Friend List tab
+                var uiModule = FFXIVClientStructs.FFXIV.Client.UI.UIModule.Instance();
+                if (uiModule != null) {
+                    uiModule->ExecuteMainCommand(38);
                 }
             }
         }

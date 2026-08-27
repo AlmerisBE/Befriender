@@ -82,8 +82,54 @@ public class FriendProfilePanelComponent {
                 ImGui.Spacing();
             }
 
-            var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : "None";
-            ImGui.Text($"{this.loc.Translate("Profile_Job")}: {jobAbbr}");
+            ImGui.Spacing();
+
+            // --- Statut de connexion ---
+            ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
+            ImGui.SameLine();
+            ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
+
+            // Ajout de friend.LocationId ici aussi
+            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, friend.CurrentWorldId, friend.HomeWorldId, friend.LocationId);
+
+            var statusIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
+            var statusIconWrap = this.textureProvider.GetFromGameIcon(statusIconLookup).GetWrapOrDefault();
+
+            if (statusIconWrap != null) {
+                float iconSize = ImGui.GetTextLineHeight();
+                float currentY = ImGui.GetCursorPosY();
+                ImGui.Image(statusIconWrap.Handle, new Vector2(iconSize, iconSize));
+                ImGui.SameLine(0, 4f);
+                ImGui.SetCursorPosY(currentY);
+            }
+            ImGui.Text(statusInfo.Name);
+
+            // --- Job et Icône ---
+            ImGui.Text($"{this.loc.Translate("Profile_Job")}: ");
+            ImGui.SameLine();
+            var jobIconId = this.gameDataService.GetJobIconId(friend.JobId);
+            if (jobIconId > 0) {
+                var jobIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = jobIconId };
+                var jobIconWrap = this.textureProvider.GetFromGameIcon(jobIconLookup).GetWrapOrDefault();
+
+                if (jobIconWrap != null) {
+                    float iconSize = ImGui.GetTextLineHeight();
+                    float currentY = ImGui.GetCursorPosY();
+                    ImGui.Image(jobIconWrap.Handle, new Vector2(iconSize, iconSize));
+                    ImGui.SameLine(0, 4f);
+                    ImGui.SetCursorPosY(currentY);
+                }
+            }
+            ImGui.Text(friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : this.loc.Translate("Profile_None"));
+
+            // --- Emplacement ---
+            string currentLocation = friend.IsOnline ? this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask) : this.loc.Translate("Profile_Unknown");
+            if (!friend.IsOnline && friend.LocationId > 0) {
+                currentLocation = this.gameDataService.GetLocationName(friend.LocationId);
+            }
+            ImGui.Text($"{this.loc.Translate("Column_Location")}: {currentLocation}");
+
+            // --- Monde et Compagnie Libre ---
             ImGui.Text($"{this.loc.Translate("Profile_World")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
 
             if (!string.IsNullOrEmpty(friend.FcTag)) {

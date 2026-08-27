@@ -78,5 +78,9 @@
   "Config_Hotkey": "Touche",
   "Tooltip_Tracked": "Alertes de connexion activées",
   "Action_TrackFriend": "Activer les alertes de connexion",
-  "Action_UntrackFriend": "Désactiver les alertes de connexion"
+  "Action_UntrackFriend": "Désactiver les alertes de connexion",
+  "Status_Offline": "Hors ligne",
+  "Status_Online": "En ligne",
+  "Status_CrossWorld": "En visite inter-monde",
+  "Status_Unknown": "Inconnu"
 }
