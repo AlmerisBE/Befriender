@@ -79,5 +79,7 @@
   "Config_Hotkey": "Taste",
   "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
   "Action_TrackFriend": "Anmeldebenachrichtigungen aktivieren",
-  "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren"
+  "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren",
+  "Column_AddedDate": "Hinzugefügt am",
+  "Column_ArchivedDate": "Archiviert am"
 }

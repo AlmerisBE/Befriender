@@ -128,6 +128,7 @@ public class FriendRepository : IFriendRepository {
                 if (!scannedIds.Contains(existing.ContentId)) {
                     // Character removed manually from vanilla list -> Auto-Archive (US-3.3)
                     existing.IsArchived = true;
+                    existing.ArchivedAt = now;
                     existing.IsOnline = false;
                     existing.IsMarkedForRemoval = false; // Reset the marker upon successful archival
 

@@ -4,6 +4,7 @@ using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Dalamud.Interface;
+using System;
 
 public class ArchiveFriendAction : IFriendAction {
     private IFriendRepository friendRepository;
@@ -21,6 +22,7 @@ public class ArchiveFriendAction : IFriendAction {
 
     public void Execute(FriendProfile friend) {
         friend.IsArchived = true;
+        friend.ArchivedAt = DateTime.Now;
         this.friendRepository.Save();
     }
 }

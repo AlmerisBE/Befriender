@@ -79,5 +79,7 @@
   "Config_Hotkey": "Key",
   "Tooltip_Tracked": "Login alerts enabled",
   "Action_TrackFriend": "Enable login alerts",
-  "Action_UntrackFriend": "Disable login alerts"
+  "Action_UntrackFriend": "Disable login alerts",
+  "Column_AddedDate": "Added On",
+  "Column_ArchivedDate": "Archived On"
 }

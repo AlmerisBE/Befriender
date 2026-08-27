@@ -36,7 +36,7 @@ public class ArchiveRestoreActionTests {
     }
 
     [Fact]
-    public void ArchiveFriendAction_Execute_SetsArchivedAndSaves() {
+    public void ArchiveFriendAction_Execute_SetsArchivedAndDateAndSaves() {
         var mockRepo = Substitute.For<IFriendRepository>();
         var action = new ArchiveFriendAction(mockRepo);
         var friend = new FriendProfile { IsArchived = false };
@@ -44,6 +44,7 @@ public class ArchiveRestoreActionTests {
         action.Execute(friend);
 
         Assert.True(friend.IsArchived);
+        Assert.True(friend.ArchivedAt > DateTime.MinValue);
         mockRepo.Received(1).Save();
     }
 
