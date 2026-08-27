@@ -78,5 +78,7 @@
   "Config_Hotkey": "Touche",
   "Tooltip_Tracked": "Alertes de connexion activées",
   "Action_TrackFriend": "Activer les alertes de connexion",
-  "Action_UntrackFriend": "Désactiver les alertes de connexion"
+  "Action_UntrackFriend": "Désactiver les alertes de connexion",
+  "Column_AddedDate": "Ajouté le",
+  "Column_ArchivedDate": "Archivé le"
 }

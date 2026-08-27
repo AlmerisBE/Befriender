@@ -25,6 +25,7 @@ public class FriendListUIFeature : IFeatureModule {
 
         // Register UI Components
         services.AddSingleton<FriendListTableComponent>();
+        services.AddSingleton<ArchiveTableComponent>();
         services.AddSingleton<FriendProfilePanelComponent>();
         services.AddSingleton<FriendStatusBarComponent>();
 

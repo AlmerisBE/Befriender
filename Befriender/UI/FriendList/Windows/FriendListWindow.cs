@@ -1,5 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Windows;
 
+using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
 using Befriender.UI.FriendList.Contracts;
@@ -18,17 +19,22 @@ public class FriendListWindow : Window, IDisposable {
     private IThemeService themeService;
     private IHotkeyService hotkeyService;
     private IWindowNavigationService navService;
+    private IConfigurationService configService;
 
     private string? pendingTabSelection;
-    private bool isProfilePanelOpen = false;
+    private bool isProfilePanelOpen;
     private const float ProfilePanelWidth = 300f;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;
         this.hotkeyService = hotkeyService;
         this.navService = navService;
+        this.configService = configService;
+
+        // Initialize state from persisted configuration to prevent ImGui size inflation on reload
+        this.isProfilePanelOpen = this.configService.GetConfig().IsProfilePanelOpen;
 
         this.hotkeyService.OnHotkeyPressed += this.Toggle;
         this.navService.OnWindowToggleRequested += this.Toggle;
@@ -85,7 +91,6 @@ public class FriendListWindow : Window, IDisposable {
     public override void Update() {
         if (this.syncService.IsWindowOpen != this.IsOpen) {
             this.syncService.IsWindowOpen = this.IsOpen;
-
             if (this.IsOpen) {
                 this.syncService.RequestServerRefresh();
             }

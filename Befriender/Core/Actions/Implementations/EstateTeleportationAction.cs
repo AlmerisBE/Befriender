@@ -10,7 +10,7 @@ public unsafe class EstateTeleportationAction : IFriendAction {
     public FontAwesomeIcon Icon => FontAwesomeIcon.HouseUser;
 
     public bool CanExecute(FriendProfile friend) {
-        return !friend.IsCharacterDeleted;
+        return !friend.IsArchived && !friend.IsCharacterDeleted;
     }
 
     public void Execute(FriendProfile friend) {

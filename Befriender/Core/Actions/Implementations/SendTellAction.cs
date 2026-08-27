@@ -18,7 +18,7 @@ public unsafe class SendTellAction : IFriendAction {
     }
 
     public bool CanExecute(FriendProfile friend) {
-        return friend.IsOnline && !friend.IsCharacterDeleted;
+        return !friend.IsCharacterDeleted;
     }
 
     public void Execute(FriendProfile friend) {

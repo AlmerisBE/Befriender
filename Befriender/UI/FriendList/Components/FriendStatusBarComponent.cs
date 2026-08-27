@@ -33,7 +33,7 @@ public class FriendStatusBarComponent {
             unsafe {
                 var uiModule = UIModule.Instance();
                 if (uiModule != null) {
-                    uiModule->ExecuteMainCommand(24);
+                    uiModule->ExecuteMainCommand(13);
                 }
             }
         }
