@@ -21,7 +21,6 @@ public class FriendListWindow : Window, IDisposable {
 
     private string? pendingTabSelection;
     private bool isProfilePanelOpen = false;
-    private float pendingWidthDelta = 0f;
     private const float ProfilePanelWidth = 300f;
 
     public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
@@ -32,8 +31,8 @@ public class FriendListWindow : Window, IDisposable {
         this.navService = navService;
 
         this.hotkeyService.OnHotkeyPressed += this.Toggle;
+        this.navService.OnWindowToggleRequested += this.Toggle;
         this.navService.OnTabRequested += this.HandleTabRequest;
-        this.navService.OnProfilePanelToggled += this.HandleProfilePanelToggle;
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(500, 600),
@@ -50,42 +49,6 @@ public class FriendListWindow : Window, IDisposable {
     private void HandleTabRequest(string tabInternalName) {
         this.pendingTabSelection = tabInternalName;
         this.IsOpen = true;
-    }
-
-    private void HandleProfilePanelToggle(bool open) {
-        if (this.isProfilePanelOpen == open) {
-            return;
-        }
-
-        this.isProfilePanelOpen = open;
-        this.pendingWidthDelta = open ? ProfilePanelWidth : -ProfilePanelWidth;
-    }
-
-    public override void Draw() {
-        if (this.pendingWidthDelta != 0f) {
-            var currentSize = ImGui.GetWindowSize();
-            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
-            this.pendingWidthDelta = 0f;
-        }
-
-        if (ImGui.BeginTabBar("MainTabBar")) {
-            foreach (var tab in this.tabs) {
-                var flags = ImGuiTabItemFlags.None;
-
-                if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
-                    flags |= ImGuiTabItemFlags.SetSelected;
-                }
-
-                bool tabVisible = true;
-                if (ImGui.BeginTabItem(tab.Name, ref tabVisible, flags)) {
-                    tab.Draw();
-                    ImGui.EndTabItem();
-                }
-            }
-
-            this.pendingTabSelection = null;
-            ImGui.EndTabBar();
-        }
     }
 
     public override void PreDraw() {
@@ -116,7 +79,6 @@ public class FriendListWindow : Window, IDisposable {
     }
 
     public override void PostDraw() {
-        // Popping the 22 pushed structural colors
         ImGui.PopStyleColor(22);
     }
 
@@ -130,9 +92,40 @@ public class FriendListWindow : Window, IDisposable {
         }
     }
 
+    public override void Draw() {
+        bool activeTabWantsPanel = false;
+
+        if (ImGui.BeginTabBar("MainTabBar")) {
+            foreach (var tab in this.tabs) {
+                var flags = ImGuiTabItemFlags.None;
+
+                if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
+                    flags |= ImGuiTabItemFlags.SetSelected;
+                }
+
+                if (ImGui.BeginTabItem(tab.Name, flags)) {
+                    tab.Draw();
+                    activeTabWantsPanel = tab.IsProfilePanelOpen;
+                    ImGui.EndTabItem();
+                }
+            }
+
+            this.pendingTabSelection = null;
+            ImGui.EndTabBar();
+        }
+
+        // Adjust window size reactively if the current tab's panel state differs from the known state
+        if (this.isProfilePanelOpen != activeTabWantsPanel) {
+            float delta = activeTabWantsPanel ? ProfilePanelWidth : -ProfilePanelWidth;
+            var currentSize = ImGui.GetWindowSize();
+            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + delta), currentSize.Y));
+            this.isProfilePanelOpen = activeTabWantsPanel;
+        }
+    }
+
     public void Dispose() {
         this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        this.navService.OnWindowToggleRequested -= this.Toggle;
         this.navService.OnTabRequested -= this.HandleTabRequest;
-        this.navService.OnProfilePanelToggled -= this.HandleProfilePanelToggle;
     }
 }

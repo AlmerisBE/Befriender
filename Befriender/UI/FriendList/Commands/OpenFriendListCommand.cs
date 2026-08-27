@@ -19,7 +19,7 @@ public class OpenFriendListCommand : ICommand {
             this.navService.OpenTab("Tab_Config");
         }
         else {
-            this.navService.OpenTab("Tab_List");
+            this.navService.ToggleWindow();
         }
     }
 }

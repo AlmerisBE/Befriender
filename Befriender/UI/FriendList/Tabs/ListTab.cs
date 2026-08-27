@@ -5,7 +5,6 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Components;
-using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
@@ -19,7 +18,6 @@ public class ListTab : ITab, IDisposable {
     private ILocalizationService loc;
     private IConfigurationService configurationService;
     private RemoveConfirmationModalComponent removeConfirmationModal;
-    private IWindowNavigationService navService;
 
     private bool showOnlineOnly = false;
     private bool forceRefresh = false;
@@ -28,8 +26,9 @@ public class ListTab : ITab, IDisposable {
 
     public string InternalName => "Tab_List";
     public string Name => this.loc.Translate("Tab_List");
+    public bool IsProfilePanelOpen => this.selectedFriend != null;
 
-    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService, RemoveConfirmationModalComponent removeConfirmationModal, IWindowNavigationService navService) {
+    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService, RemoveConfirmationModalComponent removeConfirmationModal) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
@@ -37,7 +36,6 @@ public class ListTab : ITab, IDisposable {
         this.loc = loc;
         this.configurationService = configurationService;
         this.removeConfirmationModal = removeConfirmationModal;
-        this.navService = navService;
 
         this.friendRepository.CacheCleared += this.OnCacheCleared;
     }
@@ -45,7 +43,6 @@ public class ListTab : ITab, IDisposable {
     private void OnCacheCleared() {
         if (this.selectedFriend != null) {
             this.selectedFriend = null;
-            this.navService.ToggleProfilePanel(false);
 
             var config = this.configurationService.GetConfig();
             config.IsProfilePanelOpen = false;
@@ -67,7 +64,6 @@ public class ListTab : ITab, IDisposable {
             this.configurationService.Save();
         }
 
-        this.navService.ToggleProfilePanel(shouldOpen);
         this.selectedFriend = friend;
     }
 
@@ -93,8 +89,7 @@ public class ListTab : ITab, IDisposable {
 
         ImGui.Separator();
 
-        bool refreshRequested = this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly);
-        if (refreshRequested) {
+        if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
             this.forceRefresh = true;
         }
 

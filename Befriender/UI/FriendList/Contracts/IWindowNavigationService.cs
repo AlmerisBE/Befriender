@@ -4,8 +4,8 @@ using System;
 
 public interface IWindowNavigationService {
     event Action<string>? OnTabRequested;
-    event Action<bool>? OnProfilePanelToggled;
+    event Action? OnWindowToggleRequested;
 
     void OpenTab(string tabInternalName);
-    void ToggleProfilePanel(bool open);
+    void ToggleWindow();
 }

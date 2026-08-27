@@ -5,13 +5,13 @@ using System;
 
 public class WindowNavigationService : IWindowNavigationService {
     public event Action<string>? OnTabRequested;
-    public event Action<bool>? OnProfilePanelToggled;
+    public event Action? OnWindowToggleRequested;
 
     public void OpenTab(string tabInternalName) {
         this.OnTabRequested?.Invoke(tabInternalName);
     }
 
-    public void ToggleProfilePanel(bool open) {
-        this.OnProfilePanelToggled?.Invoke(open);
+    public void ToggleWindow() {
+        this.OnWindowToggleRequested?.Invoke();
     }
 }

@@ -16,13 +16,13 @@ public class WindowNavigationServiceTests {
     }
 
     [Fact]
-    public void ToggleProfilePanel_FiresOnProfilePanelToggledEvent() {
+    public void ToggleWindow_FiresOnWindowToggleRequestedEvent() {
         var service = new WindowNavigationService();
-        bool? toggledState = null;
-        service.OnProfilePanelToggled += state => toggledState = state;
+        bool eventFired = false;
+        service.OnWindowToggleRequested += () => eventFired = true;
 
-        service.ToggleProfilePanel(true);
+        service.ToggleWindow();
 
-        Assert.True(toggledState);
+        Assert.True(eventFired);
     }
 }

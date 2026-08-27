@@ -3,5 +3,6 @@
 public interface ITab {
     string InternalName { get; }
     string Name { get; }
+    bool IsProfilePanelOpen { get; }
     void Draw();
 }

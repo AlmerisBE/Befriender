@@ -5,7 +5,6 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Components;
-using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
@@ -18,7 +17,6 @@ public class ArchiveTab : ITab, IDisposable {
     private FriendStatusBarComponent statusBarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
-    private IWindowNavigationService navService;
 
     private bool showOnlineOnly = false;
     private bool forceRefresh = false;
@@ -27,24 +25,21 @@ public class ArchiveTab : ITab, IDisposable {
 
     public string InternalName => "Tab_Archives";
     public string Name => this.loc.Translate("Tab_Archives");
+    public bool IsProfilePanelOpen => this.selectedFriend != null;
 
-    public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService, IWindowNavigationService navService) {
+    public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
         this.statusBarComponent = statusBarComponent;
         this.loc = loc;
         this.configurationService = configurationService;
-        this.navService = navService;
 
         this.friendRepository.CacheCleared += this.OnCacheCleared;
     }
 
     private void OnCacheCleared() {
-        if (this.selectedFriend != null) {
-            this.selectedFriend = null;
-            this.navService.ToggleProfilePanel(false);
-        }
+        this.selectedFriend = null;
     }
 
     private void ToggleProfilePanel(FriendProfile? friend) {
@@ -52,7 +47,6 @@ public class ArchiveTab : ITab, IDisposable {
             friend = null;
         }
 
-        this.navService.ToggleProfilePanel(friend != null);
         this.selectedFriend = friend;
     }
 
