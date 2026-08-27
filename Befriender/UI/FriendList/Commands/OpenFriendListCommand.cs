@@ -1,19 +1,25 @@
 ﻿namespace Befriender.UI.FriendList.Commands;
 
 using Befriender.Core.Command.Contracts;
-using Befriender.UI.FriendList.Windows;
+using Befriender.UI.FriendList.Contracts;
+using System;
 
 public class OpenFriendListCommand : ICommand {
-    private FriendListWindow friendListWindow;
+    private IWindowNavigationService navService;
 
     public string CommandTrigger => string.Empty;
     public string Description => "Opens the Befriender Friend List UI.";
 
-    public OpenFriendListCommand(FriendListWindow friendListWindow) {
-        this.friendListWindow = friendListWindow;
+    public OpenFriendListCommand(IWindowNavigationService navService) {
+        this.navService = navService;
     }
 
     public void Execute(string arguments) {
-        this.friendListWindow.Toggle();
+        if (arguments.Equals("config", StringComparison.OrdinalIgnoreCase)) {
+            this.navService.OpenTab("Tab_Config");
+        }
+        else {
+            this.navService.OpenTab("Tab_List");
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
+using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
@@ -16,14 +17,23 @@ public class FriendListWindow : Window, IDisposable {
     private IFriendSyncService syncService;
     private IThemeService themeService;
     private IHotkeyService hotkeyService;
+    private IWindowNavigationService navService;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, Befriender.Core.Input.Contracts.IHotkeyService hotkeyService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    private string? pendingTabSelection;
+    private bool isProfilePanelOpen = false;
+    private float pendingWidthDelta = 0f;
+    private const float ProfilePanelWidth = 300f;
+
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;
         this.hotkeyService = hotkeyService;
+        this.navService = navService;
 
         this.hotkeyService.OnHotkeyPressed += this.Toggle;
+        this.navService.OnTabRequested += this.HandleTabRequest;
+        this.navService.OnProfilePanelToggled += this.HandleProfilePanelToggle;
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(500, 600),
@@ -35,6 +45,47 @@ public class FriendListWindow : Window, IDisposable {
             IconOffset = new Vector2(1, 1),
             Click = (mouseButton) => this.syncService.RequestServerRefresh()
         });
+    }
+
+    private void HandleTabRequest(string tabInternalName) {
+        this.pendingTabSelection = tabInternalName;
+        this.IsOpen = true;
+    }
+
+    private void HandleProfilePanelToggle(bool open) {
+        if (this.isProfilePanelOpen == open) {
+            return;
+        }
+
+        this.isProfilePanelOpen = open;
+        this.pendingWidthDelta = open ? ProfilePanelWidth : -ProfilePanelWidth;
+    }
+
+    public override void Draw() {
+        if (this.pendingWidthDelta != 0f) {
+            var currentSize = ImGui.GetWindowSize();
+            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
+            this.pendingWidthDelta = 0f;
+        }
+
+        if (ImGui.BeginTabBar("MainTabBar")) {
+            foreach (var tab in this.tabs) {
+                var flags = ImGuiTabItemFlags.None;
+
+                if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
+                    flags |= ImGuiTabItemFlags.SetSelected;
+                }
+
+                bool tabVisible = true;
+                if (ImGui.BeginTabItem(tab.Name, ref tabVisible, flags)) {
+                    tab.Draw();
+                    ImGui.EndTabItem();
+                }
+            }
+
+            this.pendingTabSelection = null;
+            ImGui.EndTabBar();
+        }
     }
 
     public override void PreDraw() {
@@ -79,19 +130,9 @@ public class FriendListWindow : Window, IDisposable {
         }
     }
 
-    public override void Draw() {
-        if (ImGui.BeginTabBar("MainTabBar")) {
-            foreach (var tab in this.tabs) {
-                if (ImGui.BeginTabItem(tab.Name)) {
-                    tab.Draw();
-                    ImGui.EndTabItem();
-                }
-            }
-            ImGui.EndTabBar();
-        }
-    }
-
     public void Dispose() {
         this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        this.navService.OnTabRequested -= this.HandleTabRequest;
+        this.navService.OnProfilePanelToggled -= this.HandleProfilePanelToggle;
     }
 }

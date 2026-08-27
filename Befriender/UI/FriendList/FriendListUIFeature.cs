@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 public class FriendListUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
+        services.AddSingleton<IWindowNavigationService, WindowNavigationService>();
         services.AddSingleton<IFriendDisplayService, FriendDisplayService>();
         services.AddSingleton<VanillaFriendListModifierService>();
 

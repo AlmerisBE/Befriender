@@ -5,11 +5,11 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Components;
+using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Linq;
-using System.Numerics;
 
 public class ArchiveTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
@@ -18,23 +18,24 @@ public class ArchiveTab : ITab, IDisposable {
     private FriendStatusBarComponent statusBarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
+    private IWindowNavigationService navService;
 
     private bool showOnlineOnly = false;
     private bool forceRefresh = false;
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
-    private float pendingWidthDelta = 0f;
-    private bool isFirstFrame = true;
 
+    public string InternalName => "Tab_Archives";
     public string Name => this.loc.Translate("Tab_Archives");
 
-    public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
+    public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService, IWindowNavigationService navService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
         this.statusBarComponent = statusBarComponent;
         this.loc = loc;
         this.configurationService = configurationService;
+        this.navService = navService;
 
         this.friendRepository.CacheCleared += this.OnCacheCleared;
     }
@@ -42,7 +43,7 @@ public class ArchiveTab : ITab, IDisposable {
     private void OnCacheCleared() {
         if (this.selectedFriend != null) {
             this.selectedFriend = null;
-            this.pendingWidthDelta = -PanelWidth;
+            this.navService.ToggleProfilePanel(false);
         }
     }
 
@@ -51,25 +52,12 @@ public class ArchiveTab : ITab, IDisposable {
             friend = null;
         }
 
-        if (this.selectedFriend == null && friend != null) {
-            this.pendingWidthDelta = PanelWidth;
-        }
-        else if (this.selectedFriend != null && friend == null) {
-            this.pendingWidthDelta = -PanelWidth;
-        }
-
+        this.navService.ToggleProfilePanel(friend != null);
         this.selectedFriend = friend;
     }
 
     public void Draw() {
-        if (this.isFirstFrame) {
-            this.isFirstFrame = false;
-            this.pendingWidthDelta = this.configurationService.GetConfig().IsProfilePanelOpen ? -PanelWidth : 0f;
-        }
-
         var rawFriends = this.friendRepository.GetFriends();
-
-        // The archive tab is strictly for friends removed from the vanilla list
         var archivedFriends = rawFriends.Where(f => f.IsArchived).ToList();
 
         if (archivedFriends.Count == 0) {
@@ -92,12 +80,6 @@ public class ArchiveTab : ITab, IDisposable {
 
         if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
             this.forceRefresh = true;
-        }
-
-        if (this.pendingWidthDelta != 0f) {
-            var currentSize = ImGui.GetWindowSize();
-            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
-            this.pendingWidthDelta = 0f;
         }
     }
 
