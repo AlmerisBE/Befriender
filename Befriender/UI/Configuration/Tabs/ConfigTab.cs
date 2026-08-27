@@ -16,6 +16,8 @@ public class ConfigTab : ITab {
     private ILocalizationService loc;
     private IThemeService themeService;
 
+    public string InternalName => "Tab_Config";
+    public bool IsProfilePanelOpen => false;
     public string Name => this.loc.Translate("Tab_Config");
 
     public ConfigTab(IConfigurationService configurationService, ILocalizationService loc, IThemeService themeService) {

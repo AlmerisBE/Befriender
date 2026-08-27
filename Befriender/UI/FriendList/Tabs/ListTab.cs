@@ -9,7 +9,6 @@ using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Linq;
-using System.Numerics;
 
 public class ListTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
@@ -18,16 +17,16 @@ public class ListTab : ITab, IDisposable {
     private FriendStatusBarComponent statusBarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
+    private RemoveConfirmationModalComponent removeConfirmationModal;
 
     private bool showOnlineOnly = false;
     private bool forceRefresh = false;
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
-    private float pendingWidthDelta = 0f;
-    private bool isFirstFrame = true;
-    private RemoveConfirmationModalComponent removeConfirmationModal;
 
+    public string InternalName => "Tab_List";
     public string Name => this.loc.Translate("Tab_List");
+    public bool IsProfilePanelOpen => this.selectedFriend != null;
 
     public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService, RemoveConfirmationModalComponent removeConfirmationModal) {
         this.friendRepository = friendRepository;
@@ -44,7 +43,6 @@ public class ListTab : ITab, IDisposable {
     private void OnCacheCleared() {
         if (this.selectedFriend != null) {
             this.selectedFriend = null;
-            this.pendingWidthDelta = -PanelWidth;
 
             var config = this.configurationService.GetConfig();
             config.IsProfilePanelOpen = false;
@@ -59,14 +57,10 @@ public class ListTab : ITab, IDisposable {
             friend = null;
         }
 
-        if (this.selectedFriend == null && friend != null) {
-            this.pendingWidthDelta = PanelWidth;
-            config.IsProfilePanelOpen = true;
-            this.configurationService.Save();
-        }
-        else if (this.selectedFriend != null && friend == null) {
-            this.pendingWidthDelta = -PanelWidth;
-            config.IsProfilePanelOpen = false;
+        bool shouldOpen = friend != null;
+
+        if (config.IsProfilePanelOpen != shouldOpen) {
+            config.IsProfilePanelOpen = shouldOpen;
             this.configurationService.Save();
         }
 
@@ -74,21 +68,7 @@ public class ListTab : ITab, IDisposable {
     }
 
     public void Draw() {
-        if (this.isFirstFrame) {
-            this.isFirstFrame = false;
-            var config = this.configurationService.GetConfig();
-
-            if (config.IsProfilePanelOpen) {
-                this.pendingWidthDelta = -PanelWidth;
-                config.IsProfilePanelOpen = false;
-                this.configurationService.Save();
-            }
-        }
-
         var rawFriends = this.friendRepository.GetFriends();
-
-        // We only hide archived friends from the main list.
-        // Deleted characters that are still taking a vanilla slot MUST be shown.
         var activeFriends = rawFriends.Where(f => !f.IsArchived).ToList();
 
         if (activeFriends.Count == 0) {
@@ -109,15 +89,8 @@ public class ListTab : ITab, IDisposable {
 
         ImGui.Separator();
 
-        bool refreshRequested = this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly);
-        if (refreshRequested) {
+        if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
             this.forceRefresh = true;
-        }
-
-        if (this.pendingWidthDelta != 0f) {
-            var currentSize = ImGui.GetWindowSize();
-            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
-            this.pendingWidthDelta = 0f;
         }
 
         this.removeConfirmationModal.Draw();

@@ -5,8 +5,8 @@ using Befriender.Core.Framework;
 using Befriender.Core.Friends.Services;
 using Befriender.Core.Input.Services;
 using Befriender.Core.Notifications.Services;
+using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.FriendList.Services;
-using Befriender.UI.FriendList.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -71,9 +71,9 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        var configWindow = this.serviceProvider.GetService<FriendListWindow>();
-        if (configWindow != null) {
-            configWindow.IsOpen = true;
+        var navService = this.serviceProvider.GetService<IWindowNavigationService>();
+        if (navService != null) {
+            navService.OpenTab("Tab_Config");
         }
     }
 

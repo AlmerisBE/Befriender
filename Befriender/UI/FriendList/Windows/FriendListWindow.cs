@@ -2,6 +2,7 @@
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
+using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
@@ -16,14 +17,22 @@ public class FriendListWindow : Window, IDisposable {
     private IFriendSyncService syncService;
     private IThemeService themeService;
     private IHotkeyService hotkeyService;
+    private IWindowNavigationService navService;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, Befriender.Core.Input.Contracts.IHotkeyService hotkeyService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    private string? pendingTabSelection;
+    private bool isProfilePanelOpen = false;
+    private const float ProfilePanelWidth = 300f;
+
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;
         this.hotkeyService = hotkeyService;
+        this.navService = navService;
 
         this.hotkeyService.OnHotkeyPressed += this.Toggle;
+        this.navService.OnWindowToggleRequested += this.Toggle;
+        this.navService.OnTabRequested += this.HandleTabRequest;
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(500, 600),
@@ -35,6 +44,11 @@ public class FriendListWindow : Window, IDisposable {
             IconOffset = new Vector2(1, 1),
             Click = (mouseButton) => this.syncService.RequestServerRefresh()
         });
+    }
+
+    private void HandleTabRequest(string tabInternalName) {
+        this.pendingTabSelection = tabInternalName;
+        this.IsOpen = true;
     }
 
     public override void PreDraw() {
@@ -65,7 +79,6 @@ public class FriendListWindow : Window, IDisposable {
     }
 
     public override void PostDraw() {
-        // Popping the 22 pushed structural colors
         ImGui.PopStyleColor(22);
     }
 
@@ -80,18 +93,39 @@ public class FriendListWindow : Window, IDisposable {
     }
 
     public override void Draw() {
+        bool activeTabWantsPanel = false;
+
         if (ImGui.BeginTabBar("MainTabBar")) {
             foreach (var tab in this.tabs) {
-                if (ImGui.BeginTabItem(tab.Name)) {
+                var flags = ImGuiTabItemFlags.None;
+
+                if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
+                    flags |= ImGuiTabItemFlags.SetSelected;
+                }
+
+                if (ImGui.BeginTabItem(tab.Name, flags)) {
                     tab.Draw();
+                    activeTabWantsPanel = tab.IsProfilePanelOpen;
                     ImGui.EndTabItem();
                 }
             }
+
+            this.pendingTabSelection = null;
             ImGui.EndTabBar();
+        }
+
+        // Adjust window size reactively if the current tab's panel state differs from the known state
+        if (this.isProfilePanelOpen != activeTabWantsPanel) {
+            float delta = activeTabWantsPanel ? ProfilePanelWidth : -ProfilePanelWidth;
+            var currentSize = ImGui.GetWindowSize();
+            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + delta), currentSize.Y));
+            this.isProfilePanelOpen = activeTabWantsPanel;
         }
     }
 
     public void Dispose() {
         this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        this.navService.OnWindowToggleRequested -= this.Toggle;
+        this.navService.OnTabRequested -= this.HandleTabRequest;
     }
 }

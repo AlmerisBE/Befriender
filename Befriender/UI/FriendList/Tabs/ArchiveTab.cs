@@ -9,7 +9,6 @@ using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Linq;
-using System.Numerics;
 
 public class ArchiveTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
@@ -23,10 +22,10 @@ public class ArchiveTab : ITab, IDisposable {
     private bool forceRefresh = false;
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
-    private float pendingWidthDelta = 0f;
-    private bool isFirstFrame = true;
 
+    public string InternalName => "Tab_Archives";
     public string Name => this.loc.Translate("Tab_Archives");
+    public bool IsProfilePanelOpen => this.selectedFriend != null;
 
     public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
@@ -40,10 +39,7 @@ public class ArchiveTab : ITab, IDisposable {
     }
 
     private void OnCacheCleared() {
-        if (this.selectedFriend != null) {
-            this.selectedFriend = null;
-            this.pendingWidthDelta = -PanelWidth;
-        }
+        this.selectedFriend = null;
     }
 
     private void ToggleProfilePanel(FriendProfile? friend) {
@@ -51,25 +47,11 @@ public class ArchiveTab : ITab, IDisposable {
             friend = null;
         }
 
-        if (this.selectedFriend == null && friend != null) {
-            this.pendingWidthDelta = PanelWidth;
-        }
-        else if (this.selectedFriend != null && friend == null) {
-            this.pendingWidthDelta = -PanelWidth;
-        }
-
         this.selectedFriend = friend;
     }
 
     public void Draw() {
-        if (this.isFirstFrame) {
-            this.isFirstFrame = false;
-            this.pendingWidthDelta = this.configurationService.GetConfig().IsProfilePanelOpen ? -PanelWidth : 0f;
-        }
-
         var rawFriends = this.friendRepository.GetFriends();
-
-        // The archive tab is strictly for friends removed from the vanilla list
         var archivedFriends = rawFriends.Where(f => f.IsArchived).ToList();
 
         if (archivedFriends.Count == 0) {
@@ -92,12 +74,6 @@ public class ArchiveTab : ITab, IDisposable {
 
         if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
             this.forceRefresh = true;
-        }
-
-        if (this.pendingWidthDelta != 0f) {
-            var currentSize = ImGui.GetWindowSize();
-            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + this.pendingWidthDelta), currentSize.Y));
-            this.pendingWidthDelta = 0f;
         }
     }
 
