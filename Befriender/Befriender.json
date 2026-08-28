@@ -9,5 +9,11 @@
   "LoadRequiredState": 0,
   "LoadSync": false,
   "LoadPriority": 0,
-  "Punchline": "Because your friends are worth it."
+  "Punchline": "Because your friends are worth it.",
+  "Tags": [
+    "friends",
+    "social",
+    "ui",
+    "utility"
+  ]
 }

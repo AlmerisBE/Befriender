@@ -68,6 +68,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
 
         this.pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi += this.OnOpenConfigUi;
+        this.pluginInterface.UiBuilder.OpenMainUi += this.OnOpenMainUi;
     }
 
     private void OnOpenConfigUi() {
@@ -77,9 +78,17 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         }
     }
 
+    private void OnOpenMainUi() {
+        var navService = this.serviceProvider.GetService<IWindowNavigationService>();
+        if (navService != null) {
+            navService.ToggleWindow();
+        }
+    }
+
     public void Dispose() {
         this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
+        this.pluginInterface.UiBuilder.OpenMainUi -= this.OnOpenMainUi;
 
         this.windowSystem.RemoveAllWindows();
         this.serviceProvider.Dispose();
