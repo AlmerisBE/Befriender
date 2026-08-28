@@ -350,14 +350,11 @@ public class FriendListTableComponent {
             ImGui.Text(string.Empty);
         }
 
-        // --- COLONNE : LIEU ---
+        // --- COLUMN: LOCATION ---
         ImGui.TableNextColumn();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
-        string locationName = string.Empty;
-        if (friend.IsOnline) {
-            locationName = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
-        }
+        string locationName = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
 
         ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName);
 

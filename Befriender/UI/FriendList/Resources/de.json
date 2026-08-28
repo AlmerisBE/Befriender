@@ -133,5 +133,6 @@
   "Section_NameHistory": "Namenshistorie",
   "Section_Notes": "Notizen",
   "Section_Status": "Status & Ort",
-  "Section_System": "Systemdaten"
+  "Section_System": "Systemdaten",
+  "Status_Offline": "Offline"
 }

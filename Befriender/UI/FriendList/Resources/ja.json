@@ -133,5 +133,6 @@
   "Section_NameHistory": "名前の履歴",
   "Section_Notes": "メモ",
   "Section_Status": "ステータスと場所",
-  "Section_System": "システムデータ"
+  "Section_System": "システムデータ",
+  "Status_Offline": "オフライン"
 }

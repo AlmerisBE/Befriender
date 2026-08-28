@@ -158,13 +158,12 @@ public class FriendProfilePanelComponent {
                 }
                 ImGui.Text(statusInfo.Name);
 
-                string displayLocation = this.loc.Translate("Profile_Unknown");
-                if (friend.IsOnline) {
-                    displayLocation = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
-                    if (string.IsNullOrEmpty(displayLocation) || displayLocation == "0") {
-                        displayLocation = this.loc.Translate("Profile_Unknown");
-                    }
+                // Resolution of the display location unconditionally
+                string displayLocation = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
+                if (string.IsNullOrEmpty(displayLocation) || displayLocation == "0") {
+                    displayLocation = this.loc.Translate("Profile_Unknown");
                 }
+
                 ImGui.Text($"{this.loc.Translate("Column_Location")}: {displayLocation}");
 
                 string lastSeenStr = friend.IsOnline ? this.loc.Translate("Profile_Online") : (friend.LastSeenAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : this.loc.Translate("Profile_DaysAgo", (int)(DateTime.Now - friend.LastSeenAt).TotalDays));
