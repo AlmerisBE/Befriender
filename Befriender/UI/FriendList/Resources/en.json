@@ -102,5 +102,7 @@
   "Tooltip_Archived": "Archived",
   "Tooltip_MissingDeleted": "Missing / Deleted",
   "Tooltip_OpenNativeList": "Open Native Friend List (Vanilla)",
-  "Tooltip_Tracked": "Login alerts enabled"
+  "Tooltip_Tracked": "Login alerts enabled",
+  "Group_Unassigned": "Unassigned",
+  "List_GroupByGroups": "Group by custom groups"
 }

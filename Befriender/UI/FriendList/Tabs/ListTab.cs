@@ -20,6 +20,7 @@ public class ListTab : ITab, IDisposable {
     private RemoveConfirmationModalComponent removeConfirmationModal;
 
     private bool showOnlineOnly = false;
+    private bool groupByGroups = false;
     private bool forceRefresh = false;
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
@@ -37,13 +38,13 @@ public class ListTab : ITab, IDisposable {
         this.configurationService = configurationService;
         this.removeConfirmationModal = removeConfirmationModal;
 
+        this.groupByGroups = this.configurationService.GetConfig().GroupByCustomGroups;
         this.friendRepository.CacheCleared += this.OnCacheCleared;
     }
 
     private void OnCacheCleared() {
         if (this.selectedFriend != null) {
             this.selectedFriend = null;
-
             var config = this.configurationService.GetConfig();
             config.IsProfilePanelOpen = false;
             this.configurationService.Save();
@@ -79,7 +80,7 @@ public class ListTab : ITab, IDisposable {
         float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, footerHeight, activeFriends, this.selectedFriend, this.showOnlineOnly, this.forceRefresh, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, footerHeight, activeFriends, this.selectedFriend, this.showOnlineOnly, this.groupByGroups, this.forceRefresh, this.ToggleProfilePanel);
         this.forceRefresh = false;
 
         if (this.selectedFriend != null) {
@@ -89,8 +90,15 @@ public class ListTab : ITab, IDisposable {
 
         ImGui.Separator();
 
-        if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
+        bool previousGrouping = this.groupByGroups;
+        if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly, ref this.groupByGroups)) {
             this.forceRefresh = true;
+
+            if (this.groupByGroups != previousGrouping) {
+                var config = this.configurationService.GetConfig();
+                config.GroupByCustomGroups = this.groupByGroups;
+                this.configurationService.Save();
+            }
         }
 
         this.removeConfirmationModal.Draw();

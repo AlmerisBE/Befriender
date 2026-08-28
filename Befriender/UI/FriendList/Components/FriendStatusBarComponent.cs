@@ -19,7 +19,7 @@ public class FriendStatusBarComponent {
         this.loc = loc;
     }
 
-    public bool Draw(IReadOnlyList<FriendProfile> rawFriends, ref bool showOnlineOnly) {
+    public bool Draw(IReadOnlyList<FriendProfile> rawFriends, ref bool showOnlineOnly, ref bool groupByGroups) {
         bool forceRefresh = false;
 
         if (ImGui.Checkbox(this.loc.Translate("List_ShowOnlineOnly"), ref showOnlineOnly)) {
@@ -27,8 +27,12 @@ public class FriendStatusBarComponent {
         }
 
         ImGui.SameLine();
+        if (ImGui.Checkbox(this.loc.Translate("List_GroupByGroups"), ref groupByGroups)) {
+            forceRefresh = true;
+        }
 
-        // Native Friend List Quick Access Button
+        ImGui.SameLine();
+
         if (ImGuiComponents.IconButton(FontAwesomeIcon.AddressBook)) {
             unsafe {
                 var uiModule = UIModule.Instance();
@@ -45,7 +49,6 @@ public class FriendStatusBarComponent {
 
         int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;
         foreach (var f in rawFriends) {
-            // Contacts still registered on the official FFXIV list
             if (!f.IsArchived) {
                 vanillaCount++;
                 if (f.IsOnline && !f.IsCharacterDeleted) {
@@ -86,7 +89,6 @@ public class FriendStatusBarComponent {
             syncText = this.loc.Translate("Status_LastSync", timeStr);
         }
 
-        // Compact text uses Grand Total (rawFriends.Count) instead of Active/Vanilla count
         var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, rawFriends.Count);
         var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, rawFriends.Count);
 

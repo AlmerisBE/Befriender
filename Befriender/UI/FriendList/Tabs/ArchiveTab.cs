@@ -18,7 +18,9 @@ public class ArchiveTab : ITab, IDisposable {
     private ILocalizationService loc;
     private IConfigurationService configurationService;
 
-    private bool showOnlineOnly = false; // Kept for status bar compatibility, though ineffective here
+    private bool showOnlineOnly = false;
+    private bool groupByGroups = false;
+
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
 
@@ -53,6 +55,10 @@ public class ArchiveTab : ITab, IDisposable {
         var rawFriends = this.friendRepository.GetFriends();
         var archivedFriends = rawFriends.Where(f => f.IsArchived).ToList();
 
+        // Dynamically sync user preference directly from the global config
+        var config = this.configurationService.GetConfig();
+        this.groupByGroups = config.GroupByCustomGroups;
+
         if (archivedFriends.Count == 0) {
             ImGui.Text(this.loc.Translate("Archive_Empty"));
             return;
@@ -61,7 +67,7 @@ public class ArchiveTab : ITab, IDisposable {
         float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, footerHeight, archivedFriends, this.selectedFriend, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, footerHeight, archivedFriends, this.selectedFriend, this.groupByGroups, this.ToggleProfilePanel);
 
         if (this.selectedFriend != null) {
             ImGui.SameLine();
@@ -69,7 +75,15 @@ public class ArchiveTab : ITab, IDisposable {
         }
 
         ImGui.Separator();
-        this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly);
+
+        bool previousGrouping = this.groupByGroups;
+        this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly, ref this.groupByGroups);
+
+        // If toggled from the status bar within the archive tab, persist the choice
+        if (this.groupByGroups != previousGrouping) {
+            config.GroupByCustomGroups = this.groupByGroups;
+            this.configurationService.Save();
+        }
     }
 
     public void Dispose() => this.friendRepository.CacheCleared -= this.OnCacheCleared;

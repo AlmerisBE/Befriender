@@ -102,5 +102,7 @@
   "Tooltip_Archived": "Archiviert",
   "Tooltip_MissingDeleted": "Fehlt / Gelöscht",
   "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)",
-  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert"
+  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
+  "Group_Unassigned": "Nicht zugewiesen",
+  "List_GroupByGroups": "Nach Gruppen gruppieren"
 }

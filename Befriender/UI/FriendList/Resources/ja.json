@@ -102,5 +102,7 @@
   "Tooltip_Archived": "アーカイブ",
   "Tooltip_MissingDeleted": "行方不明 / 削除",
   "Tooltip_OpenNativeList": "公式フレンドリストを開く（バニラ）",
-  "Tooltip_Tracked": "ログイン通知が有効です"
+  "Tooltip_Tracked": "ログイン通知が有効です",
+  "Group_Unassigned": "未割り当て",
+  "List_GroupByGroups": "グループごとに表示"
 }
