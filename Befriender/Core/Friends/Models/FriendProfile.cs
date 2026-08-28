@@ -24,6 +24,7 @@ public class FriendProfile {
     public DateTime LastSeenAt { get; set; }
     public DateTime ArchivedAt { get; set; }
     public Guid? CustomGroupId { get; set; }
+    public List<Guid> Tags { get; set; } = new();
 
     // History of previous names detected for this character
     public List<string> PreviousNames { get; set; } = new();

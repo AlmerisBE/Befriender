@@ -1,4 +1,4 @@
-﻿namespace Befriender.Core.Friends.Services;
+﻿namespace Befriender.Core.Friends.Storage;
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
@@ -7,44 +7,44 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-public class JsonFriendGroupStorage : IFriendGroupStorage {
+public class JsonFriendStorage : IFriendStorage {
     private IDalamudPluginInterface pluginInterface;
 
-    public JsonFriendGroupStorage(IDalamudPluginInterface pluginInterface) {
+    public JsonFriendStorage(IDalamudPluginInterface pluginInterface) {
         this.pluginInterface = pluginInterface;
     }
 
     private string GetFilePath(string characterId) {
-        return Path.Combine(this.pluginInterface.ConfigDirectory.FullName, $"groups_{characterId}.json");
+        return Path.Combine(this.pluginInterface.ConfigDirectory.FullName, $"friends_{characterId}.json");
     }
 
-    public IReadOnlyList<FriendGroup> Load(string characterId) {
+    public IReadOnlyList<FriendProfile> Load(string characterId) {
         if (string.IsNullOrEmpty(characterId)) {
-            return new List<FriendGroup>();
+            return new List<FriendProfile>();
         }
 
         var filePath = this.GetFilePath(characterId);
         if (!File.Exists(filePath)) {
-            return new List<FriendGroup>();
+            return new List<FriendProfile>();
         }
 
         try {
             var json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<List<FriendGroup>>(json) ?? new List<FriendGroup>();
+            return JsonSerializer.Deserialize<List<FriendProfile>>(json) ?? new List<FriendProfile>();
         }
         catch {
-            return new List<FriendGroup>();
+            return new List<FriendProfile>();
         }
     }
 
-    public void Save(string characterId, IEnumerable<FriendGroup> groups) {
+    public void Save(string characterId, IEnumerable<FriendProfile> friends) {
         if (string.IsNullOrEmpty(characterId)) {
             return;
         }
 
         var filePath = this.GetFilePath(characterId);
         var options = new JsonSerializerOptions { WriteIndented = true };
-        var json = JsonSerializer.Serialize(groups, options);
+        var json = JsonSerializer.Serialize(friends, options);
         File.WriteAllText(filePath, json);
     }
 }
