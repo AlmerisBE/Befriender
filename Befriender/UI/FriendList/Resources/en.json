@@ -128,5 +128,10 @@
   "Profile_Race": "Race",
   "Profile_Title": "Title",
   "List_ShowNearbyOnly": "Nearby only",
-  "Tooltip_ToggleFilters": "Show / Hide filters"
+  "Tooltip_ToggleFilters": "Show / Hide filters",
+  "Section_Character": "Character Information",
+  "Section_NameHistory": "Name History",
+  "Section_Notes": "Notes",
+  "Section_Status": "Status & Location",
+  "Section_System": "System Data"
 }

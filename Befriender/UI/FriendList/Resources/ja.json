@@ -128,5 +128,10 @@
   "Profile_Race": "種族",
   "Profile_Title": "称号",
   "List_ShowNearbyOnly": "近くのみ表示",
-  "Tooltip_ToggleFilters": "フィルターの切り替え"
+  "Tooltip_ToggleFilters": "フィルターの切り替え",
+  "Section_Character": "キャラクター情報",
+  "Section_NameHistory": "名前の履歴",
+  "Section_Notes": "メモ",
+  "Section_Status": "ステータスと場所",
+  "Section_System": "システムデータ"
 }

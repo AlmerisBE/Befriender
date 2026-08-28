@@ -128,5 +128,10 @@
   "Profile_Race": "Volk",
   "Profile_Title": "Titel",
   "List_ShowNearbyOnly": "Nur in der Nähe",
-  "Tooltip_ToggleFilters": "Filter umschalten"
+  "Tooltip_ToggleFilters": "Filter umschalten",
+  "Section_Character": "Charakterinformationen",
+  "Section_NameHistory": "Namenshistorie",
+  "Section_Notes": "Notizen",
+  "Section_Status": "Status & Ort",
+  "Section_System": "Systemdaten"
 }
