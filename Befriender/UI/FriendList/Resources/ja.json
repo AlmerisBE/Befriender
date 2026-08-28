@@ -19,6 +19,8 @@
   "Profile_DeletedCharacter": "(削除されたキャラクター)",
   "Profile_Job": "クラス/ジョブ",
   "Profile_World": "ワールド",
+  "Profile_HomeWorld": "ホームワールド",
+  "Profile_ClientLanguages": "クライアント言語",
   "Profile_FC": "フリーカンパニー",
   "Profile_Languages": "言語",
   "Profile_MetadataHeader": "--- メタデータ ---",
@@ -80,8 +82,6 @@
   "Tooltip_Tracked": "ログイン通知が有効です",
   "Action_TrackFriend": "ログイン通知を有効にする",
   "Action_UntrackFriend": "ログイン通知を無効にする",
-  "Status_Offline": "オフライン",
-  "Status_Online": "オンライン",
-  "Status_CrossWorld": "他ワールドに遊びに来ています",
-  "Status_Unknown": "不明"
+  "Column_AddedDate": "追加日",
+  "Column_ArchivedDate": "アーカイブ日"
 }

@@ -39,7 +39,6 @@ public class FriendProfilePanelComponent {
 
             ImGui.TextUnformatted(string.IsNullOrEmpty(friend.Name) ? this.loc.Translate("Profile_DeletedCharacter") : friend.Name);
 
-            // Alignement dynamique et pixel-perfect du bouton de fermeture sur la droite
             float closeButtonSize = ImGui.GetFrameHeight();
             ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - closeButtonSize);
 
@@ -68,7 +67,6 @@ public class FriendProfilePanelComponent {
                         ImGui.SetTooltip(this.loc.Translate(action.InternalName));
                     }
 
-                    // On applique SameLine uniquement si le prochain bouton a assez de place pour s'afficher
                     if (i + 1 < actions.Count) {
                         float lastItemX2 = ImGui.GetItemRectMax().X;
                         float nextItemX2 = lastItemX2 + style.ItemSpacing.X + ImGui.GetItemRectSize().X;
@@ -82,15 +80,12 @@ public class FriendProfilePanelComponent {
                 ImGui.Spacing();
             }
 
-            ImGui.Spacing();
-
-            // --- Statut de connexion ---
+            // --- Status ---
             ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
             ImGui.SameLine();
-            ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
 
-            // Ajout de friend.LocationId ici aussi
-            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, friend.CurrentWorldId, friend.HomeWorldId, friend.LocationId);
+            ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
+            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask); // Note: Assuming signature based on provided context
 
             var statusIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
             var statusIconWrap = this.textureProvider.GetFromGameIcon(statusIconLookup).GetWrapOrDefault();
@@ -104,38 +99,45 @@ public class FriendProfilePanelComponent {
             }
             ImGui.Text(statusInfo.Name);
 
-            // --- Job et Icône ---
+            // --- Job / Class ---
             ImGui.Text($"{this.loc.Translate("Profile_Job")}: ");
             ImGui.SameLine();
-            var jobIconId = this.gameDataService.GetJobIconId(friend.JobId);
-            if (jobIconId > 0) {
-                var jobIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = jobIconId };
-                var jobIconWrap = this.textureProvider.GetFromGameIcon(jobIconLookup).GetWrapOrDefault();
 
-                if (jobIconWrap != null) {
-                    float iconSize = ImGui.GetTextLineHeight();
-                    float currentY = ImGui.GetCursorPosY();
-                    ImGui.Image(jobIconWrap.Handle, new Vector2(iconSize, iconSize));
-                    ImGui.SameLine(0, 4f);
-                    ImGui.SetCursorPosY(currentY);
+            if (friend.JobId > 0) {
+                var jobIconId = this.gameDataService.GetJobIconId(friend.JobId);
+                if (jobIconId > 0) {
+                    var jobIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = jobIconId };
+                    var jobIconWrap = this.textureProvider.GetFromGameIcon(jobIconLookup).GetWrapOrDefault();
+
+                    if (jobIconWrap != null) {
+                        float iconSize = ImGui.GetTextLineHeight();
+                        float currentY = ImGui.GetCursorPosY();
+                        ImGui.Image(jobIconWrap.Handle, new Vector2(iconSize, iconSize));
+                        ImGui.SameLine(0, 4f);
+                        ImGui.SetCursorPosY(currentY);
+                    }
                 }
             }
-            ImGui.Text(friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : this.loc.Translate("Profile_None"));
+            var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : this.loc.Translate("Profile_None");
+            ImGui.Text(jobAbbr);
 
-            // --- Emplacement ---
-            string currentLocation = friend.IsOnline ? this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask) : this.loc.Translate("Profile_Unknown");
-            if (!friend.IsOnline && friend.LocationId > 0) {
-                currentLocation = this.gameDataService.GetLocationName(friend.LocationId);
+            ImGui.Spacing();
+
+            // --- Location ---
+            var locationName = this.gameDataService.GetLocationName(friend.LocationId);
+            if ((string.IsNullOrEmpty(locationName) || locationName == friend.LocationId.ToString()) && friend.IsOnline) {
+                uint displayWorld = friend.CurrentWorldId > 0 ? friend.CurrentWorldId : friend.HomeWorldId;
+                locationName = this.gameDataService.GetWorldName(displayWorld);
             }
-            ImGui.Text($"{this.loc.Translate("Column_Location")}: {currentLocation}");
+            string displayLocation = friend.IsOnline ? (string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName) : this.loc.Translate("Profile_Unknown");
 
-            // --- Monde et Compagnie Libre ---
-            ImGui.Text($"{this.loc.Translate("Profile_World")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
+            ImGui.Text($"{this.loc.Translate("Column_Location")}: {displayLocation}");
 
-            if (!string.IsNullOrEmpty(friend.FcTag)) {
-                ImGui.Text($"{this.loc.Translate("Profile_FC")}: {friend.FcTag}");
-            }
+            // --- Free Company ---
+            string fcName = string.IsNullOrEmpty(friend.FcTag) ? this.loc.Translate("Profile_None") : friend.FcTag;
+            ImGui.Text($"{this.loc.Translate("Profile_FC")}: {fcName}");
 
+            // --- Grand Company ---
             ImGui.Text($"{this.loc.Translate("Profile_GrandCompany")}: ");
             ImGui.SameLine();
 
@@ -158,14 +160,17 @@ public class FriendProfilePanelComponent {
             string gcName = friend.GrandCompany > 0 ? this.gameDataService.GetGrandCompanyName(friend.GrandCompany) : this.loc.Translate("Profile_None");
             ImGui.Text(gcName);
 
-            ImGui.Text($"{this.loc.Translate("Profile_Languages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
+            // --- Home World ---
+            ImGui.Text($"{this.loc.Translate("Profile_HomeWorld")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
+
+            // --- Client Languages ---
+            ImGui.Text($"{this.loc.Translate("Profile_ClientLanguages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
 
             ImGui.Spacing();
+
+            // --- Metadata ---
+
             ImGui.Text(this.loc.Translate("Profile_MetadataHeader"));
-            var dateStr = friend.AddedAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : friend.AddedAt.ToShortDateString();
-            var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
-            ImGui.Text($"{this.loc.Translate("Profile_Added")}: {dateStr}");
-            ImGui.Text($"{this.loc.Translate("Profile_MetAt")}: {locStr}");
 
             string lastSeenStr = friend.IsOnline ? this.loc.Translate("Profile_Online") : (friend.LastSeenAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : this.loc.Translate("Profile_DaysAgo", (int)(DateTime.Now - friend.LastSeenAt).TotalDays));
 
@@ -180,6 +185,10 @@ public class FriendProfilePanelComponent {
             }
 
             ImGui.Text($"{this.loc.Translate("Profile_LastSeen")}: {lastSeenStr}");
+            var dateStr = friend.AddedAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : friend.AddedAt.ToShortDateString();
+            var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
+            ImGui.Text($"{this.loc.Translate("Profile_Added")}: {dateStr}");
+            ImGui.Text($"{this.loc.Translate("Profile_MetAt")}: {locStr}");
 
             ImGui.Spacing();
             string listStatus = friend.IsCharacterDeleted ? this.loc.Translate("Profile_StatusDeleted") : (friend.IsArchived ? this.loc.Translate("Profile_StatusArchived") : this.loc.Translate("Profile_StatusActive"));

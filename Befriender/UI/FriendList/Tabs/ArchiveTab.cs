@@ -12,14 +12,13 @@ using System.Linq;
 
 public class ArchiveTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
-    private FriendListTableComponent tableComponent;
+    private ArchiveTableComponent tableComponent;
     private FriendProfilePanelComponent profilePanelComponent;
     private FriendStatusBarComponent statusBarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
 
-    private bool showOnlineOnly = false;
-    private bool forceRefresh = false;
+    private bool showOnlineOnly = false; // Kept for status bar compatibility, though ineffective here
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
 
@@ -27,7 +26,7 @@ public class ArchiveTab : ITab, IDisposable {
     public string Name => this.loc.Translate("Tab_Archives");
     public bool IsProfilePanelOpen => this.selectedFriend != null;
 
-    public ArchiveTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
+    public ArchiveTab(IFriendRepository friendRepository, ArchiveTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
@@ -62,8 +61,7 @@ public class ArchiveTab : ITab, IDisposable {
         float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, footerHeight, archivedFriends, this.selectedFriend, this.showOnlineOnly, this.forceRefresh, this.ToggleProfilePanel);
-        this.forceRefresh = false;
+        this.tableComponent.Draw(tableWidth, footerHeight, archivedFriends, this.selectedFriend, this.ToggleProfilePanel);
 
         if (this.selectedFriend != null) {
             ImGui.SameLine();
@@ -71,10 +69,7 @@ public class ArchiveTab : ITab, IDisposable {
         }
 
         ImGui.Separator();
-
-        if (this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly)) {
-            this.forceRefresh = true;
-        }
+        this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly);
     }
 
     public void Dispose() => this.friendRepository.CacheCleared -= this.OnCacheCleared;

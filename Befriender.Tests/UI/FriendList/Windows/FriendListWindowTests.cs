@@ -1,5 +1,7 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Windows;
 
+using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.Configuration.Models;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
 using Befriender.UI.FriendList.Contracts;
@@ -19,9 +21,12 @@ public class FriendListWindowTests {
         var mockTheme = Substitute.For<IThemeService>();
         var mockHotkey = Substitute.For<IHotkeyService>();
         var mockNavService = Substitute.For<IWindowNavigationService>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+
+        mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
 
         // Act
-        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService);
+        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService);
 
         // Assert
         Assert.Equal("Befriender", window.WindowName);
@@ -36,11 +41,14 @@ public class FriendListWindowTests {
         var mockTheme = Substitute.For<IThemeService>();
         var mockHotkey = Substitute.For<IHotkeyService>();
         var mockNavService = Substitute.For<IWindowNavigationService>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+
+        mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
 
         // Assume the service thinks the window is closed initially
         mockSync.IsWindowOpen.Returns(false);
 
-        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService);
+        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService);
 
         // Simulate the window being opened by Dalamud or a command
         window.IsOpen = true;

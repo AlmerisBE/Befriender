@@ -123,6 +123,7 @@ public class FriendRepository : IFriendRepository {
             foreach (var existing in repositoryDict.Values) {
                 if (!scannedIds.Contains(existing.ContentId)) {
                     existing.IsArchived = true;
+                    existing.ArchivedAt = now;
                     existing.IsOnline = false;
                     existing.IsMarkedForRemoval = false;
 

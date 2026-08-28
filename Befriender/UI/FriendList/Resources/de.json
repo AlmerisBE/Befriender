@@ -19,6 +19,8 @@
   "Profile_DeletedCharacter": "(Gelöschter Charakter)",
   "Profile_Job": "Job",
   "Profile_World": "Welt",
+  "Profile_HomeWorld": "Stammwelt",
+  "Profile_ClientLanguages": "Client-Sprachen",
   "Profile_FC": "Freie Gesellschaft",
   "Profile_Languages": "Sprachen",
   "Profile_MetadataHeader": "--- Metadaten ---",
@@ -80,8 +82,6 @@
   "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
   "Action_TrackFriend": "Anmeldebenachrichtigungen aktivieren",
   "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren",
-  "Status_Offline": "Offline",
-  "Status_Online": "Online",
-  "Status_CrossWorld": "Weltenreise",
-  "Status_Unknown": "Unbekannt"
+  "Column_AddedDate": "Hinzugefügt am",
+  "Column_ArchivedDate": "Archiviert am"
 }

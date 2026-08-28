@@ -19,7 +19,9 @@
   "Profile_DeletedCharacter": "(Personnage Supprimé)",
   "Profile_Job": "Classe/Job",
   "Profile_World": "Monde",
-  "Profile_FC": "Compagnie Libre",
+  "Profile_HomeWorld": "Monde d'origine",
+  "Profile_ClientLanguages": "Langues du client",
+  "Profile_FC": "Compagnie libre",
   "Profile_Languages": "Langues",
   "Profile_MetadataHeader": "--- Méta-données ---",
   "Profile_Added": "Ajouté le",
@@ -79,8 +81,6 @@
   "Tooltip_Tracked": "Alertes de connexion activées",
   "Action_TrackFriend": "Activer les alertes de connexion",
   "Action_UntrackFriend": "Désactiver les alertes de connexion",
-  "Status_Offline": "Hors ligne",
-  "Status_Online": "En ligne",
-  "Status_CrossWorld": "En visite inter-monde",
-  "Status_Unknown": "Inconnu"
+  "Column_AddedDate": "Ajouté le",
+  "Column_ArchivedDate": "Archivé le"
 }

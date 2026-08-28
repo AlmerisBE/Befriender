@@ -12,7 +12,7 @@ public unsafe class ViewSearchInfoAction : IFriendAction {
     public FontAwesomeIcon Icon => FontAwesomeIcon.InfoCircle;
 
     public bool CanExecute(FriendProfile friend) {
-        return friend.IsOnline && !friend.IsCharacterDeleted;
+        return !friend.IsCharacterDeleted;
     }
 
     public void Execute(FriendProfile friend) {

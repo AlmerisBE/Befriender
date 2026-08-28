@@ -16,7 +16,7 @@ public class TrackFriendAction : IFriendAction {
     }
 
     public bool CanExecute(FriendProfile friend) {
-        return !friend.IsCharacterDeleted && !friend.IsTrackedForNotifications;
+        return !friend.IsArchived && !friend.IsCharacterDeleted && !friend.IsTrackedForNotifications;
     }
 
     public void Execute(FriendProfile friend) {
