@@ -150,4 +150,23 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
         // Triggers the native server data request mimicking the vanilla friend list opening
         friendProxy->RequestData();
     }
+
+    public void RequestCrossWorldUpdate() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return;
+        }
+
+        var friendProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FriendList);
+        if (friendProxy == null) {
+            return;
+        }
+
+        friendProxy->RequestData();
+    }
 }

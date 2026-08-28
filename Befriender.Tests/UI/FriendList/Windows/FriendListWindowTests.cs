@@ -31,7 +31,7 @@ public class FriendListWindowTests {
     }
 
     [Fact]
-    public void FriendListWindow_OnOpen_RequestsServerRefresh() {
+    public void FriendListWindow_OnOpen_RequestsServerAndCrossWorldRefresh() {
         var mockTabs = new List<ITab>();
         var mockSync = Substitute.For<IFriendSyncService>();
         var mockTheme = Substitute.For<IThemeService>();
@@ -47,6 +47,7 @@ public class FriendListWindowTests {
 
         mockSync.Received().IsWindowOpen = true;
         mockSync.Received(1).RequestServerRefresh();
+        mockSync.Received(1).RequestCrossWorldRefresh();
     }
 
     [Fact]
