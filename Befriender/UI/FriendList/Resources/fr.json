@@ -86,6 +86,7 @@
   "Profile_Unknown": "Inconnu",
   "Profile_World": "Monde",
   "Status_CompactCounts": "{0} | {1}/{2} En ligne",
+  "Status_CrossWorld": "Inter-Monde",
   "Status_DaysAgo": "Il y a {0}j",
   "Status_HoursAgo": "Il y a {0}h",
   "Status_JustNow": "À l'instant",
