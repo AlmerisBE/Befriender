@@ -83,5 +83,9 @@
   "Action_TrackFriend": "ログイン通知を有効にする",
   "Action_UntrackFriend": "ログイン通知を無効にする",
   "Column_AddedDate": "追加日",
-  "Column_ArchivedDate": "アーカイブ日"
+  "Column_ArchivedDate": "アーカイブ日",
+  "Tab_About": "概要",
+  "About_Version": "バージョン",
+  "About_GitHub": "GitHubリポジトリ",
+  "About_Description": "Befrienderは連絡先のメタデータを保存してソーシャル体験を向上させます。\n\n重要：このプラグインはデータをリアルタイムで更新しません。開いているとき、またはバックグラウンドで公式（バニラ）のフレンドリストをスキャンします。表示される情報は、スキャン時の最後の既知の状態を反映しています。"
 }
