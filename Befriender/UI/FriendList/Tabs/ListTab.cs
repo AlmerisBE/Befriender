@@ -21,6 +21,7 @@ public class ListTab : ITab, IDisposable {
 
     private string searchQuery = string.Empty;
     private bool showOnlineOnly = false;
+    private bool showNearbyOnly = false;
     private bool groupByGroups = false;
     private bool forceRefresh = false;
     private const float PanelWidth = 300f;
@@ -73,7 +74,7 @@ public class ListTab : ITab, IDisposable {
         var activeFriends = rawFriends.Where(f => !f.IsArchived).ToList();
 
         bool previousGrouping = this.groupByGroups;
-        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.groupByGroups, ref this.searchQuery, true)) {
+        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, true)) {
             this.forceRefresh = true;
             if (this.groupByGroups != previousGrouping) {
                 var config = this.configurationService.GetConfig();
@@ -92,7 +93,7 @@ public class ListTab : ITab, IDisposable {
 
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, activeFriends, this.selectedFriend, this.showOnlineOnly, this.groupByGroups, this.searchQuery, this.forceRefresh, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, activeFriends, this.selectedFriend, this.showOnlineOnly, this.showNearbyOnly, this.groupByGroups, this.searchQuery, this.forceRefresh, this.ToggleProfilePanel);
         this.forceRefresh = false;
 
         if (this.selectedFriend != null) {

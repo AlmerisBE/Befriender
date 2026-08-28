@@ -126,5 +126,7 @@
   "Profile_FantasiaDetected": "⚠️ Filtre d'illusion détecté !",
   "Profile_Level": "Niveau",
   "Profile_Race": "Race",
-  "Profile_Title": "Titre"
+  "Profile_Title": "Titre",
+  "List_ShowNearbyOnly": "Proches uniquement",
+  "Tooltip_ToggleFilters": "Afficher / Masquer les filtres"
 }

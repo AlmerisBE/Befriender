@@ -35,9 +35,12 @@ public class ArchiveTableComponent {
         this.proximityService = proximityService;
     }
 
-    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool groupByGroups, string searchQuery, Action<FriendProfile?> onRowSelected) {
+    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool showNearbyOnly, bool groupByGroups, string searchQuery, Action<FriendProfile?> onRowSelected) {
         var palette = this.themeService.CurrentPalette;
-        var filteredFriends = this.searchService.FilterFriends(archivedFriends, searchQuery);
+
+        var displayFriends = showNearbyOnly ? archivedFriends.Where(f => this.proximityService.IsFriendNearby(f.ContentId)).ToList() : archivedFriends.ToList();
+
+        var filteredFriends = this.searchService.FilterFriends(displayFriends, searchQuery);
 
         if (groupByGroups) {
             if (ImGui.BeginChild("GroupedArchiveContainer", new Vector2(tableWidth, 0))) {

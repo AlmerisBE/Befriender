@@ -126,5 +126,7 @@
   "Profile_FantasiaDetected": "⚠️ 幻想薬の使用を検知しました！",
   "Profile_Level": "レベル",
   "Profile_Race": "種族",
-  "Profile_Title": "称号"
+  "Profile_Title": "称号",
+  "List_ShowNearbyOnly": "近くのみ表示",
+  "Tooltip_ToggleFilters": "フィルターの切り替え"
 }

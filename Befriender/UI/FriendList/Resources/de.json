@@ -126,5 +126,7 @@
   "Profile_FantasiaDetected": "⚠️ Fantasia-Nutzung erkannt!",
   "Profile_Level": "Stufe",
   "Profile_Race": "Volk",
-  "Profile_Title": "Titel"
+  "Profile_Title": "Titel",
+  "List_ShowNearbyOnly": "Nur in der Nähe",
+  "Tooltip_ToggleFilters": "Filter umschalten"
 }

@@ -126,5 +126,7 @@
   "Profile_FantasiaDetected": "⚠️ Fantasia usage detected!",
   "Profile_Level": "Level",
   "Profile_Race": "Race",
-  "Profile_Title": "Title"
+  "Profile_Title": "Title",
+  "List_ShowNearbyOnly": "Nearby only",
+  "Tooltip_ToggleFilters": "Show / Hide filters"
 }

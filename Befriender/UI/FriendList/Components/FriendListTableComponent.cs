@@ -46,13 +46,18 @@ public class FriendListTableComponent {
         this.proximityService = proximityService;
     }
 
-    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool groupByGroups, string searchQuery, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
+    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool showNearbyOnly, bool groupByGroups, string searchQuery, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
         float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
         var palette = this.themeService.CurrentPalette;
         bool dataUpdated = this.syncService.LastSyncTime != this.lastProcessedSyncTime;
         bool needsRefresh = forceRefresh || dataUpdated;
 
         var displayFriends = showOnlineOnly ? rawFriends.Where(f => f.IsOnline).ToList() : rawFriends.ToList();
+
+        if (showNearbyOnly) {
+            displayFriends = displayFriends.Where(f => this.proximityService.IsFriendNearby(f.ContentId)).ToList();
+        }
+
         var filteredFriends = this.searchService.FilterFriends(displayFriends, searchQuery);
 
         if (groupByGroups) {
