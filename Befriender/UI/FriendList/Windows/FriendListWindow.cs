@@ -25,8 +25,7 @@ public class FriendListWindow : Window, IDisposable {
     private bool isProfilePanelOpen;
     private const float ProfilePanelWidth = 300f;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService)
-        : base($"Befriender v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.1.0"}", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;
@@ -34,7 +33,6 @@ public class FriendListWindow : Window, IDisposable {
         this.navService = navService;
         this.configService = configService;
 
-        // Initialize state from persisted configuration to prevent ImGui size inflation on reload
         this.isProfilePanelOpen = this.configService.GetConfig().IsProfilePanelOpen;
 
         this.hotkeyService.OnHotkeyPressed += this.Toggle;
@@ -89,13 +87,13 @@ public class FriendListWindow : Window, IDisposable {
         ImGui.PopStyleColor(22);
     }
 
-    public override void Update() {
-        if (this.syncService.IsWindowOpen != this.IsOpen) {
-            this.syncService.IsWindowOpen = this.IsOpen;
-            if (this.IsOpen) {
-                this.syncService.RequestServerRefresh();
-            }
-        }
+    public override void OnOpen() {
+        this.syncService.IsWindowOpen = true;
+        this.syncService.RequestServerRefresh();
+    }
+
+    public override void OnClose() {
+        this.syncService.IsWindowOpen = false;
     }
 
     public override void Draw() {
@@ -120,7 +118,6 @@ public class FriendListWindow : Window, IDisposable {
             ImGui.EndTabBar();
         }
 
-        // Adjust window size reactively if the current tab's panel state differs from the known state
         if (this.isProfilePanelOpen != activeTabWantsPanel) {
             float delta = activeTabWantsPanel ? ProfilePanelWidth : -ProfilePanelWidth;
             var currentSize = ImGui.GetWindowSize();

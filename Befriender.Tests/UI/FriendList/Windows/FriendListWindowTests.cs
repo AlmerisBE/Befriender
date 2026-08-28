@@ -15,7 +15,6 @@ using Xunit;
 public class FriendListWindowTests {
     [Fact]
     public void FriendListWindow_Initialization_SetsCorrectPropertiesAndButtons() {
-        // Arrange
         var mockTabs = new List<ITab>();
         var mockSync = Substitute.For<IFriendSyncService>();
         var mockTheme = Substitute.For<IThemeService>();
@@ -25,17 +24,14 @@ public class FriendListWindowTests {
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
 
-        // Act
         var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService);
 
-        // Assert
-        Assert.StartsWith("Befriender v", window.WindowName);
+        Assert.Equal("Befriender", window.WindowName);
         Assert.Single(window.TitleBarButtons);
     }
 
     [Fact]
-    public void FriendListWindow_Update_RequestsServerRefreshWhenWindowOpens() {
-        // Arrange
+    public void FriendListWindow_OnOpen_RequestsServerRefresh() {
         var mockTabs = new List<ITab>();
         var mockSync = Substitute.For<IFriendSyncService>();
         var mockTheme = Substitute.For<IThemeService>();
@@ -45,19 +41,29 @@ public class FriendListWindowTests {
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
 
-        // Assume the service thinks the window is closed initially
-        mockSync.IsWindowOpen.Returns(false);
+        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService);
+
+        window.OnOpen();
+
+        mockSync.Received().IsWindowOpen = true;
+        mockSync.Received(1).RequestServerRefresh();
+    }
+
+    [Fact]
+    public void FriendListWindow_OnClose_UpdatesSyncServiceState() {
+        var mockTabs = new List<ITab>();
+        var mockSync = Substitute.For<IFriendSyncService>();
+        var mockTheme = Substitute.For<IThemeService>();
+        var mockHotkey = Substitute.For<IHotkeyService>();
+        var mockNavService = Substitute.For<IWindowNavigationService>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+
+        mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
 
         var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService);
 
-        // Simulate the window being opened by Dalamud or a command
-        window.IsOpen = true;
+        window.OnClose();
 
-        // Act
-        window.Update();
-
-        // Assert
-        mockSync.Received().IsWindowOpen = true;
-        mockSync.Received(1).RequestServerRefresh();
+        mockSync.Received().IsWindowOpen = false;
     }
 }
