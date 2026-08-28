@@ -18,17 +18,19 @@ public class ProximityService : IProximityService, IDisposable {
     private IConfigurationService configService;
     private INotificationManager notificationManager;
     private ILocalizationService loc;
+    private IClientState clientState;
 
     private HashSet<ulong> currentlyNearbyIds = new();
     private DateTime lastScanTime = DateTime.MinValue;
 
-    public ProximityService(IObjectTable objectTable, IFramework framework, IFriendRepository friendRepository, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc) {
+    public ProximityService(IObjectTable objectTable, IFramework framework, IFriendRepository friendRepository, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc, IClientState clientState) {
         this.objectTable = objectTable;
         this.framework = framework;
         this.friendRepository = friendRepository;
         this.configService = configService;
         this.notificationManager = notificationManager;
         this.loc = loc;
+        this.clientState = clientState;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
@@ -66,6 +68,8 @@ public class ProximityService : IProximityService, IDisposable {
 
             if (lookup.TryGetValue(key, out var friend)) {
                 newNearbyIds.Add(friend.ContentId);
+
+                this.friendRepository.UpdateFriendFromCharacter(friend.ContentId, pc, (ushort)this.clientState.TerritoryType);
 
                 if (!this.currentlyNearbyIds.Contains(friend.ContentId)) {
                     bool shouldNotify = (!friend.IsArchived && config.NotifyOnNearbyFriends) || (friend.IsArchived && config.NotifyOnNearbyArchived);

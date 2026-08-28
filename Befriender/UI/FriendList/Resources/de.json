@@ -121,5 +121,10 @@
   "Config_ProximitySettings": "Näherungseinstellungen",
   "List_SearchHint": "Suchen...",
   "Notification_FriendNearby": "{0} ist in der Nähe!",
-  "Tooltip_Nearby": "In der Nähe"
+  "Tooltip_Nearby": "In der Nähe",
+  "Action_ClearFantasia": "Als gesehen markieren",
+  "Profile_FantasiaDetected": "⚠️ Fantasia-Nutzung erkannt!",
+  "Profile_Level": "Stufe",
+  "Profile_Race": "Volk",
+  "Profile_Title": "Titel"
 }

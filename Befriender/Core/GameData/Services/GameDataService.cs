@@ -377,4 +377,46 @@ public class GameDataService : IGameDataService {
         var row = sheet.GetRowOrDefault(grandCompanyId);
         return row.HasValue ? row.Value.Name.ToString() : grandCompanyId.ToString();
     }
+
+    public string GetTitleName(ushort titleId, byte gender) {
+        if (titleId == 0) {
+            return string.Empty;
+        }
+
+        var sheet = this.dataManager.GetExcelSheet<Lumina.Excel.Sheets.Title>();
+        var row = sheet?.GetRowOrDefault(titleId);
+        if (!row.HasValue) {
+            return titleId.ToString();
+        }
+
+        return gender == 1 ? row.Value.Feminine.ToString() : row.Value.Masculine.ToString();
+    }
+
+    public string GetRaceName(byte raceId, byte gender) {
+        if (raceId == 0) {
+            return string.Empty;
+        }
+
+        var sheet = this.dataManager.GetExcelSheet<Lumina.Excel.Sheets.Race>();
+        var row = sheet?.GetRowOrDefault(raceId);
+        if (!row.HasValue) {
+            return raceId.ToString();
+        }
+
+        return gender == 1 ? row.Value.Feminine.ToString() : row.Value.Masculine.ToString();
+    }
+
+    public string GetTribeName(byte tribeId, byte gender) {
+        if (tribeId == 0) {
+            return string.Empty;
+        }
+
+        var sheet = this.dataManager.GetExcelSheet<Lumina.Excel.Sheets.Tribe>();
+        var row = sheet?.GetRowOrDefault(tribeId);
+        if (!row.HasValue) {
+            return tribeId.ToString();
+        }
+
+        return gender == 1 ? row.Value.Feminine.ToString() : row.Value.Masculine.ToString();
+    }
 }

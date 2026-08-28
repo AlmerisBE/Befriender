@@ -121,5 +121,10 @@
   "Config_ProximitySettings": "近接設定",
   "List_SearchHint": "検索...",
   "Notification_FriendNearby": "{0} が近くにいます！",
-  "Tooltip_Nearby": "近くにいる"
+  "Tooltip_Nearby": "近くにいる",
+  "Action_ClearFantasia": "確認済みにする",
+  "Profile_FantasiaDetected": "⚠️ 幻想薬の使用を検知しました！",
+  "Profile_Level": "レベル",
+  "Profile_Race": "種族",
+  "Profile_Title": "称号"
 }

@@ -5,6 +5,7 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
+using Befriender.UI.Theme.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -21,11 +22,12 @@ public class FriendProfilePanelComponent {
     private ITextureProvider textureProvider;
     private IFriendGroupRepository groupRepository;
     private IFriendTagRepository tagRepository;
+    private IThemeService themeService;
 
     private string notesBuffer = string.Empty;
     private ulong currentFriendId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository, IFriendTagRepository tagRepository) {
+    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository, IFriendTagRepository tagRepository, IThemeService themeService) {
         this.gameDataService = gameDataService;
         this.friendRepository = friendRepository;
         this.loc = loc;
@@ -33,6 +35,7 @@ public class FriendProfilePanelComponent {
         this.textureProvider = textureProvider;
         this.groupRepository = groupRepository;
         this.tagRepository = tagRepository;
+        this.themeService = themeService;
     }
 
     public void Draw(float panelWidth, FriendProfile friend, Action onClose) {
@@ -185,6 +188,38 @@ public class FriendProfilePanelComponent {
             }
             var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : this.loc.Translate("Profile_None");
             ImGui.Text(jobAbbr);
+
+            // --- Level ---
+            if (friend.Level > 0) {
+                ImGui.Text($"{this.loc.Translate("Profile_Level")}: {friend.Level}");
+            }
+
+            // --- Race / Title ---
+            string title = this.gameDataService.GetTitleName(friend.TitleId, friend.Gender);
+            if (!string.IsNullOrEmpty(title)) {
+                ImGui.Text($"{this.loc.Translate("Profile_Title")}: {title}");
+            }
+
+            string race = this.gameDataService.GetRaceName(friend.Race, friend.Gender);
+            string tribe = this.gameDataService.GetTribeName(friend.Tribe, friend.Gender);
+            if (!string.IsNullOrEmpty(race)) {
+                ImGui.Text($"{this.loc.Translate("Profile_Race")}: {race} ({tribe})");
+            }
+
+            if (friend.IsFantasiaDetected) {
+                ImGui.PushStyleColor(ImGuiCol.Text, this.themeService.CurrentPalette.TextMarkedForRemoval);
+                ImGui.Text(this.loc.Translate("Profile_FantasiaDetected"));
+                ImGui.PopStyleColor();
+                ImGui.SameLine();
+
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.CheckDouble)) {
+                    friend.IsFantasiaDetected = false;
+                    this.friendRepository.Save();
+                }
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(this.loc.Translate("Action_ClearFantasia"));
+                }
+            }
 
             ImGui.Spacing();
 

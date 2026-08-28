@@ -121,5 +121,10 @@
   "Config_ProximitySettings": "Proximity Settings",
   "List_SearchHint": "Search...",
   "Notification_FriendNearby": "{0} is nearby!",
-  "Tooltip_Nearby": "Nearby"
+  "Tooltip_Nearby": "Nearby",
+  "Action_ClearFantasia": "Mark as seen",
+  "Profile_FantasiaDetected": "⚠️ Fantasia usage detected!",
+  "Profile_Level": "Level",
+  "Profile_Race": "Race",
+  "Profile_Title": "Title"
 }

@@ -121,5 +121,10 @@
   "Config_NotifyNearbyFriends": "Notifier si un ami est proche",
   "Config_NotifyNearbyArchived": "Notifier si un contact archivé est proche",
   "Notification_FriendNearby": "Votre contact {0} est à proximité !",
-  "Tooltip_Nearby": "À proximité"
+  "Tooltip_Nearby": "À proximité",
+  "Action_ClearFantasia": "Marquer comme vu",
+  "Profile_FantasiaDetected": "⚠️ Filtre d'illusion détecté !",
+  "Profile_Level": "Niveau",
+  "Profile_Race": "Race",
+  "Profile_Title": "Titre"
 }
