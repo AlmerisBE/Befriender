@@ -28,6 +28,18 @@ public class AboutTab : ITab {
         ImGui.Separator();
         ImGui.Spacing();
 
+        ImGui.TextDisabled(this.loc.Translate("About_FeaturesHeader"));
+        ImGui.Spacing();
+        ImGui.BulletText(this.loc.Translate("About_Feature1"));
+        ImGui.BulletText(this.loc.Translate("About_Feature2"));
+        ImGui.BulletText(this.loc.Translate("About_Feature3"));
+        ImGui.BulletText(this.loc.Translate("About_Feature4"));
+        ImGui.BulletText(this.loc.Translate("About_Feature5"));
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
         ImGui.Text($"{this.loc.Translate("About_Version")}: {this.pluginVersion}");
 
         ImGui.Spacing();

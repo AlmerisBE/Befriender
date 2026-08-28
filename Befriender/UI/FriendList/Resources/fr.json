@@ -86,5 +86,11 @@
   "Tab_About": "À propos",
   "About_Version": "Version",
   "About_GitHub": "Dépôt GitHub",
-  "About_Description": "Befriender enrichit votre expérience sociale en sauvegardant les métadonnées de vos contacts.\n\nImportant : Ce plugin ne met pas à jour les données en temps réel. Il scanne votre liste d'amis officielle (Vanilla) lorsqu'elle est ouverte ou en arrière-plan. Les informations affichées reflètent le dernier état connu lors de ce scan."
+  "About_Description": "Befriender enrichit votre expérience sociale en sauvegardant les métadonnées de vos contacts.\n\nImportant : Ce plugin ne met pas à jour les données en temps réel. Il scanne votre liste d'amis officielle (Vanilla) lorsqu'elle est ouverte ou en arrière-plan. Les informations affichées reflètent le dernier état connu lors de ce scan.",
+  "About_FeaturesHeader": "Fonctionnalités principales :",
+  "About_Feature1": "Suivi des métadonnées : Date et lieu d'ajout, dernière connexion, et historique des noms.",
+  "About_Feature2": "Notes personnalisées et archivage manuel pour masquer un contact sans le supprimer.",
+  "About_Feature3": "Actions rapides : Téléportation au logement, invitations, messages et carte de personnage.",
+  "About_Feature4": "Identification des amis disparus/supprimés de votre liste native.",
+  "About_Feature5": "Synchronisation en arrière-plan paramétrable."
 }
