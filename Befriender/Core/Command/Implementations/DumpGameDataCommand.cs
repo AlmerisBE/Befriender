@@ -55,18 +55,5 @@ public class DumpGameDataCommand : ICommand {
                 }
             }
         }
-
-        this.pluginLog.Info("=== MAIN COMMANDS ===");
-        var mainCommandSheet = this.dataManager.GetExcelSheet<MainCommand>();
-        if (mainCommandSheet != null) {
-            foreach (var row in mainCommandSheet) {
-                var name = row.Name.ToString();
-                if (string.IsNullOrEmpty(name)) {
-                    continue;
-                }
-
-                this.pluginLog.Info($"Command ID: {row.RowId} | Name: {name}");
-            }
-        }
     }
 }

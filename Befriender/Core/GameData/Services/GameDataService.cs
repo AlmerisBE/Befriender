@@ -1,15 +1,20 @@
 ﻿namespace Befriender.Core.GameData.Services;
 
 using Befriender.Core.GameData.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
 
 public class GameDataService : IGameDataService {
     private IDataManager dataManager;
+    private IObjectTable objectTable;
+    private ILocalizationService loc;
 
-    public GameDataService(IDataManager dataManager) {
+    public GameDataService(IDataManager dataManager, IObjectTable objectTable, ILocalizationService loc) {
         this.dataManager = dataManager;
+        this.objectTable = objectTable;
+        this.loc = loc;
     }
 
     public string GetWorldName(uint worldId) {
@@ -79,159 +84,237 @@ public class GameDataService : IGameDataService {
                 }
             }
         }
-
         return territoryId.ToString();
     }
 
-    private uint GetOnlineStatusIconId(ulong stateMask) {
+    private bool IsInDutyTerritory(ushort territoryId) {
+        if (territoryId == 0) {
+            return false;
+        }
+
+        var sheet = this.dataManager.GetExcelSheet<TerritoryType>();
+        if (sheet == null) {
+            return false;
+        }
+
+        var row = sheet.GetRowOrDefault(territoryId);
+        if (!row.HasValue) {
+            return false;
+        }
+
+        // Exhaustive list of actual duty territory uses extracted from game data dump
+        return row.Value.TerritoryIntendedUse.RowId switch {
+            3 or 4 or 8 or 10 or 18 or 26 or 27 or 28 or 29 or 31 or 33 or 34 or 36 or 37 or 38 or 39 or 41 or 46 or 47 or 48 or 52 or 53 or 54 or 56 or 57 or 58 or 59 or 60 or 61 or 63 => true,
+            _ => false
+        };
+    }
+
+    public bool IsCrossWorld(uint currentWorldId, uint homeWorldId, ulong stateMask, ushort locationId) {
         var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld)) {
-            return 61535;
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP) ||
+            (stateMask != 0 && this.IsInDutyTerritory(locationId))) {
+            return false;
+        }
+
+        return currentWorldId > 0 && currentWorldId != homeWorldId;
+    }
+
+    public string GetDisplayLocation(ushort locationId, uint currentWorldId, uint homeWorldId, ulong stateMask) {
+        if (this.IsCrossWorld(currentWorldId, homeWorldId, stateMask, locationId)) {
+            uint displayWorld = currentWorldId > 0 ? currentWorldId : homeWorldId;
+            return this.GetWorldName(displayWorld);
+        }
+
+        var locationName = this.GetLocationName(locationId);
+
+        if (string.IsNullOrEmpty(locationName) || locationName == locationId.ToString() || locationId == 0) {
+            uint displayWorld = currentWorldId > 0 ? currentWorldId : homeWorldId;
+            return this.GetWorldName(displayWorld);
+        }
+
+        return locationName;
+    }
+
+    private uint GetOnlineStatusRowId(ulong stateMask, ushort locationId) {
+        if (stateMask == 0) {
+            return 10; // Row 10: Offline
+        }
+
+        var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
+
+        // Accurate mapping to exact OnlineStatus Row IDs dumped from the client
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP)) {
+            return 13;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty)) {
-            return 61510;
+            return 43;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld)) {
+            return 40;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty)) {
+            return 41;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty)) {
+            return 42;
+        }
+
+        if (this.IsInDutyTerritory(locationId)) {
+            return 43;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.WaitingForDutyFinder)) {
-            return 61517;
+            return 25;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.ViewingCutscene)) {
-            return 61508;
+            return 15;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.CameraMode)) {
-            return 61546;
+            return 18;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AwayFromKeyboard)) {
-            return 61511;
+            return 17;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Busy)) {
-            return 61509;
+            return 12;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.RecruitingPartyMembers)) {
-            return 61536;
+            return 26;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PlayingTripleTriad)) {
-            return 61539;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AllianceLeader)) {
-            return 61518;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyLeader)) {
-            return 61519;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyMember)) {
-            return 61520;
+            return 14;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeaderCrossWorld)) {
-            return 61961;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeader)) {
-            return 61521;
+            return 38;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyMemberCrossWorld)) {
-            return 61962;
+            return 39;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AllianceLeader)) {
+            return 33;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyLeader)) {
+            return 34;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyMember)) {
+            return 35;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeader)) {
+            return 36;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyMember)) {
-            return 61522;
+            return 37;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.RolePlaying)) {
-            return 61545;
+            return 22;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingForParty)) {
-            return 61515;
+            return 23;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingToMeldMateria)) {
-            return 61514;
+            return 21;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingForRepairs)) {
-            return 61512;
+            return 19;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingToRepair)) {
-            return 61513;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Mentor)) {
-            return 61540;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.BattleMentor)) {
-            return 61542;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.TradeMentor)) {
-            return 61543;
+            return 20;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvPMentor)) {
-            return 61544;
+            return 30;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.TradeMentor)) {
+            return 29;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvEMentor)) {
+            return 28;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Mentor)) {
+            return 27;
+        }
+
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.BattleMentor)) {
+            return 11;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.NewAdventurer)) {
-            return 61523;
+            return 32;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Returner)) {
-            return 61547;
+            return 31;
         }
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Online)) {
-            return 61505;
+            return 47;
         }
 
-        return 61504; // Offline
+        return 47; // Default to Online
     }
 
-    public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask) {
-        var iconId = this.GetOnlineStatusIconId(stateMask);
+    public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask, uint currentWorldId, uint homeWorldId, ushort locationId) {
+        uint rowId = this.GetOnlineStatusRowId(stateMask, locationId);
+        bool isCrossWorld = this.IsCrossWorld(currentWorldId, homeWorldId, stateMask, locationId);
 
-        if (iconId == 61504) {
-            return (61504, "Offline");
+        if (rowId == 10) {
+            return (61504, this.loc.Translate("Status_Offline"));
         }
 
-        if (iconId == 61505) {
-            return (61505, "Online");
+        if (rowId == 47 && isCrossWorld) {
+            return (61505, this.loc.Translate("Status_CrossWorld"));
         }
 
         var sheet = this.dataManager.GetExcelSheet<OnlineStatus>();
         if (sheet != null) {
-            foreach (var row in sheet) {
-                if (row.Icon == iconId) {
-                    return (iconId, row.Name.ToString());
-                }
+            var row = sheet.GetRowOrDefault(rowId);
+            if (row.HasValue) {
+                return (row.Value.Icon, row.Value.Name.ToString());
             }
         }
 
-        return (iconId, "Unknown");
+        return (61505, this.loc.Translate("Status_Unknown"));
     }
 
     public bool IsFriendAvailable(ulong stateMask) {
         var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty) ||
+            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.ViewingCutscene) ||
-            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Busy) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AwayFromKeyboard) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.CameraMode)) {

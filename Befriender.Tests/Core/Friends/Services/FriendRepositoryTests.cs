@@ -302,4 +302,44 @@ public class FriendRepositoryTests {
         Assert.NotNull(notifiedFriend);
         Assert.Equal(1ul, notifiedFriend.ContentId);
     }
+
+    [Fact]
+    public void FriendRepository_UpdateFriends_PreservesLocationWhenOfflineAndAcceptsZeroWhenOnline() {
+        // Arrange
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var existingFriends = new List<FriendProfile> {
+            new FriendProfile { ContentId = 1, Name = "Offline Friend", IsOnline = false, LocationId = 123 },
+            new FriendProfile { ContentId = 2, Name = "CrossWorld Friend", IsOnline = true, LocationId = 123 }
+        };
+        mockStorage.Load("Almeris_33").Returns(existingFriends);
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        var scannedFriends = new List<FriendProfile> {
+            // Offline scan returns 0 for location
+            new FriendProfile { ContentId = 1, Name = "Offline Friend", IsOnline = false, LocationId = 0 },
+            // Online scan returns 0 for location (e.g., cross-world or instance)
+            new FriendProfile { ContentId = 2, Name = "CrossWorld Friend", IsOnline = true, LocationId = 0 }
+        };
+
+        // Act
+        repository.UpdateFriends(scannedFriends);
+        var result = repository.GetFriends();
+
+        // Assert
+        var offlineFriend = result.First(f => f.ContentId == 1);
+        var onlineFriend = result.First(f => f.ContentId == 2);
+
+        // The offline friend should keep their last known location (123)
+        Assert.Equal(123, offlineFriend.LocationId);
+
+        // The online friend should accept the new 0 location to prevent ghosting
+        Assert.Equal(0, onlineFriend.LocationId);
+    }
 }
