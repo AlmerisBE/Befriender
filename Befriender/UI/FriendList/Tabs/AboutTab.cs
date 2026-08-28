@@ -15,7 +15,6 @@ public class AboutTab : ITab {
     public string InternalName => "Tab_About";
     public string Name => this.loc.Translate("Tab_About");
     public bool IsProfilePanelOpen => false;
-    private string searchQuery = string.Empty;
 
     public AboutTab(ILocalizationService loc) {
         this.loc = loc;
@@ -55,11 +54,23 @@ public class AboutTab : ITab {
 
         ImGui.Spacing();
 
-        // Using CodeBranch as a safe fallback for the repository link
         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.CodeBranch, this.loc.Translate("About_GitHub"))) {
             try {
                 Process.Start(new ProcessStartInfo {
                     FileName = "https://github.com/AlmerisBE/Befriender",
+                    UseShellExecute = true
+                });
+            }
+            catch { } // Silently ignore if the OS fails to open the browser
+        }
+
+        ImGui.SameLine();
+
+        // Utilisation de FontAwesomeIcon.Comments à la place de l'icône de marque manquante
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Comments, this.loc.Translate("About_Discord"))) {
+            try {
+                Process.Start(new ProcessStartInfo {
+                    FileName = "https://discord.gg/3VKgxb3Sy",
                     UseShellExecute = true
                 });
             }
