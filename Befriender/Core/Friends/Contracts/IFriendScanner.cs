@@ -8,5 +8,4 @@ public interface IFriendScanner {
     int GetCurrentFriendCount();
     ulong GetStateHash();
     void RequestServerUpdate();
-    void RequestCrossWorldUpdate();
 }

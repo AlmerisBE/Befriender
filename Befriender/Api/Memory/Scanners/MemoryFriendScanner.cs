@@ -75,7 +75,7 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 FcTag = fcTag,
                 OnlineStateMask = onlineStateMask,
                 ClientLanguages = clientLanguages,
-                GrandCompany = grandCompany,
+                GrandCompany = grandCompany
             });
         }
 
@@ -123,7 +123,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
         for (uint i = 0; i < count; i++) {
             var entry = friendProxy->GetEntry(i);
             if (entry != null) {
-                // Creates a unique fast hash based on the State flag of all entries
                 hash = unchecked(hash * 314159 + (ulong)entry->State);
             }
         }
@@ -132,26 +131,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
     }
 
     public void RequestServerUpdate() {
-        var uiModule = UIModule.Instance();
-        if (uiModule == null) {
-            return;
-        }
-
-        var infoModule = uiModule->GetInfoModule();
-        if (infoModule == null) {
-            return;
-        }
-
-        var friendProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FriendList);
-        if (friendProxy == null) {
-            return;
-        }
-
-        // Triggers the native server data request mimicking the vanilla friend list opening
-        friendProxy->RequestData();
-    }
-
-    public void RequestCrossWorldUpdate() {
         var uiModule = UIModule.Instance();
         if (uiModule == null) {
             return;

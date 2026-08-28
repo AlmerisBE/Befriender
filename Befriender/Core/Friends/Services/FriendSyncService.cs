@@ -17,7 +17,6 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
     private DateTime nextHashCheck = DateTime.MinValue;
     private DateTime pendingSyncTime = DateTime.MaxValue;
     private DateTime nextAutoSyncTime = DateTime.MaxValue;
-    private DateTime nextCrossWorldSyncTime = DateTime.MinValue;
 
     public DateTime LastSyncTime { get; private set; } = DateTime.MinValue;
     public bool IsSyncPending => this.pendingSyncTime != DateTime.MaxValue;
@@ -60,19 +59,6 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
         this.friendScanner.RequestServerUpdate();
         this.pendingSyncTime = DateTime.Now.AddSeconds(2);
         this.ScheduleNextAutoSync();
-    }
-
-    public void RequestCrossWorldRefresh() {
-        var now = DateTime.Now;
-        if (now < this.nextCrossWorldSyncTime) {
-            return;
-        }
-
-        this.friendScanner.RequestCrossWorldUpdate();
-
-        // Cooldown aléatoire entre 5 et 10 secondes
-        int cooldownSeconds = Random.Shared.Next(5, 11);
-        this.nextCrossWorldSyncTime = now.AddSeconds(cooldownSeconds);
     }
 
     private void ScheduleNextAutoSync() {

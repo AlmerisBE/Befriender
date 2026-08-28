@@ -47,7 +47,6 @@ public class FriendListWindowTests {
 
         mockSync.Received().IsWindowOpen = true;
         mockSync.Received(1).RequestServerRefresh();
-        mockSync.Received(1).RequestCrossWorldRefresh();
     }
 
     [Fact]

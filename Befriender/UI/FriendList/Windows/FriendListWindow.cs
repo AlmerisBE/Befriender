@@ -90,7 +90,6 @@ public class FriendListWindow : Window, IDisposable {
     public override void OnOpen() {
         this.syncService.IsWindowOpen = true;
         this.syncService.RequestServerRefresh();
-        this.syncService.RequestCrossWorldRefresh();
     }
 
     public override void OnClose() {

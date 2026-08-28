@@ -9,5 +9,4 @@ public interface IFriendSyncService {
 
     void ForceSync();
     void RequestServerRefresh();
-    void RequestCrossWorldRefresh();
 }

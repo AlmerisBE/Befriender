@@ -53,24 +53,4 @@ public class FriendSyncServiceTests {
             list.First().FcTag == "TEST"
         ));
     }
-
-    [Fact]
-    public void RequestCrossWorldRefresh_EnforcesServerCooldown() {
-        var mockFramework = Substitute.For<IFramework>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        var mockScanner = Substitute.For<IFriendScanner>();
-        var mockRepository = Substitute.For<IFriendRepository>();
-        var mockClientState = Substitute.For<IClientState>();
-
-        mockConfigService.GetConfig().Returns(new PluginConfiguration());
-
-        using var service = new FriendSyncService(mockFramework, mockConfigService, mockScanner, mockRepository, mockClientState);
-
-        service.RequestCrossWorldRefresh();
-
-        // Un deuxième appel immédiat devrait être bloqué par le cooldown de 5 à 10 secondes
-        service.RequestCrossWorldRefresh();
-
-        mockScanner.Received(1).RequestCrossWorldUpdate();
-    }
 }
