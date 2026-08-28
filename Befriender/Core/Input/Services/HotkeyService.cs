@@ -2,11 +2,13 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Input.Contracts;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 
-public class HotkeyService : IHotkeyService, IDisposable {
+public unsafe class HotkeyService : IHotkeyService, IDisposable {
     private IKeyState keyState;
     private IFramework framework;
     private IConfigurationService configService;
@@ -31,9 +33,22 @@ public class HotkeyService : IHotkeyService, IDisposable {
         }
 
         bool isKeyPressed = this.keyState[targetKey];
+        bool isInputFocused = false;
 
-        // On vérifie le "just pressed" pour éviter le spam de la fenêtre (Toggle en boucle)
-        if (isKeyPressed && !this.wasKeyPressed) {
+        try {
+            if (ImGui.GetIO().WantCaptureKeyboard) {
+                isInputFocused = true;
+            }
+
+            var atkStage = AtkStage.Instance();
+            if (atkStage != null && atkStage->GetFocus() != null) {
+                isInputFocused = true;
+            }
+        }
+        catch { } // Silently swallow exceptions in isolated unit test environments
+
+        // Trigger only if the key is just pressed AND no text input is currently focused
+        if (isKeyPressed && !this.wasKeyPressed && !isInputFocused) {
             bool ctrlPressed = this.keyState[VirtualKey.CONTROL];
             bool shiftPressed = this.keyState[VirtualKey.SHIFT];
             bool altPressed = this.keyState[VirtualKey.MENU];
@@ -45,6 +60,7 @@ public class HotkeyService : IHotkeyService, IDisposable {
             }
         }
 
+        // Always track the physical key state accurately to avoid stuck logic
         this.wasKeyPressed = isKeyPressed;
     }
 
