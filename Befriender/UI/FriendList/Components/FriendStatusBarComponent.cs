@@ -3,6 +3,9 @@
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 
 public class FriendStatusBarComponent {
@@ -17,6 +20,21 @@ public class FriendStatusBarComponent {
     }
 
     public void Draw() {
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.AddressBook)) {
+            unsafe {
+                var uiModule = UIModule.Instance();
+                if (uiModule != null) {
+                    uiModule->ExecuteMainCommand(13);
+                }
+            }
+        }
+
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(this.loc.Translate("Tooltip_OpenNativeList"));
+        }
+
+        ImGui.SameLine();
+
         var rawFriends = this.friendRepository.GetFriends();
 
         int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;

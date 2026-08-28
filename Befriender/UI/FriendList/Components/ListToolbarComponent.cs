@@ -2,9 +2,6 @@
 
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.Components;
-using FFXIVClientStructs.FFXIV.Client.UI;
 
 public class ListToolbarComponent {
     private ILocalizationService loc;
@@ -30,31 +27,9 @@ public class ListToolbarComponent {
 
         ImGui.SameLine();
 
-        float buttonSize = ImGui.GetFrameHeight();
-        float searchWidth = 150f;
-        float rightAlign = ImGui.GetWindowContentRegionMax().X - buttonSize - searchWidth - ImGui.GetStyle().ItemSpacing.X;
-
-        if (ImGui.GetCursorPosX() < rightAlign) {
-            ImGui.SameLine(rightAlign);
-        }
-
-        ImGui.SetNextItemWidth(searchWidth);
+        ImGui.SetNextItemWidth(150f);
         if (ImGui.InputTextWithHint("##search", this.loc.Translate("List_SearchHint"), ref searchQuery, 50)) {
             forceRefresh = true;
-        }
-
-        ImGui.SameLine();
-
-        if (ImGuiComponents.IconButton(FontAwesomeIcon.AddressBook)) {
-            unsafe {
-                var uiModule = UIModule.Instance();
-                if (uiModule != null) {
-                    uiModule->ExecuteMainCommand(13);
-                }
-            }
-        }
-        if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip(this.loc.Translate("Tooltip_OpenNativeList"));
         }
 
         return forceRefresh;
