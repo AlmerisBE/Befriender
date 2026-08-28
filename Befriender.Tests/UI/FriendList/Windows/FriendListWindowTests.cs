@@ -29,7 +29,7 @@ public class FriendListWindowTests {
         var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService);
 
         // Assert
-        Assert.Equal("Befriender", window.WindowName);
+        Assert.StartsWith("Befriender v", window.WindowName);
         Assert.Single(window.TitleBarButtons);
     }
 

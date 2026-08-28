@@ -25,7 +25,8 @@ public class FriendListWindow : Window, IDisposable {
     private bool isProfilePanelOpen;
     private const float ProfilePanelWidth = 300f;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService)
+        : base($"Befriender v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.1.0"}", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;

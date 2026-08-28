@@ -83,5 +83,15 @@
   "Action_TrackFriend": "Enable login alerts",
   "Action_UntrackFriend": "Disable login alerts",
   "Column_AddedDate": "Added On",
-  "Column_ArchivedDate": "Archived On"
+  "Column_ArchivedDate": "Archived On",
+  "Tab_About": "About",
+  "About_Version": "Version",
+  "About_GitHub": "GitHub Repository",
+  "About_Description": "Befriender enhances your social experience by saving your contacts' metadata.\n\nImportant: This plugin does not update data in real-time. It scans your official (Vanilla) friend list when opened or in the background. Displayed information reflects the last known state from the scan.",
+  "About_FeaturesHeader": "Key Features:",
+  "About_Feature1": "Track metadata: Added date, location, last seen, and name changes.",
+  "About_Feature2": "Custom notes and manual archiving to hide contacts without un-friending.",
+  "About_Feature3": "Quick actions: Estate teleport, party invites, messages, and adventurer plates.",
+  "About_Feature4": "Identifies missing/deleted friends from your vanilla list.",
+  "About_Feature5": "Customizable background synchronization."
 }

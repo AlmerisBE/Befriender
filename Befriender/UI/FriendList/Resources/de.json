@@ -83,5 +83,15 @@
   "Action_TrackFriend": "Anmeldebenachrichtigungen aktivieren",
   "Action_UntrackFriend": "Anmeldebenachrichtigungen deaktivieren",
   "Column_AddedDate": "Hinzugefügt am",
-  "Column_ArchivedDate": "Archiviert am"
+  "Column_ArchivedDate": "Archiviert am",
+  "Tab_About": "Über",
+  "About_Version": "Version",
+  "About_GitHub": "GitHub-Repository",
+  "About_Description": "Befriender bereichert dein soziales Erlebnis durch das Speichern von Metadaten deiner Kontakte.\n\nWichtig: Dieses Plugin aktualisiert Daten nicht in Echtzeit. Es scannt deine offizielle (Vanilla) Freundesliste, wenn sie geöffnet ist oder im Hintergrund. Angezeigte Informationen spiegeln den zuletzt bekannten Status des Scans wider.",
+  "About_FeaturesHeader": "Hauptfunktionen:",
+  "About_Feature1": "Metadaten-Tracking: Hinzugefügt am, Ort, zuletzt gesehen und Namenshistorie.",
+  "About_Feature2": "Notizen und manuelles Archivieren, um Kontakte auszublenden, ohne sie zu löschen.",
+  "About_Feature3": "Schnellaktionen: Haus-Teleport, Gruppeneinladungen, Nachrichten und Abenteurerpässe.",
+  "About_Feature4": "Identifiziert fehlende/gelöschte Freunde aus der Standardliste.",
+  "About_Feature5": "Anpassbare Hintergrundsynchronisation."
 }
