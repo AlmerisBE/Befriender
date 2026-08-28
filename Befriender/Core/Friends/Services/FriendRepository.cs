@@ -106,6 +106,8 @@ public class FriendRepository : IFriendRepository {
                         existing.FcTag = scanned.FcTag;
                     }
 
+                    existing.GroupId = scanned.GroupId;
+
                     if (wasOffline && existing.IsOnline) {
                         this.FriendLoggedOn?.Invoke(existing);
                     }
