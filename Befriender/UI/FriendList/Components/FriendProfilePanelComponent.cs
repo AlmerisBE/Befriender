@@ -85,7 +85,7 @@ public class FriendProfilePanelComponent {
             ImGui.SameLine();
 
             ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
-            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask); // Note: Assuming signature based on provided context
+            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, friend.CurrentWorldId, friend.HomeWorldId, friend.LocationId);
 
             var statusIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
             var statusIconWrap = this.textureProvider.GetFromGameIcon(statusIconLookup).GetWrapOrDefault();
@@ -124,12 +124,13 @@ public class FriendProfilePanelComponent {
             ImGui.Spacing();
 
             // --- Location ---
-            var locationName = this.gameDataService.GetLocationName(friend.LocationId);
-            if ((string.IsNullOrEmpty(locationName) || locationName == friend.LocationId.ToString()) && friend.IsOnline) {
-                uint displayWorld = friend.CurrentWorldId > 0 ? friend.CurrentWorldId : friend.HomeWorldId;
-                locationName = this.gameDataService.GetWorldName(displayWorld);
+            string displayLocation = this.loc.Translate("Profile_Unknown");
+            if (friend.IsOnline) {
+                displayLocation = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
+                if (string.IsNullOrEmpty(displayLocation) || displayLocation == "0") {
+                    displayLocation = this.loc.Translate("Profile_Unknown");
+                }
             }
-            string displayLocation = friend.IsOnline ? (string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName) : this.loc.Translate("Profile_Unknown");
 
             ImGui.Text($"{this.loc.Translate("Column_Location")}: {displayLocation}");
 
@@ -169,7 +170,6 @@ public class FriendProfilePanelComponent {
             ImGui.Spacing();
 
             // --- Metadata ---
-
             ImGui.Text(this.loc.Translate("Profile_MetadataHeader"));
 
             string lastSeenStr = friend.IsOnline ? this.loc.Translate("Profile_Online") : (friend.LastSeenAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : this.loc.Translate("Profile_DaysAgo", (int)(DateTime.Now - friend.LastSeenAt).TotalDays));

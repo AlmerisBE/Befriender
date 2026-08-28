@@ -102,7 +102,6 @@ public class GameDataService : IGameDataService {
             return false;
         }
 
-        // Exhaustive list of actual duty territory uses extracted from game data dump
         return row.Value.TerritoryIntendedUse.RowId switch {
             3 or 4 or 8 or 10 or 18 or 26 or 27 or 28 or 29 or 31 or 33 or 34 or 36 or 37 or 38 or 39 or 41 or 46 or 47 or 48 or 52 or 53 or 54 or 56 or 57 or 58 or 59 or 60 or 61 or 63 => true,
             _ => false
@@ -112,8 +111,7 @@ public class GameDataService : IGameDataService {
     public bool IsCrossWorld(uint currentWorldId, uint homeWorldId, ulong stateMask, ushort locationId) {
         var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld) ||
-            state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
+        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty) ||
             state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP) ||
@@ -121,7 +119,15 @@ public class GameDataService : IGameDataService {
             return false;
         }
 
-        return currentWorldId > 0 && currentWorldId != homeWorldId;
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) {
+            return currentWorldId > 0 && currentWorldId != homeWorldId;
+        }
+
+        var localWorldId = localPlayer.CurrentWorld.RowId;
+        var friendWorldId = currentWorldId > 0 ? currentWorldId : homeWorldId;
+
+        return localWorldId != friendWorldId;
     }
 
     public string GetDisplayLocation(ushort locationId, uint currentWorldId, uint homeWorldId, ulong stateMask) {
@@ -142,12 +148,11 @@ public class GameDataService : IGameDataService {
 
     private uint GetOnlineStatusRowId(ulong stateMask, ushort locationId) {
         if (stateMask == 0) {
-            return 10; // Row 10: Offline
+            return 10;
         }
 
         var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
-        // Accurate mapping to exact OnlineStatus Row IDs dumped from the client
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP)) {
             return 13;
         }
@@ -280,7 +285,7 @@ public class GameDataService : IGameDataService {
             return 47;
         }
 
-        return 47; // Default to Online
+        return 47;
     }
 
     public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask, uint currentWorldId, uint homeWorldId, ushort locationId) {
