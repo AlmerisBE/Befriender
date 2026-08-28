@@ -25,8 +25,8 @@ public class FriendListTableComponent {
     private IFriendActionService actionService;
     private IFriendGroupRepository groupRepository;
 
-    private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
-    private int lastFriendCount = -1;
+    private Dictionary<string, IReadOnlyList<FriendProfile>> cachedTables = new();
+    private Dictionary<string, int> lastTableFriendCounts = new();
     private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
     public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository) {
@@ -40,53 +40,82 @@ public class FriendListTableComponent {
         this.groupRepository = groupRepository;
     }
 
-    public void Draw(float tableWidth, float footerHeight, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool groupByGroups, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
-        if (ImGui.BeginTable("FriendsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
+    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool groupByGroups, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
+        float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
+        var palette = this.themeService.CurrentPalette;
+        bool dataUpdated = this.syncService.LastSyncTime != this.lastProcessedSyncTime;
+        bool needsRefresh = forceRefresh || dataUpdated;
+
+        var displayFriends = showOnlineOnly ? rawFriends.Where(f => f.IsOnline).ToList() : rawFriends.ToList();
+
+        if (groupByGroups) {
+            if (ImGui.BeginChild("GroupedListContainer", new Vector2(tableWidth, 0))) {
+                var groupsDict = this.groupRepository.GetGroups().ToDictionary(g => g.Id, g => g.Title);
+
+                var groupedFriends = displayFriends
+                    .GroupBy(f => f.CustomGroupId)
+                    .OrderBy(g => g.Key.HasValue ? (groupsDict.TryGetValue(g.Key.Value, out var title) ? title : string.Empty) : "ZZZZZ_UNASSIGNED");
+
+                foreach (var group in groupedFriends) {
+                    string groupName = group.Key.HasValue && groupsDict.TryGetValue(group.Key.Value, out var name) && !string.IsNullOrEmpty(name)
+                        ? name
+                        : this.loc.Translate("Group_Unassigned");
+
+                    string headerText = $"{groupName} ({group.Count()})###GroupHeader_{group.Key}";
+
+                    if (ImGui.CollapsingHeader(headerText, ImGuiTreeNodeFlags.DefaultOpen)) {
+                        this.DrawFriendTable($"FriendsTable_{group.Key}", group, 0, selectedFriend, palette, textOffsetY, needsRefresh, onRowSelected, false);
+                    }
+                }
+            }
+            ImGui.EndChild();
+        }
+        else {
+            this.DrawFriendTable("FriendsTable_All", displayFriends, tableWidth, selectedFriend, palette, textOffsetY, needsRefresh, onRowSelected, true);
+        }
+
+        this.lastProcessedSyncTime = this.syncService.LastSyncTime;
+    }
+
+    private void DrawFriendTable(string tableId, IEnumerable<FriendProfile> friends, float tableWidth, FriendProfile? selectedFriend, ThemePalette palette, float textOffsetY, bool needsRefresh, Action<FriendProfile?> onRowSelected, bool useScroll) {
+        var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Sortable;
+        if (useScroll) {
+            flags |= ImGuiTableFlags.ScrollY;
+        }
+
+        if (ImGui.BeginTable(tableId, 5, flags, new Vector2(tableWidth, 0))) {
             ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.DefaultSort | ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn(this.loc.Translate("Column_Name"));
             ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn(this.loc.Translate("Column_FC"), ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn(this.loc.Translate("Column_Location"));
 
-            ImGui.TableSetupScrollFreeze(0, 1);
+            if (useScroll) {
+                ImGui.TableSetupScrollFreeze(0, 1);
+            }
+
             ImGui.TableHeadersRow();
 
-            this.HandleSortingAndFiltering(rawFriends, showOnlineOnly, forceRefresh);
-            float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
-            var palette = this.themeService.CurrentPalette;
+            var sortSpecs = ImGui.TableGetSortSpecs();
+            var friendsList = friends.ToList();
 
-            if (groupByGroups) {
-                var groupsDict = this.groupRepository.GetGroups().ToDictionary(g => g.Id, g => g.Title);
+            if (sortSpecs.SpecsDirty || needsRefresh || !this.lastTableFriendCounts.TryGetValue(tableId, out int count) || count != friendsList.Count) {
+                int sortColumn = -1;
+                bool isAscending = true;
 
-                var groupedFriends = this.cachedFriends
-                    .GroupBy(f => f.CustomGroupId)
-                    .OrderBy(g => g.Key.HasValue ? (groupsDict.TryGetValue(g.Key.Value, out var title) ? title : string.Empty) : "ZZZZZ_UNASSIGNED");
-
-                foreach (var group in groupedFriends) {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-
-                    string groupName = group.Key.HasValue && groupsDict.TryGetValue(group.Key.Value, out var name) && !string.IsNullOrEmpty(name)
-                        ? name
-                        : this.loc.Translate("Group_Unassigned");
-
-                    string headerText = $"{groupName} ({group.Count()})";
-
-                    ImGui.PushStyleColor(ImGuiCol.Text, palette.Text);
-                    bool isNodeOpen = ImGui.TreeNodeEx(headerText, ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen);
-                    ImGui.PopStyleColor();
-
-                    if (isNodeOpen) {
-                        foreach (var friend in group) {
-                            this.DrawFriendRow(friend, selectedFriend, palette, textOffsetY, onRowSelected);
-                        }
-
-                        ImGui.TreePop();
-                    }
+                if (sortSpecs.SpecsCount > 0) {
+                    var spec = sortSpecs.Specs[0];
+                    sortColumn = spec.ColumnIndex;
+                    isAscending = spec.SortDirection == ImGuiSortDirection.Ascending;
                 }
+
+                this.cachedTables[tableId] = this.displayService.ProcessFriends(friendsList, false, sortColumn, isAscending);
+                this.lastTableFriendCounts[tableId] = friendsList.Count;
+                sortSpecs.SpecsDirty = false;
             }
-            else {
-                foreach (var friend in this.cachedFriends) {
+
+            if (this.cachedTables.TryGetValue(tableId, out var tableFriends)) {
+                foreach (var friend in tableFriends) {
                     this.DrawFriendRow(friend, selectedFriend, palette, textOffsetY, onRowSelected);
                 }
             }
@@ -309,27 +338,5 @@ public class FriendListTableComponent {
         ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName);
 
         ImGui.PopStyleColor();
-    }
-
-    private void HandleSortingAndFiltering(IReadOnlyList<FriendProfile> rawFriends, bool showOnlineOnly, bool forceRefresh) {
-        var sortSpecs = ImGui.TableGetSortSpecs();
-        bool dataUpdated = this.syncService.LastSyncTime != this.lastProcessedSyncTime;
-
-        if (sortSpecs.SpecsDirty || forceRefresh || rawFriends.Count != this.lastFriendCount || dataUpdated) {
-            int sortColumn = -1;
-            bool isAscending = true;
-
-            if (sortSpecs.SpecsCount > 0) {
-                var spec = sortSpecs.Specs[0];
-                sortColumn = spec.ColumnIndex;
-                isAscending = spec.SortDirection == ImGuiSortDirection.Ascending;
-            }
-
-            this.cachedFriends = this.displayService.ProcessFriends(rawFriends, showOnlineOnly, sortColumn, isAscending);
-
-            sortSpecs.SpecsDirty = false;
-            this.lastFriendCount = rawFriends.Count;
-            this.lastProcessedSyncTime = this.syncService.LastSyncTime;
-        }
     }
 }

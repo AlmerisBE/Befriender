@@ -24,6 +24,7 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
 
         // Register UI Components
+        services.AddSingleton<ListToolbarComponent>();
         services.AddSingleton<FriendListTableComponent>();
         services.AddSingleton<ArchiveTableComponent>();
         services.AddSingleton<FriendProfilePanelComponent>();

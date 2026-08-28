@@ -33,8 +33,8 @@ public class FriendProfilePanelComponent {
         this.groupRepository = groupRepository;
     }
 
-    public void Draw(float panelWidth, float footerHeight, FriendProfile friend, Action onClose) {
-        if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, -footerHeight), true)) {
+    public void Draw(float panelWidth, FriendProfile friend, Action onClose) {
+        if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, 0), true)) {
             if (this.currentFriendId != friend.ContentId) {
                 this.currentFriendId = friend.ContentId;
                 this.notesBuffer = friend.Notes ?? string.Empty;

@@ -3,6 +3,7 @@
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
+using Befriender.UI.FriendList.Components;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
@@ -20,18 +21,20 @@ public class FriendListWindow : Window, IDisposable {
     private IHotkeyService hotkeyService;
     private IWindowNavigationService navService;
     private IConfigurationService configService;
+    private FriendStatusBarComponent statusBarComponent;
 
     private string? pendingTabSelection;
     private bool isProfilePanelOpen;
     private const float ProfilePanelWidth = 300f;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService, FriendStatusBarComponent statusBarComponent) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
         this.themeService = themeService;
         this.hotkeyService = hotkeyService;
         this.navService = navService;
         this.configService = configService;
+        this.statusBarComponent = statusBarComponent;
 
         this.isProfilePanelOpen = this.configService.GetConfig().IsProfilePanelOpen;
 
@@ -98,25 +101,30 @@ public class FriendListWindow : Window, IDisposable {
 
     public override void Draw() {
         bool activeTabWantsPanel = false;
+        float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
 
-        if (ImGui.BeginTabBar("MainTabBar")) {
-            foreach (var tab in this.tabs) {
-                var flags = ImGuiTabItemFlags.None;
+        // Container ensuring space is saved for the status bar
+        if (ImGui.BeginChild("MainContent", new Vector2(0, -footerHeight))) {
+            if (ImGui.BeginTabBar("MainTabBar")) {
+                foreach (var tab in this.tabs) {
+                    var flags = ImGuiTabItemFlags.None;
 
-                if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
-                    flags |= ImGuiTabItemFlags.SetSelected;
+                    if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
+                        flags |= ImGuiTabItemFlags.SetSelected;
+                    }
+
+                    if (ImGui.BeginTabItem(tab.Name, flags)) {
+                        tab.Draw();
+                        activeTabWantsPanel = tab.IsProfilePanelOpen;
+                        ImGui.EndTabItem();
+                    }
                 }
 
-                if (ImGui.BeginTabItem(tab.Name, flags)) {
-                    tab.Draw();
-                    activeTabWantsPanel = tab.IsProfilePanelOpen;
-                    ImGui.EndTabItem();
-                }
+                this.pendingTabSelection = null;
+                ImGui.EndTabBar();
             }
-
-            this.pendingTabSelection = null;
-            ImGui.EndTabBar();
         }
+        ImGui.EndChild();
 
         if (this.isProfilePanelOpen != activeTabWantsPanel) {
             float delta = activeTabWantsPanel ? ProfilePanelWidth : -ProfilePanelWidth;
@@ -124,6 +132,9 @@ public class FriendListWindow : Window, IDisposable {
             ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + delta), currentSize.Y));
             this.isProfilePanelOpen = activeTabWantsPanel;
         }
+
+        ImGui.Separator();
+        this.statusBarComponent.Draw();
     }
 
     public void Dispose() {

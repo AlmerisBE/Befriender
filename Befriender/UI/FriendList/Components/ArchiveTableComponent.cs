@@ -18,8 +18,8 @@ public class ArchiveTableComponent {
     private IFriendActionService actionService;
     private IFriendGroupRepository groupRepository;
 
-    private IReadOnlyList<FriendProfile> cachedFriends = new List<FriendProfile>();
-    private int lastFriendCount = -1;
+    private Dictionary<string, IReadOnlyList<FriendProfile>> cachedTables = new();
+    private Dictionary<string, int> lastTableFriendCounts = new();
 
     public ArchiveTableComponent(ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository) {
         this.loc = loc;
@@ -28,50 +28,81 @@ public class ArchiveTableComponent {
         this.groupRepository = groupRepository;
     }
 
-    public void Draw(float tableWidth, float footerHeight, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool groupByGroups, Action<FriendProfile?> onRowSelected) {
-        if (ImGui.BeginTable("ArchiveTable", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Sortable, new Vector2(tableWidth, -footerHeight))) {
-            ImGui.TableSetupColumn(this.loc.Translate("Column_Name"), ImGuiTableColumnFlags.DefaultSort);
-            ImGui.TableSetupColumn(this.loc.Translate("Column_AddedDate"), ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn(this.loc.Translate("Column_ArchivedDate"), ImGuiTableColumnFlags.WidthFixed);
+    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool groupByGroups, Action<FriendProfile?> onRowSelected) {
+        var palette = this.themeService.CurrentPalette;
 
-            ImGui.TableSetupScrollFreeze(0, 1);
-            ImGui.TableHeadersRow();
-
-            this.HandleSorting(archivedFriends);
-            var palette = this.themeService.CurrentPalette;
-
-            if (groupByGroups) {
+        if (groupByGroups) {
+            if (ImGui.BeginChild("GroupedArchiveContainer", new Vector2(tableWidth, 0))) {
                 var groupsDict = this.groupRepository.GetGroups().ToDictionary(g => g.Id, g => g.Title);
 
-                var groupedFriends = this.cachedFriends
+                var groupedFriends = archivedFriends
                     .GroupBy(f => f.CustomGroupId)
                     .OrderBy(g => g.Key.HasValue ? (groupsDict.TryGetValue(g.Key.Value, out var title) ? title : string.Empty) : "ZZZZZ_UNASSIGNED");
 
                 foreach (var group in groupedFriends) {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-
                     string groupName = group.Key.HasValue && groupsDict.TryGetValue(group.Key.Value, out var name) && !string.IsNullOrEmpty(name)
                         ? name
                         : this.loc.Translate("Group_Unassigned");
 
-                    string headerText = $"{groupName} ({group.Count()})";
+                    string headerText = $"{groupName} ({group.Count()})###ArchiveHeader_{group.Key}";
 
-                    ImGui.PushStyleColor(ImGuiCol.Text, palette.Text);
-                    bool isNodeOpen = ImGui.TreeNodeEx(headerText, ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen);
-                    ImGui.PopStyleColor();
-
-                    if (isNodeOpen) {
-                        foreach (var friend in group) {
-                            this.DrawArchiveRow(friend, selectedFriend, palette, onRowSelected);
-                        }
-
-                        ImGui.TreePop();
+                    if (ImGui.CollapsingHeader(headerText, ImGuiTreeNodeFlags.DefaultOpen)) {
+                        this.DrawArchiveTable($"ArchiveTable_{group.Key}", group, 0, selectedFriend, palette, onRowSelected, false);
                     }
                 }
             }
-            else {
-                foreach (var friend in this.cachedFriends) {
+            ImGui.EndChild();
+        }
+        else {
+            this.DrawArchiveTable("ArchiveTable_All", archivedFriends, tableWidth, selectedFriend, palette, onRowSelected, true);
+        }
+    }
+
+    private void DrawArchiveTable(string tableId, IEnumerable<FriendProfile> friends, float tableWidth, FriendProfile? selectedFriend, ThemePalette palette, Action<FriendProfile?> onRowSelected, bool useScroll) {
+        var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Sortable;
+        if (useScroll) {
+            flags |= ImGuiTableFlags.ScrollY;
+        }
+
+        if (ImGui.BeginTable(tableId, 3, flags, new Vector2(tableWidth, 0))) {
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Name"), ImGuiTableColumnFlags.DefaultSort);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_AddedDate"), ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_ArchivedDate"), ImGuiTableColumnFlags.WidthFixed);
+
+            if (useScroll) {
+                ImGui.TableSetupScrollFreeze(0, 1);
+            }
+
+            ImGui.TableHeadersRow();
+
+            var sortSpecs = ImGui.TableGetSortSpecs();
+            var friendsList = friends.ToList();
+
+            if (sortSpecs.SpecsDirty || !this.lastTableFriendCounts.TryGetValue(tableId, out int count) || count != friendsList.Count) {
+                int sortColumn = 1;
+                bool isAscending = false;
+
+                if (sortSpecs.SpecsCount > 0) {
+                    var spec = sortSpecs.Specs[0];
+                    sortColumn = spec.ColumnIndex;
+                    isAscending = spec.SortDirection == ImGuiSortDirection.Ascending;
+                }
+
+                var query = friendsList.AsEnumerable();
+                query = sortColumn switch {
+                    0 => isAscending ? query.OrderBy(f => f.Name) : query.OrderByDescending(f => f.Name),
+                    1 => isAscending ? query.OrderBy(f => f.AddedAt).ThenBy(f => f.Name) : query.OrderByDescending(f => f.AddedAt).ThenBy(f => f.Name),
+                    2 => isAscending ? query.OrderBy(f => f.ArchivedAt).ThenBy(f => f.Name) : query.OrderByDescending(f => f.ArchivedAt).ThenBy(f => f.Name),
+                    _ => query
+                };
+
+                this.cachedTables[tableId] = query.ToList();
+                this.lastTableFriendCounts[tableId] = friendsList.Count;
+                sortSpecs.SpecsDirty = false;
+            }
+
+            if (this.cachedTables.TryGetValue(tableId, out var tableFriends)) {
+                foreach (var friend in tableFriends) {
                     this.DrawArchiveRow(friend, selectedFriend, palette, onRowSelected);
                 }
             }
@@ -132,32 +163,5 @@ public class ArchiveTableComponent {
         ImGui.Text(archivedDateStr);
 
         ImGui.PopStyleColor();
-    }
-
-    private void HandleSorting(IReadOnlyList<FriendProfile> archivedFriends) {
-        var sortSpecs = ImGui.TableGetSortSpecs();
-
-        if (sortSpecs.SpecsDirty || archivedFriends.Count != this.lastFriendCount) {
-            int sortColumn = 1; // Default sort by Added Date
-            bool isAscending = false;
-
-            if (sortSpecs.SpecsCount > 0) {
-                var spec = sortSpecs.Specs[0];
-                sortColumn = spec.ColumnIndex;
-                isAscending = spec.SortDirection == ImGuiSortDirection.Ascending;
-            }
-
-            var query = archivedFriends.AsEnumerable();
-            query = sortColumn switch {
-                0 => isAscending ? query.OrderBy(f => f.Name) : query.OrderByDescending(f => f.Name),
-                1 => isAscending ? query.OrderBy(f => f.AddedAt).ThenBy(f => f.Name) : query.OrderByDescending(f => f.AddedAt).ThenBy(f => f.Name),
-                2 => isAscending ? query.OrderBy(f => f.ArchivedAt).ThenBy(f => f.Name) : query.OrderByDescending(f => f.ArchivedAt).ThenBy(f => f.Name),
-                _ => query
-            };
-
-            this.cachedFriends = query.ToList();
-            sortSpecs.SpecsDirty = false;
-            this.lastFriendCount = archivedFriends.Count;
-        }
     }
 }
