@@ -114,5 +114,6 @@
   "Tag_NoTags": "タグが作成されていません。",
   "Profile_SelectTags": "タグを選択...",
   "Profile_Tags": "タグ",
-  "Tag_NoTagsCreated": "タグが作成されていません。"
+  "Tag_NoTagsCreated": "タグが作成されていません。",
+  "List_SearchHint": "検索..."
 }

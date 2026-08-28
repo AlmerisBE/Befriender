@@ -4,6 +4,7 @@ using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
+using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Theme.Models;
 using Dalamud.Bindings.ImGui;
@@ -17,19 +18,22 @@ public class ArchiveTableComponent {
     private IThemeService themeService;
     private IFriendActionService actionService;
     private IFriendGroupRepository groupRepository;
+    private IFriendSearchService searchService;
 
     private Dictionary<string, IReadOnlyList<FriendProfile>> cachedTables = new();
     private Dictionary<string, int> lastTableFriendCounts = new();
 
-    public ArchiveTableComponent(ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository) {
+    public ArchiveTableComponent(ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository, IFriendSearchService searchService) {
         this.loc = loc;
         this.themeService = themeService;
         this.actionService = actionService;
         this.groupRepository = groupRepository;
+        this.searchService = searchService;
     }
 
-    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool groupByGroups, Action<FriendProfile?> onRowSelected) {
+    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool groupByGroups, string searchQuery, Action<FriendProfile?> onRowSelected) {
         var palette = this.themeService.CurrentPalette;
+        var filteredFriends = this.searchService.FilterFriends(archivedFriends, searchQuery);
 
         if (groupByGroups) {
             if (ImGui.BeginChild("GroupedArchiveContainer", new Vector2(tableWidth, 0))) {
@@ -37,7 +41,7 @@ public class ArchiveTableComponent {
                 var groupsDict = groupsList.ToDictionary(g => g.Id, g => g.Title);
                 var groupOrder = groupsList.Select(g => g.Id).ToList();
 
-                var groupedFriends = archivedFriends
+                var groupedFriends = filteredFriends
                     .GroupBy(f => f.CustomGroupId)
                     .OrderBy(g => g.Key.HasValue && groupOrder.Contains(g.Key.Value) ? groupOrder.IndexOf(g.Key.Value) : int.MaxValue);
 
@@ -56,7 +60,7 @@ public class ArchiveTableComponent {
             ImGui.EndChild();
         }
         else {
-            this.DrawArchiveTable("ArchiveTable_All", archivedFriends, tableWidth, selectedFriend, palette, onRowSelected, true);
+            this.DrawArchiveTable("ArchiveTable_All", filteredFriends, tableWidth, selectedFriend, palette, onRowSelected, true);
         }
     }
 

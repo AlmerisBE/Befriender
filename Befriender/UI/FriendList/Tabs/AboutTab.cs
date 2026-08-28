@@ -15,6 +15,7 @@ public class AboutTab : ITab {
     public string InternalName => "Tab_About";
     public string Name => this.loc.Translate("Tab_About");
     public bool IsProfilePanelOpen => false;
+    private string searchQuery = string.Empty;
 
     public AboutTab(ILocalizationService loc) {
         this.loc = loc;

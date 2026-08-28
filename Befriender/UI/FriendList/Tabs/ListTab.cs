@@ -19,6 +19,7 @@ public class ListTab : ITab, IDisposable {
     private IConfigurationService configurationService;
     private RemoveConfirmationModalComponent removeConfirmationModal;
 
+    private string searchQuery = string.Empty;
     private bool showOnlineOnly = false;
     private bool groupByGroups = false;
     private bool forceRefresh = false;
@@ -72,7 +73,7 @@ public class ListTab : ITab, IDisposable {
         var activeFriends = rawFriends.Where(f => !f.IsArchived).ToList();
 
         bool previousGrouping = this.groupByGroups;
-        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.groupByGroups, true)) {
+        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.groupByGroups, ref this.searchQuery, true)) {
             this.forceRefresh = true;
             if (this.groupByGroups != previousGrouping) {
                 var config = this.configurationService.GetConfig();
@@ -91,7 +92,7 @@ public class ListTab : ITab, IDisposable {
 
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, activeFriends, this.selectedFriend, this.showOnlineOnly, this.groupByGroups, this.forceRefresh, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, activeFriends, this.selectedFriend, this.showOnlineOnly, this.groupByGroups, this.searchQuery, this.forceRefresh, this.ToggleProfilePanel);
         this.forceRefresh = false;
 
         if (this.selectedFriend != null) {
@@ -102,7 +103,5 @@ public class ListTab : ITab, IDisposable {
         this.removeConfirmationModal.Draw();
     }
 
-    public void Dispose() {
-        this.friendRepository.CacheCleared -= this.OnCacheCleared;
-    }
+    public void Dispose() => this.friendRepository.CacheCleared -= this.OnCacheCleared;
 }

@@ -22,6 +22,7 @@ public class FriendListUIFeature : IFeatureModule {
 
         // Register feature-specific localization provider
         services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
+        services.AddSingleton<IFriendSearchService, FriendSearchService>();
 
         // Register UI Components
         services.AddSingleton<ListToolbarComponent>();

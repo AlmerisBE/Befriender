@@ -18,6 +18,7 @@ public class ArchiveTab : ITab, IDisposable {
     private ILocalizationService loc;
     private IConfigurationService configurationService;
 
+    private string searchQuery = string.Empty;
     private bool showOnlineOnly = false;
     private bool groupByGroups = false;
     private const float PanelWidth = 300f;
@@ -58,7 +59,7 @@ public class ArchiveTab : ITab, IDisposable {
         this.groupByGroups = config.GroupByCustomGroups;
 
         bool previousGrouping = this.groupByGroups;
-        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.groupByGroups, false)) {
+        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.groupByGroups, ref this.searchQuery, false)) {
             if (this.groupByGroups != previousGrouping) {
                 config.GroupByCustomGroups = this.groupByGroups;
                 this.configurationService.Save();
@@ -75,7 +76,7 @@ public class ArchiveTab : ITab, IDisposable {
 
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, archivedFriends, this.selectedFriend, this.groupByGroups, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, archivedFriends, this.selectedFriend, this.groupByGroups, this.searchQuery, this.ToggleProfilePanel);
 
         if (this.selectedFriend != null) {
             ImGui.SameLine();

@@ -13,7 +13,7 @@ public class ListToolbarComponent {
         this.loc = loc;
     }
 
-    public bool Draw(ref bool showOnlineOnly, ref bool groupByGroups, bool showOnlineCheckbox) {
+    public bool Draw(ref bool showOnlineOnly, ref bool groupByGroups, ref string searchQuery, bool showOnlineCheckbox) {
         bool forceRefresh = false;
 
         if (showOnlineCheckbox) {
@@ -25,6 +25,21 @@ public class ListToolbarComponent {
         }
 
         if (ImGui.Checkbox(this.loc.Translate("List_GroupByGroups"), ref groupByGroups)) {
+            forceRefresh = true;
+        }
+
+        ImGui.SameLine();
+
+        float buttonSize = ImGui.GetFrameHeight();
+        float searchWidth = 150f;
+        float rightAlign = ImGui.GetWindowContentRegionMax().X - buttonSize - searchWidth - ImGui.GetStyle().ItemSpacing.X;
+
+        if (ImGui.GetCursorPosX() < rightAlign) {
+            ImGui.SameLine(rightAlign);
+        }
+
+        ImGui.SetNextItemWidth(searchWidth);
+        if (ImGui.InputTextWithHint("##search", this.loc.Translate("List_SearchHint"), ref searchQuery, 50)) {
             forceRefresh = true;
         }
 

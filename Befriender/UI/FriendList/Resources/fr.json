@@ -114,5 +114,6 @@
   "Tag_NoTags": "Aucun tag créé.",
   "Profile_SelectTags": "Sélectionner des tags...",
   "Profile_Tags": "Tags",
-  "Tag_NoTagsCreated": "Aucun tag créé."
+  "Tag_NoTagsCreated": "Aucun tag créé.",
+  "List_SearchHint": "Rechercher..."
 }

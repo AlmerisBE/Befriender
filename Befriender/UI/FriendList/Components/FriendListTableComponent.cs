@@ -24,12 +24,13 @@ public class FriendListTableComponent {
     private IThemeService themeService;
     private IFriendActionService actionService;
     private IFriendGroupRepository groupRepository;
+    private IFriendSearchService searchService;
 
     private Dictionary<string, IReadOnlyList<FriendProfile>> cachedTables = new();
     private Dictionary<string, int> lastTableFriendCounts = new();
     private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
-    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository) {
+    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository, IFriendSearchService searchService) {
         this.displayService = displayService;
         this.syncService = syncService;
         this.gameDataService = gameDataService;
@@ -38,23 +39,25 @@ public class FriendListTableComponent {
         this.themeService = themeService;
         this.actionService = actionService;
         this.groupRepository = groupRepository;
+        this.searchService = searchService;
     }
 
-    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool groupByGroups, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
+    public void Draw(float tableWidth, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool groupByGroups, string searchQuery, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
         float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
         var palette = this.themeService.CurrentPalette;
         bool dataUpdated = this.syncService.LastSyncTime != this.lastProcessedSyncTime;
         bool needsRefresh = forceRefresh || dataUpdated;
 
         var displayFriends = showOnlineOnly ? rawFriends.Where(f => f.IsOnline).ToList() : rawFriends.ToList();
+        var filteredFriends = this.searchService.FilterFriends(displayFriends, searchQuery);
 
         if (groupByGroups) {
             if (ImGui.BeginChild("GroupedListContainer", new Vector2(tableWidth, 0))) {
                 var groupsList = this.groupRepository.GetGroups();
                 var groupsDict = groupsList.ToDictionary(g => g.Id, g => g.Title);
-                var groupOrder = groupsList.Select(g => g.Id).ToList(); // Snapshot of the current defined order
+                var groupOrder = groupsList.Select(g => g.Id).ToList();
 
-                var groupedFriends = displayFriends
+                var groupedFriends = filteredFriends
                     .GroupBy(f => f.CustomGroupId)
                     .OrderBy(g => g.Key.HasValue && groupOrder.Contains(g.Key.Value) ? groupOrder.IndexOf(g.Key.Value) : int.MaxValue);
 
@@ -73,7 +76,7 @@ public class FriendListTableComponent {
             ImGui.EndChild();
         }
         else {
-            this.DrawFriendTable("FriendsTable_All", displayFriends, tableWidth, selectedFriend, palette, textOffsetY, needsRefresh, onRowSelected, true);
+            this.DrawFriendTable("FriendsTable_All", filteredFriends, tableWidth, selectedFriend, palette, textOffsetY, needsRefresh, onRowSelected, true);
         }
 
         this.lastProcessedSyncTime = this.syncService.LastSyncTime;
