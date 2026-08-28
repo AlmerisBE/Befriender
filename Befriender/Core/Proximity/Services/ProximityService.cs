@@ -2,6 +2,7 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Friends.Contracts;
+using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
 using Dalamud.Game.ClientState.Objects.SubKinds;
@@ -19,11 +20,12 @@ public class ProximityService : IProximityService, IDisposable {
     private INotificationManager notificationManager;
     private ILocalizationService loc;
     private IClientState clientState;
+    private IGameDataService gameDataService;
 
     private HashSet<ulong> currentlyNearbyIds = new();
     private DateTime lastScanTime = DateTime.MinValue;
 
-    public ProximityService(IObjectTable objectTable, IFramework framework, IFriendRepository friendRepository, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc, IClientState clientState) {
+    public ProximityService(IObjectTable objectTable, IFramework framework, IFriendRepository friendRepository, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc, IClientState clientState, IGameDataService gameDataService) {
         this.objectTable = objectTable;
         this.framework = framework;
         this.friendRepository = friendRepository;
@@ -31,6 +33,7 @@ public class ProximityService : IProximityService, IDisposable {
         this.notificationManager = notificationManager;
         this.loc = loc;
         this.clientState = clientState;
+        this.gameDataService = gameDataService;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
@@ -69,7 +72,10 @@ public class ProximityService : IProximityService, IDisposable {
             if (lookup.TryGetValue(key, out var friend)) {
                 newNearbyIds.Add(friend.ContentId);
 
-                this.friendRepository.UpdateFriendFromCharacter(friend.ContentId, pc, (ushort)this.clientState.TerritoryType);
+                uint currentTerritory = this.clientState.TerritoryType;
+                uint territoryToUpdate = this.gameDataService.IsStandardTerritory(currentTerritory) ? currentTerritory : friend.LocationId;
+
+                this.friendRepository.UpdateFriendFromCharacter(friend.ContentId, pc, territoryToUpdate);
 
                 if (!this.currentlyNearbyIds.Contains(friend.ContentId)) {
                     bool shouldNotify = (!friend.IsArchived && config.NotifyOnNearbyFriends) || (friend.IsArchived && config.NotifyOnNearbyArchived);

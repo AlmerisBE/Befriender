@@ -11,7 +11,7 @@ public class FriendProfile {
     public bool IsOnline { get; set; }
     public byte JobId { get; set; }
     public byte Level { get; set; }
-    public ushort LocationId { get; set; }
+    public uint LocationId { get; set; }
     public string FcTag { get; set; } = string.Empty;
 
     public ulong OnlineStateMask { get; set; }
@@ -25,7 +25,7 @@ public class FriendProfile {
     public bool IsFantasiaDetected { get; set; }
 
     public DateTime AddedAt { get; set; }
-    public ushort AddedLocationId { get; set; }
+    public uint AddedLocationId { get; set; }
     public DateTime LastSeenAt { get; set; }
     public DateTime ArchivedAt { get; set; }
     public Guid? CustomGroupId { get; set; }

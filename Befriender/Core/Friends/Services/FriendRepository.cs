@@ -2,7 +2,9 @@
 
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +51,7 @@ public class FriendRepository : IFriendRepository {
 
             this.EnsureLoaded();
 
-            var currentTerritory = (ushort)this.clientState.TerritoryType;
+            var currentTerritory = this.clientState.TerritoryType;
             var now = DateTime.Now;
             var scannedList = scannedFriends.ToList();
 
@@ -141,7 +143,7 @@ public class FriendRepository : IFriendRepository {
         }
     }
 
-    public void UpdateFriendFromCharacter(ulong contentId, Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter player, ushort territoryId) {
+    public void UpdateFriendFromCharacter(ulong contentId, IPlayerCharacter player, uint territoryId) {
         lock (this.lockObj) {
             this.EnsureLoaded();
             var friend = this.friends.FirstOrDefault(f => f.ContentId == contentId);
@@ -157,8 +159,16 @@ public class FriendRepository : IFriendRepository {
             var tag = player.CompanyTag.TextValue;
             if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
 
+            // Vital fix: Use the local player's current world instead of the remote player's current world.
+            // IPlayerCharacter.CurrentWorld on remote entities often incorrectly returns their HomeWorld.
+            var localPlayer = this.objectTable.LocalPlayer;
+            if (localPlayer != null && friend.CurrentWorldId != localPlayer.CurrentWorld.RowId) {
+                friend.CurrentWorldId = localPlayer.CurrentWorld.RowId;
+                changed = true;
+            }
+
             unsafe {
-                var csChar = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address;
+                var csChar = (Character*)player.Address;
                 if (csChar != null) {
                     if (friend.TitleId != csChar->TitleId) { friend.TitleId = csChar->TitleId; changed = true; }
                     if (friend.OnlineStatusId != csChar->CharacterData.OnlineStatus) { friend.OnlineStatusId = csChar->CharacterData.OnlineStatus; changed = true; }

@@ -11,7 +11,7 @@ public interface IFriendRepository {
 
     IReadOnlyList<FriendProfile> GetFriends();
     void UpdateFriends(IEnumerable<FriendProfile> friends);
-    void UpdateFriendFromCharacter(ulong contentId, IPlayerCharacter player, ushort territoryId);
+    void UpdateFriendFromCharacter(ulong contentId, IPlayerCharacter player, uint territoryId);
     void RemoveFriendData(ulong contentId);
     void Save();
     void ClearCache();

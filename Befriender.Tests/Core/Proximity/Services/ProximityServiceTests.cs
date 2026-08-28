@@ -4,6 +4,7 @@ using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
+using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Services;
 using Dalamud.Game.ClientState.Objects.SubKinds;
@@ -27,11 +28,13 @@ public class ProximityServiceTests {
         var mockNotif = Substitute.For<INotificationManager>();
         var mockLoc = Substitute.For<ILocalizationService>();
         var mockClientState = Substitute.For<IClientState>();
+        var mockGameData = Substitute.For<IGameDataService>();
 
         var config = new PluginConfiguration { EnableProximityDetection = true, NotifyOnNearbyFriends = true };
         mockConfig.GetConfig().Returns(config);
+        mockGameData.IsStandardTerritory(Arg.Any<uint>()).Returns(true);
 
-        // Utilisation de HomeWorldId = 0 pour correspondre à la structure Lumina par défaut
+        // HomeWorldId = 0 corresponds to the default Lumina structure
         var friend = new FriendProfile { ContentId = 123, Name = "Alice Liddell", HomeWorldId = 0, IsArchived = false };
         mockRepo.GetFriends().Returns(new List<FriendProfile> { friend });
 
@@ -46,13 +49,14 @@ public class ProximityServiceTests {
         var enumerator = new List<IGameObject> { mockPlayer }.GetEnumerator();
         mockObjectTable.GetEnumerator().Returns(enumerator);
 
-        using var service = new ProximityService(mockObjectTable, mockFramework, mockRepo, mockConfig, mockNotif, mockLoc, mockClientState);
+        using var service = new ProximityService(mockObjectTable, mockFramework, mockRepo, mockConfig, mockNotif, mockLoc, mockClientState, mockGameData);
 
         mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
 
         Assert.True(service.IsFriendNearby(123));
         mockNotif.Received(1).AddNotification(Arg.Any<Notification>());
-        mockRepo.Received(1).UpdateFriendFromCharacter(123, mockPlayer, Arg.Any<ushort>());
+
+        mockRepo.Received(1).UpdateFriendFromCharacter(123, mockPlayer, Arg.Any<uint>());
     }
 
     [Fact]
@@ -64,16 +68,16 @@ public class ProximityServiceTests {
         var mockNotif = Substitute.For<INotificationManager>();
         var mockLoc = Substitute.For<ILocalizationService>();
         var mockClientState = Substitute.For<IClientState>();
+        var mockGameData = Substitute.For<IGameDataService>();
 
         var config = new PluginConfiguration { EnableProximityDetection = false };
         mockConfig.GetConfig().Returns(config);
 
-        using var service = new ProximityService(mockObjectTable, mockFramework, mockRepo, mockConfig, mockNotif, mockLoc, mockClientState);
+        using var service = new ProximityService(mockObjectTable, mockFramework, mockRepo, mockConfig, mockNotif, mockLoc, mockClientState, mockGameData);
 
         mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
 
         Assert.Empty(service.GetNearbyFriendIds());
-        // Correction CS8625: Utilisation de Arg.Any<Notification>() au lieu de default
         mockNotif.DidNotReceiveWithAnyArgs().AddNotification(Arg.Any<Notification>());
     }
 }

@@ -53,7 +53,7 @@ public class GameDataService : IGameDataService {
         return 62100 + (uint)jobId;
     }
 
-    public string GetLocationName(ushort territoryId) {
+    public string GetLocationName(uint territoryId) {
         if (territoryId == 0) {
             return string.Empty;
         }
@@ -87,7 +87,7 @@ public class GameDataService : IGameDataService {
         return territoryId.ToString();
     }
 
-    private bool IsInDutyTerritory(ushort territoryId) {
+    private bool IsInDutyTerritory(uint territoryId) {
         if (territoryId == 0) {
             return false;
         }
@@ -108,7 +108,7 @@ public class GameDataService : IGameDataService {
         };
     }
 
-    public bool IsCrossWorld(uint currentWorldId, uint homeWorldId, ulong stateMask, ushort locationId) {
+    public bool IsCrossWorld(uint currentWorldId, uint homeWorldId, ulong stateMask, uint locationId) {
         var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
         if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty) ||
@@ -130,7 +130,7 @@ public class GameDataService : IGameDataService {
         return localWorldId != friendWorldId;
     }
 
-    public string GetDisplayLocation(ushort locationId, uint currentWorldId, uint homeWorldId, ulong stateMask) {
+    public string GetDisplayLocation(uint locationId, uint currentWorldId, uint homeWorldId, ulong stateMask) {
         if (this.IsCrossWorld(currentWorldId, homeWorldId, stateMask, locationId)) {
             uint displayWorld = currentWorldId > 0 ? currentWorldId : homeWorldId;
             return this.GetWorldName(displayWorld);
@@ -146,7 +146,7 @@ public class GameDataService : IGameDataService {
         return locationName;
     }
 
-    private uint GetOnlineStatusRowId(ulong stateMask, ushort locationId) {
+    private uint GetOnlineStatusRowId(ulong stateMask, uint locationId) {
         if (stateMask == 0) {
             return 10;
         }
@@ -288,7 +288,7 @@ public class GameDataService : IGameDataService {
         return 47;
     }
 
-    public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask, uint currentWorldId, uint homeWorldId, ushort locationId) {
+    public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask, uint currentWorldId, uint homeWorldId, uint locationId) {
         uint rowId = this.GetOnlineStatusRowId(stateMask, locationId);
         bool isCrossWorld = this.IsCrossWorld(currentWorldId, homeWorldId, stateMask, locationId);
 
@@ -418,5 +418,27 @@ public class GameDataService : IGameDataService {
         }
 
         return gender == 1 ? row.Value.Feminine.ToString() : row.Value.Masculine.ToString();
+    }
+
+    public bool IsStandardTerritory(uint territoryId) {
+        if (territoryId == 0) {
+            return false;
+        }
+
+        var sheet = this.dataManager.GetExcelSheet<TerritoryType>();
+        if (sheet == null) {
+            return false;
+        }
+
+        var row = sheet.GetRowOrDefault(territoryId);
+        if (!row.HasValue) {
+            return false;
+        }
+
+        // 0 = Open World, 1 = City, 2 = Housing Exterior
+        return row.Value.TerritoryIntendedUse.RowId switch {
+            0 or 1 or 2 => true,
+            _ => false
+        };
     }
 }
