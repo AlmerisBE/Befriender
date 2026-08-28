@@ -24,4 +24,8 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool HotkeyCtrl { get; set; } = false;
     public bool HotkeyShift { get; set; } = false;
     public bool HotkeyAlt { get; set; } = false;
+
+    public bool EnableProximityDetection { get; set; } = true;
+    public bool NotifyOnNearbyFriends { get; set; } = true;
+    public bool NotifyOnNearbyArchived { get; set; } = false;
 }

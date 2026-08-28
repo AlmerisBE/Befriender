@@ -5,10 +5,12 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
+using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Theme.Models;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
@@ -25,12 +27,13 @@ public class FriendListTableComponent {
     private IFriendActionService actionService;
     private IFriendGroupRepository groupRepository;
     private IFriendSearchService searchService;
+    private IProximityService proximityService;
 
     private Dictionary<string, IReadOnlyList<FriendProfile>> cachedTables = new();
     private Dictionary<string, int> lastTableFriendCounts = new();
     private DateTime lastProcessedSyncTime = DateTime.MinValue;
 
-    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository, IFriendSearchService searchService) {
+    public FriendListTableComponent(IFriendDisplayService displayService, IFriendSyncService syncService, IGameDataService gameDataService, ITextureProvider textureProvider, ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository, IFriendSearchService searchService, IProximityService proximityService) {
         this.displayService = displayService;
         this.syncService = syncService;
         this.gameDataService = gameDataService;
@@ -40,6 +43,7 @@ public class FriendListTableComponent {
         this.actionService = actionService;
         this.groupRepository = groupRepository;
         this.searchService = searchService;
+        this.proximityService = proximityService;
     }
 
     public void Draw(float tableWidth, IReadOnlyList<FriendProfile> rawFriends, FriendProfile? selectedFriend, bool showOnlineOnly, bool groupByGroups, string searchQuery, bool forceRefresh, Action<FriendProfile?> onRowSelected) {
@@ -258,6 +262,16 @@ public class FriendListTableComponent {
             ImGui.PopStyleColor();
         }
         else {
+            if (this.proximityService.IsFriendNearby(friend.ContentId)) {
+                ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+                ImGui.TextColored(palette.StatusFallbackOnline, ((char)FontAwesomeIcon.StreetView).ToString());
+                ImGui.PopFont();
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
+                }
+
+                ImGui.SameLine();
+            }
             ImGui.Text(friend.Name);
         }
 

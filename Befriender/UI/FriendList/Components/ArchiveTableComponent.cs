@@ -4,10 +4,12 @@ using Befriender.Core.Actions.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
+using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Theme.Models;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,16 +21,18 @@ public class ArchiveTableComponent {
     private IFriendActionService actionService;
     private IFriendGroupRepository groupRepository;
     private IFriendSearchService searchService;
+    private IProximityService proximityService;
 
     private Dictionary<string, IReadOnlyList<FriendProfile>> cachedTables = new();
     private Dictionary<string, int> lastTableFriendCounts = new();
 
-    public ArchiveTableComponent(ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository, IFriendSearchService searchService) {
+    public ArchiveTableComponent(ILocalizationService loc, IThemeService themeService, IFriendActionService actionService, IFriendGroupRepository groupRepository, IFriendSearchService searchService, IProximityService proximityService) {
         this.loc = loc;
         this.themeService = themeService;
         this.actionService = actionService;
         this.groupRepository = groupRepository;
         this.searchService = searchService;
+        this.proximityService = proximityService;
     }
 
     public void Draw(float tableWidth, IReadOnlyList<FriendProfile> archivedFriends, FriendProfile? selectedFriend, bool groupByGroups, string searchQuery, Action<FriendProfile?> onRowSelected) {
@@ -152,6 +156,18 @@ public class ArchiveTableComponent {
             displayName = this.loc.Translate("Profile_DeletedCharacter");
             if (friend.PreviousNames != null && friend.PreviousNames.Count > 0) {
                 displayName += $" ({friend.PreviousNames[0]})";
+            }
+        }
+        else {
+            if (this.proximityService.IsFriendNearby(friend.ContentId)) {
+                ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+                ImGui.TextColored(palette.StatusFallbackOnline, ((char)FontAwesomeIcon.StreetView).ToString());
+                ImGui.PopFont();
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
+                }
+
+                ImGui.SameLine();
             }
         }
         ImGui.Text(displayName);

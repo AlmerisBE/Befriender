@@ -45,7 +45,6 @@ public class FriendStatusBarComponent {
                     onlineCount++;
                 }
             }
-
             if (f.IsArchived) {
                 archivedCount++;
             }

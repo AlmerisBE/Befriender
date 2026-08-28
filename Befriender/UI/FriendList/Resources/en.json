@@ -115,5 +115,11 @@
   "Profile_SelectTags": "Select tags...",
   "Profile_Tags": "Tags",
   "Tag_NoTagsCreated": "No tags created.",
-  "List_SearchHint": "Search..."
+  "Config_EnableProximity": "Enable proximity radar",
+  "Config_NotifyNearbyArchived": "Notify when an archived contact is nearby",
+  "Config_NotifyNearbyFriends": "Notify when a friend is nearby",
+  "Config_ProximitySettings": "Proximity Settings",
+  "List_SearchHint": "Search...",
+  "Notification_FriendNearby": "{0} is nearby!",
+  "Tooltip_Nearby": "Nearby"
 }

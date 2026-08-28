@@ -137,6 +137,32 @@ public class ConfigTab : ITab {
         }
 
         ImGui.Spacing();
+        ImGui.Text(this.loc.Translate("Config_ProximitySettings"));
+        ImGui.Separator();
+
+        bool enableProximity = config.EnableProximityDetection;
+        if (ImGui.Checkbox(this.loc.Translate("Config_EnableProximity"), ref enableProximity)) {
+            config.EnableProximityDetection = enableProximity;
+            configChanged = true;
+        }
+
+        if (enableProximity) {
+            ImGui.Indent();
+            bool notifyFriends = config.NotifyOnNearbyFriends;
+            if (ImGui.Checkbox(this.loc.Translate("Config_NotifyNearbyFriends"), ref notifyFriends)) {
+                config.NotifyOnNearbyFriends = notifyFriends;
+                configChanged = true;
+            }
+
+            bool notifyArchived = config.NotifyOnNearbyArchived;
+            if (ImGui.Checkbox(this.loc.Translate("Config_NotifyNearbyArchived"), ref notifyArchived)) {
+                config.NotifyOnNearbyArchived = notifyArchived;
+                configChanged = true;
+            }
+            ImGui.Unindent();
+        }
+
+        ImGui.Spacing();
         ImGui.Text(this.loc.Translate("Config_HotkeySettings"));
         ImGui.Separator();
 

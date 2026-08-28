@@ -115,5 +115,11 @@
   "Profile_SelectTags": "タグを選択...",
   "Profile_Tags": "タグ",
   "Tag_NoTagsCreated": "タグが作成されていません。",
-  "List_SearchHint": "検索..."
+  "Config_EnableProximity": "近接レーダーを有効にする",
+  "Config_NotifyNearbyArchived": "アーカイブされた連絡先が近くにいる時に通知する",
+  "Config_NotifyNearbyFriends": "フレンドが近くにいる時に通知する",
+  "Config_ProximitySettings": "近接設定",
+  "List_SearchHint": "検索...",
+  "Notification_FriendNearby": "{0} が近くにいます！",
+  "Tooltip_Nearby": "近くにいる"
 }

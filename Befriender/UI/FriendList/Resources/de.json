@@ -115,5 +115,11 @@
   "Profile_SelectTags": "Tags auswählen...",
   "Profile_Tags": "Tags",
   "Tag_NoTagsCreated": "Keine Tags erstellt.",
-  "List_SearchHint": "Suchen..."
+  "Config_EnableProximity": "Näherungsradar aktivieren",
+  "Config_NotifyNearbyArchived": "Benachrichtigen, wenn ein archivierter Kontakt in der Nähe ist",
+  "Config_NotifyNearbyFriends": "Benachrichtigen, wenn ein Freund in der Nähe ist",
+  "Config_ProximitySettings": "Näherungseinstellungen",
+  "List_SearchHint": "Suchen...",
+  "Notification_FriendNearby": "{0} ist in der Nähe!",
+  "Tooltip_Nearby": "In der Nähe"
 }

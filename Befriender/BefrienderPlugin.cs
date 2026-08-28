@@ -31,7 +31,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         ITextureProvider textureProvider,
         IGameInteropProvider gameInteropProvider,
         IAddonLifecycle addonLifecycle,
-        IKeyState keyState) {
+        IKeyState keyState,
+        INotificationManager notificationManager) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -50,6 +51,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(gameInteropProvider);
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(keyState);
+        services.AddSingleton(notificationManager);
 
         services.AddPluginFeatures();
 
@@ -60,6 +62,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<VanillaFriendListModifierService>();
         this.serviceProvider.GetRequiredService<HotkeyService>();
         this.serviceProvider.GetRequiredService<OnlineNotificationService>();
+        this.serviceProvider.GetRequiredService<Befriender.Core.Proximity.Contracts.IProximityService>();
 
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {
