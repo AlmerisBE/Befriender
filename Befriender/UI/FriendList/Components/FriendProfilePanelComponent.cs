@@ -83,6 +83,27 @@ public class FriendProfilePanelComponent {
                 ImGui.Spacing();
             }
 
+            // --- Custom Group Assignment ---
+            var groups = this.groupRepository.GetGroups().ToList();
+            var groupNames = groups.Select(g => g.Title).ToList();
+            groupNames.Insert(0, this.loc.Translate("Group_None"));
+
+            int currentIndex = 0;
+            if (friend.CustomGroupId.HasValue) {
+                var idx = groups.FindIndex(g => g.Id == friend.CustomGroupId.Value);
+                if (idx >= 0) {
+                    currentIndex = idx + 1;
+                }
+            }
+
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            if (ImGui.Combo($"##groupSelect_{friend.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
+                friend.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
+                this.friendRepository.Save();
+            }
+
+            ImGui.Spacing();
+
             // --- Status ---
             ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
             ImGui.SameLine();
@@ -166,25 +187,6 @@ public class FriendProfilePanelComponent {
 
             // --- Home World ---
             ImGui.Text($"{this.loc.Translate("Profile_HomeWorld")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
-
-            // --- Custom Group Assignment ---
-            var groups = this.groupRepository.GetGroups().ToList();
-            var groupNames = groups.Select(g => g.Title).ToList();
-            groupNames.Insert(0, this.loc.Translate("Group_None"));
-
-            int currentIndex = 0;
-            if (friend.CustomGroupId.HasValue) {
-                var idx = groups.FindIndex(g => g.Id == friend.CustomGroupId.Value);
-                if (idx >= 0) {
-                    currentIndex = idx + 1;
-                }
-            }
-
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            if (ImGui.Combo($"##groupSelect_{friend.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
-                friend.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
-                this.friendRepository.Save();
-            }
 
             // --- Client Languages ---
             ImGui.Text($"{this.loc.Translate("Profile_ClientLanguages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
