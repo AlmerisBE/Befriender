@@ -46,4 +46,54 @@ public class FriendGroupRepositoryTests {
         Assert.Empty(groups);
         mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendGroup>>());
     }
+
+    [Fact]
+    public void MoveGroupUp_SwapsWithPreviousElementAndSaves() {
+        var mockStorage = Substitute.For<IFriendGroupStorage>();
+        var mockIdentity = Substitute.For<ICharacterIdentityService>();
+
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var existingGroups = new List<FriendGroup> {
+            new FriendGroup { Id = id1, Title = "Group 1" },
+            new FriendGroup { Id = id2, Title = "Group 2" }
+        };
+
+        mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
+        mockStorage.Load("Almeris_33").Returns(existingGroups);
+
+        var repository = new FriendGroupRepository(mockStorage, mockIdentity);
+
+        repository.MoveGroupUp(id2);
+        var groups = repository.GetGroups();
+
+        Assert.Equal(id2, groups[0].Id);
+        Assert.Equal(id1, groups[1].Id);
+        mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendGroup>>());
+    }
+
+    [Fact]
+    public void MoveGroupDown_SwapsWithNextElementAndSaves() {
+        var mockStorage = Substitute.For<IFriendGroupStorage>();
+        var mockIdentity = Substitute.For<ICharacterIdentityService>();
+
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var existingGroups = new List<FriendGroup> {
+            new FriendGroup { Id = id1, Title = "Group 1" },
+            new FriendGroup { Id = id2, Title = "Group 2" }
+        };
+
+        mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
+        mockStorage.Load("Almeris_33").Returns(existingGroups);
+
+        var repository = new FriendGroupRepository(mockStorage, mockIdentity);
+
+        repository.MoveGroupDown(id1);
+        var groups = repository.GetGroups();
+
+        Assert.Equal(id2, groups[0].Id);
+        Assert.Equal(id1, groups[1].Id);
+        mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendGroup>>());
+    }
 }

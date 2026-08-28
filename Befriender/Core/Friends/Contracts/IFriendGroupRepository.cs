@@ -10,6 +10,8 @@ public interface IFriendGroupRepository {
     void AddGroup(string title);
     void UpdateGroup(FriendGroup group);
     void RemoveGroup(Guid id);
+    void MoveGroupUp(Guid id);
+    void MoveGroupDown(Guid id);
     void Save();
     void ClearCache();
 }

@@ -6,6 +6,7 @@ using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using System;
 using System.Linq;
 using System.Numerics;
 
@@ -15,6 +16,7 @@ public class GroupsTab : ITab {
     private ILocalizationService loc;
 
     private string newGroupBuffer = string.Empty;
+    private Guid? groupToOpen = null;
 
     public string InternalName => "Tab_Groups";
     public string Name => this.loc.Translate("Tab_Groups");
@@ -30,6 +32,7 @@ public class GroupsTab : ITab {
         ImGui.SetNextItemWidth(250);
         ImGui.InputTextWithHint("##newGroup", this.loc.Translate("Group_NewNameHint"), ref this.newGroupBuffer, 50);
         ImGui.SameLine();
+
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus) && !string.IsNullOrWhiteSpace(this.newGroupBuffer)) {
             this.groupRepository.AddGroup(this.newGroupBuffer);
             this.newGroupBuffer = string.Empty;
@@ -39,7 +42,7 @@ public class GroupsTab : ITab {
         ImGui.Separator();
         ImGui.Spacing();
 
-        var groups = this.groupRepository.GetGroups();
+        var groups = this.groupRepository.GetGroups().ToList();
         var friends = this.friendRepository.GetFriends();
 
         if (groups.Count == 0) {
@@ -47,59 +50,106 @@ public class GroupsTab : ITab {
             return;
         }
 
-        if (ImGui.BeginTabBar("GroupsSubTabBar")) {
-            foreach (var group in groups) {
-                if (ImGui.BeginTabItem($"{group.Title}###Group_{group.Id}")) {
-                    ImGui.Spacing();
+        for (int i = 0; i < groups.Count; i++) {
+            var group = groups[i];
 
-                    string titleBuffer = group.Title;
-                    ImGui.SetNextItemWidth(300);
-                    if (ImGui.InputText(this.loc.Translate("Group_Title"), ref titleBuffer, 50)) {
-                        group.Title = titleBuffer;
-                        this.groupRepository.UpdateGroup(group);
-                    }
+            ImGui.PushID(group.Id.ToString());
 
-                    string descBuffer = group.Description;
-                    ImGui.SetNextItemWidth(300);
-                    if (ImGui.InputTextMultiline(this.loc.Translate("Group_Description"), ref descBuffer, 255, new Vector2(300, 60))) {
-                        group.Description = descBuffer;
-                        this.groupRepository.UpdateGroup(group);
-                    }
-
-                    ImGui.Spacing();
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, this.loc.Translate("Group_Delete"))) {
-                        // Unassign all friends in this group before deleting
-                        var friendsInGroup = friends.Where(f => f.CustomGroupId == group.Id).ToList();
-                        foreach (var f in friendsInGroup) {
-                            f.CustomGroupId = null;
-                        }
-
-                        if (friendsInGroup.Count > 0) {
-                            this.friendRepository.Save();
-                        }
-
-                        this.groupRepository.RemoveGroup(group.Id);
-                    }
-
-                    ImGui.Spacing();
-                    ImGui.Separator();
-                    ImGui.Spacing();
-
-                    var groupFriends = friends.Where(f => f.CustomGroupId == group.Id && !f.IsArchived).ToList();
-                    ImGui.Text($"{this.loc.Translate("Group_Members")} ({groupFriends.Count})");
-
-                    if (ImGui.BeginListBox($"##GroupList_{group.Id}", new Vector2(-1, -1))) {
-                        foreach (var friend in groupFriends) {
-                            ImGui.Text(friend.Name);
-                        }
-
-                        ImGui.EndListBox();
-                    }
-
-                    ImGui.EndTabItem();
-                }
+            // Force the accordion to stay open if it was just moved
+            if (this.groupToOpen == group.Id) {
+                ImGui.SetNextItemOpen(true);
+                this.groupToOpen = null;
             }
-            ImGui.EndTabBar();
+
+            if (ImGui.CollapsingHeader($"{group.Title}###Header_{group.Id}")) {
+                ImGui.Spacing();
+
+                // --- Actions Toolbar ---
+                bool canMoveUp = i > 0;
+                bool canMoveDown = i < groups.Count - 1;
+                float frameHeight = ImGui.GetFrameHeight();
+
+                // Up Arrow
+                if (!canMoveUp) {
+                    ImGui.BeginDisabled();
+                }
+
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp)) {
+                    this.groupRepository.MoveGroupUp(group.Id);
+                    this.groupToOpen = group.Id;
+                }
+                if (!canMoveUp) {
+                    ImGui.EndDisabled();
+                }
+
+                // Delete Button
+                ImGui.SameLine();
+                if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, this.loc.Translate("Group_Delete"))) {
+                    var friendsInGroup = friends.Where(f => f.CustomGroupId == group.Id).ToList();
+                    foreach (var f in friendsInGroup) {
+                        f.CustomGroupId = null;
+                    }
+
+                    if (friendsInGroup.Count > 0) {
+                        this.friendRepository.Save();
+                    }
+
+                    this.groupRepository.RemoveGroup(group.Id);
+                }
+
+                // Down Arrow (Pushed to the right edge)
+                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - frameHeight);
+                if (!canMoveDown) {
+                    ImGui.BeginDisabled();
+                }
+
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown)) {
+                    this.groupRepository.MoveGroupDown(group.Id);
+                    this.groupToOpen = group.Id;
+                }
+                if (!canMoveDown) {
+                    ImGui.EndDisabled();
+                }
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                // --- Inputs ---
+                string titleBuffer = group.Title;
+                ImGui.SetNextItemWidth(-1);
+                if (ImGui.InputText(this.loc.Translate("Group_Title"), ref titleBuffer, 50)) {
+                    group.Title = titleBuffer;
+                    this.groupRepository.UpdateGroup(group);
+                }
+
+                string descBuffer = group.Description;
+                ImGui.SetNextItemWidth(-1);
+                if (ImGui.InputTextMultiline(this.loc.Translate("Group_Description"), ref descBuffer, 255, new Vector2(-1, 80))) {
+                    group.Description = descBuffer;
+                    this.groupRepository.UpdateGroup(group);
+                }
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                // --- Members ---
+                var groupFriends = friends.Where(f => f.CustomGroupId == group.Id && !f.IsArchived).ToList();
+                ImGui.Text($"{this.loc.Translate("Group_Members")} ({groupFriends.Count})");
+
+                if (ImGui.BeginListBox($"##GroupList_{group.Id}", new Vector2(-1, -1))) {
+                    foreach (var friend in groupFriends) {
+                        ImGui.Text(friend.Name);
+                    }
+
+                    ImGui.EndListBox();
+                }
+
+                ImGui.Spacing();
+            }
+
+            ImGui.PopID();
         }
     }
 }

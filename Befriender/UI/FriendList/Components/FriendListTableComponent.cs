@@ -50,11 +50,13 @@ public class FriendListTableComponent {
 
         if (groupByGroups) {
             if (ImGui.BeginChild("GroupedListContainer", new Vector2(tableWidth, 0))) {
-                var groupsDict = this.groupRepository.GetGroups().ToDictionary(g => g.Id, g => g.Title);
+                var groupsList = this.groupRepository.GetGroups();
+                var groupsDict = groupsList.ToDictionary(g => g.Id, g => g.Title);
+                var groupOrder = groupsList.Select(g => g.Id).ToList(); // Snapshot of the current defined order
 
                 var groupedFriends = displayFriends
                     .GroupBy(f => f.CustomGroupId)
-                    .OrderBy(g => g.Key.HasValue ? (groupsDict.TryGetValue(g.Key.Value, out var title) ? title : string.Empty) : "ZZZZZ_UNASSIGNED");
+                    .OrderBy(g => g.Key.HasValue && groupOrder.Contains(g.Key.Value) ? groupOrder.IndexOf(g.Key.Value) : int.MaxValue);
 
                 foreach (var group in groupedFriends) {
                     string groupName = group.Key.HasValue && groupsDict.TryGetValue(group.Key.Value, out var name) && !string.IsNullOrEmpty(name)

@@ -63,6 +63,32 @@ public class FriendGroupRepository : IFriendGroupRepository {
         }
     }
 
+    public void MoveGroupUp(Guid id) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            var index = this.groups.FindIndex(g => g.Id == id);
+            if (index > 0) {
+                var group = this.groups[index];
+                this.groups.RemoveAt(index);
+                this.groups.Insert(index - 1, group);
+                this.Save();
+            }
+        }
+    }
+
+    public void MoveGroupDown(Guid id) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            var index = this.groups.FindIndex(g => g.Id == id);
+            if (index >= 0 && index < this.groups.Count - 1) {
+                var group = this.groups[index];
+                this.groups.RemoveAt(index);
+                this.groups.Insert(index + 1, group);
+                this.Save();
+            }
+        }
+    }
+
     public void Save() {
         lock (this.lockObj) {
             this.storage.Save(this.loadedCharacterId, this.groups);
