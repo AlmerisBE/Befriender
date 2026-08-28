@@ -111,5 +111,8 @@
   "Tab_Tags": "タグ",
   "Tag_Delete": "タグを削除",
   "Tag_NewNameHint": "新しいタグ名",
-  "Tag_NoTags": "タグが作成されていません。"
+  "Tag_NoTags": "タグが作成されていません。",
+  "Profile_SelectTags": "タグを選択...",
+  "Profile_Tags": "タグ",
+  "Tag_NoTagsCreated": "タグが作成されていません。"
 }

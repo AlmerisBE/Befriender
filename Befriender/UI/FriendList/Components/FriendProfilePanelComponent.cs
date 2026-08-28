@@ -20,17 +20,19 @@ public class FriendProfilePanelComponent {
     private IFriendActionService actionService;
     private ITextureProvider textureProvider;
     private IFriendGroupRepository groupRepository;
+    private IFriendTagRepository tagRepository;
 
     private string notesBuffer = string.Empty;
     private ulong currentFriendId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository) {
+    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository, IFriendTagRepository tagRepository) {
         this.gameDataService = gameDataService;
         this.friendRepository = friendRepository;
         this.loc = loc;
         this.actionService = actionService;
         this.textureProvider = textureProvider;
         this.groupRepository = groupRepository;
+        this.tagRepository = tagRepository;
     }
 
     public void Draw(float panelWidth, FriendProfile friend, Action onClose) {
@@ -100,6 +102,45 @@ public class FriendProfilePanelComponent {
             if (ImGui.Combo($"##groupSelect_{friend.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
                 friend.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
                 this.friendRepository.Save();
+            }
+
+            ImGui.Spacing();
+
+            // --- Tags Assignment ---
+            var allTags = this.tagRepository.GetTags();
+            if (allTags.Count == 0) {
+                ImGui.TextDisabled(this.loc.Translate("Tag_NoTagsCreated"));
+            }
+            else {
+                var assignedTags = allTags.Where(t => friend.Tags.Contains(t.Id)).ToList();
+                string preview = assignedTags.Count > 0
+                    ? string.Join(", ", assignedTags.Select(t => t.Name))
+                    : this.loc.Translate("Profile_SelectTags");
+
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                if (ImGui.BeginCombo($"##tagSelect_{friend.ContentId}", preview)) {
+                    bool tagsChanged = false;
+
+                    foreach (var tag in allTags) {
+                        bool isSelected = friend.Tags.Contains(tag.Id);
+                        if (ImGui.Checkbox($"{tag.Name}##{tag.Id}", ref isSelected)) {
+                            if (isSelected) {
+                                friend.Tags.Add(tag.Id);
+                            }
+                            else {
+                                friend.Tags.Remove(tag.Id);
+                            }
+
+                            tagsChanged = true;
+                        }
+                    }
+
+                    if (tagsChanged) {
+                        this.friendRepository.Save();
+                    }
+
+                    ImGui.EndCombo();
+                }
             }
 
             ImGui.Spacing();

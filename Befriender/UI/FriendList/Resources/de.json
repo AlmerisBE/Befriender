@@ -111,5 +111,8 @@
   "Tab_Tags": "Tags",
   "Tag_Delete": "Tag löschen",
   "Tag_NewNameHint": "Neuer Tag-Name",
-  "Tag_NoTags": "Keine Tags erstellt."
+  "Tag_NoTags": "Keine Tags erstellt.",
+  "Profile_SelectTags": "Tags auswählen...",
+  "Profile_Tags": "Tags",
+  "Tag_NoTagsCreated": "Keine Tags erstellt."
 }
