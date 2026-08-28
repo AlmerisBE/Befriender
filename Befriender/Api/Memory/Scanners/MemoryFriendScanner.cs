@@ -63,7 +63,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
             ulong onlineStateMask = (ulong)entry->State;
             byte clientLanguages = (byte)entry->Languages;
             byte grandCompany = (byte)entry->GrandCompany;
-            byte groupId = (byte)entry->Group;
 
             friends.Add(new FriendProfile {
                 ContentId = entry->ContentId,
@@ -76,8 +75,7 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
                 FcTag = fcTag,
                 OnlineStateMask = onlineStateMask,
                 ClientLanguages = clientLanguages,
-                GrandCompany = grandCompany,
-                GroupId = groupId
+                GrandCompany = grandCompany
             });
         }
 
@@ -125,7 +123,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
         for (uint i = 0; i < count; i++) {
             var entry = friendProxy->GetEntry(i);
             if (entry != null) {
-                // Creates a unique fast hash based on the State flag of all entries
                 hash = unchecked(hash * 314159 + (ulong)entry->State);
             }
         }
@@ -149,7 +146,6 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
             return;
         }
 
-        // Triggers the native server data request mimicking the vanilla friend list opening
         friendProxy->RequestData();
     }
 }

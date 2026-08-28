@@ -24,14 +24,6 @@ public class FriendGroupRepository : IFriendGroupRepository {
         var currentId = this.identityService.GetCurrentCharacterId();
         if (!string.IsNullOrEmpty(currentId) && this.loadedCharacterId != currentId) {
             this.groups = this.storage.Load(currentId).ToList();
-
-            // Seed vanilla FFXIV groups (0 = None, 1-7 = Symbols) if empty
-            if (this.groups.Count == 0) {
-                for (byte i = 0; i <= 7; i++) {
-                    this.groups.Add(new FriendGroup { Id = i });
-                }
-            }
-
             this.loadedCharacterId = currentId;
         }
     }
@@ -43,6 +35,14 @@ public class FriendGroupRepository : IFriendGroupRepository {
         }
     }
 
+    public void AddGroup(string title) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            this.groups.Add(new FriendGroup { Title = title });
+            this.Save();
+        }
+    }
+
     public void UpdateGroup(FriendGroup group) {
         lock (this.lockObj) {
             this.EnsureLoaded();
@@ -50,6 +50,40 @@ public class FriendGroupRepository : IFriendGroupRepository {
             if (existing != null) {
                 existing.Title = group.Title;
                 existing.Description = group.Description;
+                this.Save();
+            }
+        }
+    }
+
+    public void RemoveGroup(Guid id) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            this.groups.RemoveAll(g => g.Id == id);
+            this.Save();
+        }
+    }
+
+    public void MoveGroupUp(Guid id) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            var index = this.groups.FindIndex(g => g.Id == id);
+            if (index > 0) {
+                var group = this.groups[index];
+                this.groups.RemoveAt(index);
+                this.groups.Insert(index - 1, group);
+                this.Save();
+            }
+        }
+    }
+
+    public void MoveGroupDown(Guid id) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            var index = this.groups.FindIndex(g => g.Id == id);
+            if (index >= 0 && index < this.groups.Count - 1) {
+                var group = this.groups[index];
+                this.groups.RemoveAt(index);
+                this.groups.Insert(index + 1, group);
                 this.Save();
             }
         }

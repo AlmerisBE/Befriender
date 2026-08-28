@@ -22,12 +22,16 @@ public class FriendListUIFeature : IFeatureModule {
 
         // Register feature-specific localization provider
         services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
+        services.AddSingleton<IFriendSearchService, FriendSearchService>();
 
         // Register UI Components
+        services.AddSingleton<ListToolbarComponent>();
         services.AddSingleton<FriendListTableComponent>();
         services.AddSingleton<ArchiveTableComponent>();
         services.AddSingleton<FriendProfilePanelComponent>();
         services.AddSingleton<FriendStatusBarComponent>();
+        services.AddSingleton<GroupManagementComponent>();
+        services.AddSingleton<TagManagementComponent>();
 
         // Register the List tab orchestrator
         services.AddSingleton<ITab, ListTab>();

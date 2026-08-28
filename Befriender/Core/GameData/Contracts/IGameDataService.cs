@@ -14,4 +14,8 @@ public interface IGameDataService {
     string GetClientLanguageString(byte languageMask);
     uint GetGrandCompanyIconId(byte grandCompanyId);
     string GetGrandCompanyName(byte grandCompanyId);
+
+    string GetTitleName(ushort titleId, byte gender);
+    string GetRaceName(byte raceId, byte gender);
+    string GetTribeName(byte tribeId, byte gender);
 }

@@ -5,11 +5,13 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
+using Befriender.UI.Theme.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Plugin.Services;
 using System;
+using System.Linq;
 using System.Numerics;
 
 public class FriendProfilePanelComponent {
@@ -18,20 +20,26 @@ public class FriendProfilePanelComponent {
     private ILocalizationService loc;
     private IFriendActionService actionService;
     private ITextureProvider textureProvider;
+    private IFriendGroupRepository groupRepository;
+    private IFriendTagRepository tagRepository;
+    private IThemeService themeService;
 
     private string notesBuffer = string.Empty;
     private ulong currentFriendId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider) {
+    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository, IFriendTagRepository tagRepository, IThemeService themeService) {
         this.gameDataService = gameDataService;
         this.friendRepository = friendRepository;
         this.loc = loc;
         this.actionService = actionService;
         this.textureProvider = textureProvider;
+        this.groupRepository = groupRepository;
+        this.tagRepository = tagRepository;
+        this.themeService = themeService;
     }
 
-    public void Draw(float panelWidth, float footerHeight, FriendProfile friend, Action onClose) {
-        if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, -footerHeight), true)) {
+    public void Draw(float panelWidth, FriendProfile friend, Action onClose) {
+        if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, 0), true)) {
             if (this.currentFriendId != friend.ContentId) {
                 this.currentFriendId = friend.ContentId;
                 this.notesBuffer = friend.Notes ?? string.Empty;
@@ -80,6 +88,66 @@ public class FriendProfilePanelComponent {
                 ImGui.Spacing();
             }
 
+            // --- Custom Group Assignment ---
+            var groups = this.groupRepository.GetGroups().ToList();
+            var groupNames = groups.Select(g => g.Title).ToList();
+            groupNames.Insert(0, this.loc.Translate("Group_None"));
+
+            int currentIndex = 0;
+            if (friend.CustomGroupId.HasValue) {
+                var idx = groups.FindIndex(g => g.Id == friend.CustomGroupId.Value);
+                if (idx >= 0) {
+                    currentIndex = idx + 1;
+                }
+            }
+
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            if (ImGui.Combo($"##groupSelect_{friend.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
+                friend.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
+                this.friendRepository.Save();
+            }
+
+            ImGui.Spacing();
+
+            // --- Tags Assignment ---
+            var allTags = this.tagRepository.GetTags();
+            if (allTags.Count == 0) {
+                ImGui.TextDisabled(this.loc.Translate("Tag_NoTagsCreated"));
+            }
+            else {
+                var assignedTags = allTags.Where(t => friend.Tags.Contains(t.Id)).ToList();
+                string preview = assignedTags.Count > 0
+                    ? string.Join(", ", assignedTags.Select(t => t.Name))
+                    : this.loc.Translate("Profile_SelectTags");
+
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                if (ImGui.BeginCombo($"##tagSelect_{friend.ContentId}", preview)) {
+                    bool tagsChanged = false;
+
+                    foreach (var tag in allTags) {
+                        bool isSelected = friend.Tags.Contains(tag.Id);
+                        if (ImGui.Checkbox($"{tag.Name}##{tag.Id}", ref isSelected)) {
+                            if (isSelected) {
+                                friend.Tags.Add(tag.Id);
+                            }
+                            else {
+                                friend.Tags.Remove(tag.Id);
+                            }
+
+                            tagsChanged = true;
+                        }
+                    }
+
+                    if (tagsChanged) {
+                        this.friendRepository.Save();
+                    }
+
+                    ImGui.EndCombo();
+                }
+            }
+
+            ImGui.Spacing();
+
             // --- Status ---
             ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
             ImGui.SameLine();
@@ -120,6 +188,38 @@ public class FriendProfilePanelComponent {
             }
             var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : this.loc.Translate("Profile_None");
             ImGui.Text(jobAbbr);
+
+            // --- Level ---
+            if (friend.Level > 0) {
+                ImGui.Text($"{this.loc.Translate("Profile_Level")}: {friend.Level}");
+            }
+
+            // --- Race / Title ---
+            string title = this.gameDataService.GetTitleName(friend.TitleId, friend.Gender);
+            if (!string.IsNullOrEmpty(title)) {
+                ImGui.Text($"{this.loc.Translate("Profile_Title")}: {title}");
+            }
+
+            string race = this.gameDataService.GetRaceName(friend.Race, friend.Gender);
+            string tribe = this.gameDataService.GetTribeName(friend.Tribe, friend.Gender);
+            if (!string.IsNullOrEmpty(race)) {
+                ImGui.Text($"{this.loc.Translate("Profile_Race")}: {race} ({tribe})");
+            }
+
+            if (friend.IsFantasiaDetected) {
+                ImGui.PushStyleColor(ImGuiCol.Text, this.themeService.CurrentPalette.TextMarkedForRemoval);
+                ImGui.Text(this.loc.Translate("Profile_FantasiaDetected"));
+                ImGui.PopStyleColor();
+                ImGui.SameLine();
+
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.CheckDouble)) {
+                    friend.IsFantasiaDetected = false;
+                    this.friendRepository.Save();
+                }
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(this.loc.Translate("Action_ClearFantasia"));
+                }
+            }
 
             ImGui.Spacing();
 

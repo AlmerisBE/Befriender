@@ -2,6 +2,7 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
+using Befriender.UI.FriendList.Components;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
@@ -15,18 +16,46 @@ public class ConfigTab : ITab {
     private IConfigurationService configurationService;
     private ILocalizationService loc;
     private IThemeService themeService;
+    private GroupManagementComponent groupComponent;
+    private TagManagementComponent tagComponent;
 
     public string InternalName => "Tab_Config";
     public bool IsProfilePanelOpen => false;
     public string Name => this.loc.Translate("Tab_Config");
 
-    public ConfigTab(IConfigurationService configurationService, ILocalizationService loc, IThemeService themeService) {
+    public ConfigTab(IConfigurationService configurationService, ILocalizationService loc, IThemeService themeService, GroupManagementComponent groupComponent, TagManagementComponent tagComponent) {
         this.configurationService = configurationService;
         this.loc = loc;
         this.themeService = themeService;
+        this.groupComponent = groupComponent;
+        this.tagComponent = tagComponent;
     }
 
     public void Draw() {
+        if (ImGui.BeginTabBar("ConfigurationTabBar")) {
+            if (ImGui.BeginTabItem(this.loc.Translate("Tab_General"))) {
+                ImGui.Spacing();
+                this.DrawGeneralConfiguration();
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(this.loc.Translate("Tab_Groups"))) {
+                ImGui.Spacing();
+                this.groupComponent.Draw();
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(this.loc.Translate("Tab_Tags"))) {
+                ImGui.Spacing();
+                this.tagComponent.Draw();
+                ImGui.EndTabItem();
+            }
+
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void DrawGeneralConfiguration() {
         var config = this.configurationService.GetConfig();
         bool configChanged = false;
 
@@ -108,19 +137,54 @@ public class ConfigTab : ITab {
         }
 
         ImGui.Spacing();
+        ImGui.Text(this.loc.Translate("Config_ProximitySettings"));
+        ImGui.Separator();
+
+        bool enableProximity = config.EnableProximityDetection;
+        if (ImGui.Checkbox(this.loc.Translate("Config_EnableProximity"), ref enableProximity)) {
+            config.EnableProximityDetection = enableProximity;
+            configChanged = true;
+        }
+
+        if (enableProximity) {
+            ImGui.Indent();
+            bool notifyFriends = config.NotifyOnNearbyFriends;
+            if (ImGui.Checkbox(this.loc.Translate("Config_NotifyNearbyFriends"), ref notifyFriends)) {
+                config.NotifyOnNearbyFriends = notifyFriends;
+                configChanged = true;
+            }
+
+            bool notifyArchived = config.NotifyOnNearbyArchived;
+            if (ImGui.Checkbox(this.loc.Translate("Config_NotifyNearbyArchived"), ref notifyArchived)) {
+                config.NotifyOnNearbyArchived = notifyArchived;
+                configChanged = true;
+            }
+            ImGui.Unindent();
+        }
+
+        ImGui.Spacing();
         ImGui.Text(this.loc.Translate("Config_HotkeySettings"));
         ImGui.Separator();
 
         bool ctrl = config.HotkeyCtrl;
-        if (ImGui.Checkbox("Ctrl", ref ctrl)) { config.HotkeyCtrl = ctrl; configChanged = true; }
+        if (ImGui.Checkbox("Ctrl", ref ctrl)) {
+            config.HotkeyCtrl = ctrl;
+            configChanged = true;
+        }
         ImGui.SameLine();
 
         bool shift = config.HotkeyShift;
-        if (ImGui.Checkbox("Shift", ref shift)) { config.HotkeyShift = shift; configChanged = true; }
+        if (ImGui.Checkbox("Shift", ref shift)) {
+            config.HotkeyShift = shift;
+            configChanged = true;
+        }
         ImGui.SameLine();
 
         bool alt = config.HotkeyAlt;
-        if (ImGui.Checkbox("Alt", ref alt)) { config.HotkeyAlt = alt; configChanged = true; }
+        if (ImGui.Checkbox("Alt", ref alt)) {
+            config.HotkeyAlt = alt;
+            configChanged = true;
+        }
 
         var keys = Enum.GetValues<VirtualKey>();
         var keyNames = keys.Select(k => k.ToString()).ToArray();

@@ -106,8 +106,6 @@ public class FriendRepository : IFriendRepository {
                         existing.FcTag = scanned.FcTag;
                     }
 
-                    existing.GroupId = scanned.GroupId;
-
                     if (wasOffline && existing.IsOnline) {
                         this.FriendLoggedOn?.Invoke(existing);
                     }
@@ -140,6 +138,59 @@ public class FriendRepository : IFriendRepository {
 
             this.friends = repositoryDict.Values.ToList();
             this.storage.Save(this.loadedCharacterId, this.friends);
+        }
+    }
+
+    public void UpdateFriendFromCharacter(ulong contentId, Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter player, ushort territoryId) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            var friend = this.friends.FirstOrDefault(f => f.ContentId == contentId);
+            if (friend == null) {
+                return;
+            }
+
+            bool changed = false;
+
+            if (friend.Level != player.Level) { friend.Level = player.Level; changed = true; }
+            if (friend.JobId != player.ClassJob.RowId) { friend.JobId = (byte)player.ClassJob.RowId; changed = true; }
+
+            var tag = player.CompanyTag.TextValue;
+            if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
+
+            unsafe {
+                var csChar = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address;
+                if (csChar != null) {
+                    if (friend.TitleId != csChar->TitleId) { friend.TitleId = csChar->TitleId; changed = true; }
+                    if (friend.OnlineStatusId != csChar->CharacterData.OnlineStatus) { friend.OnlineStatusId = csChar->CharacterData.OnlineStatus; changed = true; }
+
+                    byte race = csChar->DrawData.CustomizeData.Race;
+                    byte tribe = csChar->DrawData.CustomizeData.Tribe;
+                    byte gender = csChar->DrawData.CustomizeData.Sex;
+
+                    if (friend.Race != 0 && (friend.Race != race || friend.Gender != gender)) {
+                        friend.IsFantasiaDetected = true;
+                        changed = true;
+                    }
+
+                    if (friend.Race != race) { friend.Race = race; changed = true; }
+                    if (friend.Tribe != tribe) { friend.Tribe = tribe; changed = true; }
+                    if (friend.Gender != gender) { friend.Gender = gender; changed = true; }
+                }
+            }
+
+            if (friend.LocationId != territoryId) { friend.LocationId = territoryId; changed = true; }
+
+            if (!friend.IsOnline) { friend.IsOnline = true; changed = true; }
+            if (friend.IsMissing) { friend.IsMissing = false; changed = true; }
+
+            if ((DateTime.Now - friend.LastSeenAt).TotalMinutes > 5) {
+                friend.LastSeenAt = DateTime.Now;
+                changed = true;
+            }
+
+            if (changed) {
+                this.Save();
+            }
         }
     }
 

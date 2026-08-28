@@ -88,7 +88,6 @@ public class FriendSyncService : IFriendSyncService, IDisposable {
             this.lastStateHash = currentHash;
         }
 
-        // Random automatic refresh ONLY if the window is currently open
         if (this.IsWindowOpen && now >= this.nextAutoSyncTime) {
             this.RequestServerRefresh();
         }

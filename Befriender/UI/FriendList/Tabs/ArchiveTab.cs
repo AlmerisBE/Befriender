@@ -14,11 +14,14 @@ public class ArchiveTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
     private ArchiveTableComponent tableComponent;
     private FriendProfilePanelComponent profilePanelComponent;
-    private FriendStatusBarComponent statusBarComponent;
+    private ListToolbarComponent toolbarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
 
-    private bool showOnlineOnly = false; // Kept for status bar compatibility, though ineffective here
+    private string searchQuery = string.Empty;
+    private bool showOnlineOnly = false;
+    private bool showNearbyOnly = false;
+    private bool groupByGroups = false;
     private const float PanelWidth = 300f;
     private FriendProfile? selectedFriend = null;
 
@@ -26,11 +29,11 @@ public class ArchiveTab : ITab, IDisposable {
     public string Name => this.loc.Translate("Tab_Archives");
     public bool IsProfilePanelOpen => this.selectedFriend != null;
 
-    public ArchiveTab(IFriendRepository friendRepository, ArchiveTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, FriendStatusBarComponent statusBarComponent, ILocalizationService loc, IConfigurationService configurationService) {
+    public ArchiveTab(IFriendRepository friendRepository, ArchiveTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, ListToolbarComponent toolbarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;
-        this.statusBarComponent = statusBarComponent;
+        this.toolbarComponent = toolbarComponent;
         this.loc = loc;
         this.configurationService = configurationService;
 
@@ -53,23 +56,33 @@ public class ArchiveTab : ITab, IDisposable {
         var rawFriends = this.friendRepository.GetFriends();
         var archivedFriends = rawFriends.Where(f => f.IsArchived).ToList();
 
+        var config = this.configurationService.GetConfig();
+        this.groupByGroups = config.GroupByCustomGroups;
+
+        bool previousGrouping = this.groupByGroups;
+        if (this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, false)) {
+            if (this.groupByGroups != previousGrouping) {
+                config.GroupByCustomGroups = this.groupByGroups;
+                this.configurationService.Save();
+            }
+        }
+
+        ImGui.Separator();
+        ImGui.Spacing();
+
         if (archivedFriends.Count == 0) {
             ImGui.Text(this.loc.Translate("Archive_Empty"));
             return;
         }
 
-        float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
         float tableWidth = this.selectedFriend != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        this.tableComponent.Draw(tableWidth, footerHeight, archivedFriends, this.selectedFriend, this.ToggleProfilePanel);
+        this.tableComponent.Draw(tableWidth, archivedFriends, this.selectedFriend, this.showNearbyOnly, this.groupByGroups, this.searchQuery, this.ToggleProfilePanel);
 
         if (this.selectedFriend != null) {
             ImGui.SameLine();
-            this.profilePanelComponent.Draw(PanelWidth, footerHeight, this.selectedFriend, () => this.ToggleProfilePanel(null));
+            this.profilePanelComponent.Draw(PanelWidth, this.selectedFriend, () => this.ToggleProfilePanel(null));
         }
-
-        ImGui.Separator();
-        this.statusBarComponent.Draw(rawFriends, ref this.showOnlineOnly);
     }
 
     public void Dispose() => this.friendRepository.CacheCleared -= this.OnCacheCleared;

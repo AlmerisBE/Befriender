@@ -44,6 +44,7 @@ public class ConfigurationServiceTests {
         Assert.NotNull(config);
         Assert.Equal(15, config.MinSyncIntervalMinutes);
         Assert.Equal(30, config.MaxSyncIntervalMinutes);
+        Assert.False(config.GroupByCustomGroups);
         Assert.Equal(0, config.Version);
     }
 

@@ -18,9 +18,14 @@ public class PluginConfiguration : IPluginConfiguration {
     public string SelectedThemeName { get; set; } = "Dark";
 
     public bool IsProfilePanelOpen { get; set; } = false;
+    public bool GroupByCustomGroups { get; set; } = false;
 
     public VirtualKey Hotkey { get; set; } = 0;
     public bool HotkeyCtrl { get; set; } = false;
     public bool HotkeyShift { get; set; } = false;
     public bool HotkeyAlt { get; set; } = false;
+
+    public bool EnableProximityDetection { get; set; } = true;
+    public bool NotifyOnNearbyFriends { get; set; } = true;
+    public bool NotifyOnNearbyArchived { get; set; } = false;
 }
