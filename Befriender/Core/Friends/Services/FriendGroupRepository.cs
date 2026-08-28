@@ -24,14 +24,6 @@ public class FriendGroupRepository : IFriendGroupRepository {
         var currentId = this.identityService.GetCurrentCharacterId();
         if (!string.IsNullOrEmpty(currentId) && this.loadedCharacterId != currentId) {
             this.groups = this.storage.Load(currentId).ToList();
-
-            // Seed vanilla FFXIV groups (0 = None, 1-7 = Symbols) if empty
-            if (this.groups.Count == 0) {
-                for (byte i = 0; i <= 7; i++) {
-                    this.groups.Add(new FriendGroup { Id = i });
-                }
-            }
-
             this.loadedCharacterId = currentId;
         }
     }
@@ -40,6 +32,14 @@ public class FriendGroupRepository : IFriendGroupRepository {
         lock (this.lockObj) {
             this.EnsureLoaded();
             return this.groups.ToList();
+        }
+    }
+
+    public void AddGroup(string title) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            this.groups.Add(new FriendGroup { Title = title });
+            this.Save();
         }
     }
 
@@ -52,6 +52,14 @@ public class FriendGroupRepository : IFriendGroupRepository {
                 existing.Description = group.Description;
                 this.Save();
             }
+        }
+    }
+
+    public void RemoveGroup(Guid id) {
+        lock (this.lockObj) {
+            this.EnsureLoaded();
+            this.groups.RemoveAll(g => g.Id == id);
+            this.Save();
         }
     }
 

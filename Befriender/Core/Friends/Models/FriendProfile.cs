@@ -23,7 +23,7 @@ public class FriendProfile {
     public ushort AddedLocationId { get; set; }
     public DateTime LastSeenAt { get; set; }
     public DateTime ArchivedAt { get; set; }
-    public byte GroupId { get; set; }
+    public Guid? CustomGroupId { get; set; }
 
     // History of previous names detected for this character
     public List<string> PreviousNames { get; set; } = new();

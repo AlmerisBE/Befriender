@@ -10,6 +10,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Plugin.Services;
 using System;
+using System.Linq;
 using System.Numerics;
 
 public class FriendProfilePanelComponent {
@@ -18,16 +19,18 @@ public class FriendProfilePanelComponent {
     private ILocalizationService loc;
     private IFriendActionService actionService;
     private ITextureProvider textureProvider;
+    private IFriendGroupRepository groupRepository;
 
     private string notesBuffer = string.Empty;
     private ulong currentFriendId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider) {
+    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository) {
         this.gameDataService = gameDataService;
         this.friendRepository = friendRepository;
         this.loc = loc;
         this.actionService = actionService;
         this.textureProvider = textureProvider;
+        this.groupRepository = groupRepository;
     }
 
     public void Draw(float panelWidth, float footerHeight, FriendProfile friend, Action onClose) {
@@ -163,6 +166,25 @@ public class FriendProfilePanelComponent {
 
             // --- Home World ---
             ImGui.Text($"{this.loc.Translate("Profile_HomeWorld")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
+
+            // --- Custom Group Assignment ---
+            var groups = this.groupRepository.GetGroups().ToList();
+            var groupNames = groups.Select(g => g.Title).ToList();
+            groupNames.Insert(0, this.loc.Translate("Group_None"));
+
+            int currentIndex = 0;
+            if (friend.CustomGroupId.HasValue) {
+                var idx = groups.FindIndex(g => g.Id == friend.CustomGroupId.Value);
+                if (idx >= 0) {
+                    currentIndex = idx + 1;
+                }
+            }
+
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            if (ImGui.Combo($"##groupSelect_{friend.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
+                friend.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
+                this.friendRepository.Save();
+            }
 
             // --- Client Languages ---
             ImGui.Text($"{this.loc.Translate("Profile_ClientLanguages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");

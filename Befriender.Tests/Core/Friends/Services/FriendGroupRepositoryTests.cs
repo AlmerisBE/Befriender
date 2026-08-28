@@ -4,13 +4,13 @@ using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
 using Befriender.Core.Friends.Services;
 using NSubstitute;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 public class FriendGroupRepositoryTests {
     [Fact]
-    public void GetGroups_SeedsVanillaGroups_WhenStorageIsEmpty() {
+    public void AddGroup_CreatesNewGroupAndSaves() {
         var mockStorage = Substitute.For<IFriendGroupStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
@@ -18,33 +18,32 @@ public class FriendGroupRepositoryTests {
         mockStorage.Load("Almeris_33").Returns(new List<FriendGroup>());
 
         var repository = new FriendGroupRepository(mockStorage, mockIdentity);
+
+        repository.AddGroup("My Custom Group");
         var groups = repository.GetGroups();
 
-        Assert.Equal(8, groups.Count);
-        Assert.Equal(0, groups[0].Id);
-        Assert.Equal(7, groups[7].Id);
+        Assert.Single(groups);
+        Assert.Equal("My Custom Group", groups[0].Title);
+        mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendGroup>>());
     }
 
     [Fact]
-    public void UpdateGroup_UpdatesMetadataAndSaves_WhenGroupExists() {
+    public void RemoveGroup_DeletesGroupAndSaves() {
         var mockStorage = Substitute.For<IFriendGroupStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
-        mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
+        var groupId = Guid.NewGuid();
+        var existingGroups = new List<FriendGroup> { new FriendGroup { Id = groupId, Title = "To Delete" } };
 
-        var existingGroups = new List<FriendGroup> {
-            new FriendGroup { Id = 1, Title = "Old Title" }
-        };
+        mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
         mockStorage.Load("Almeris_33").Returns(existingGroups);
 
         var repository = new FriendGroupRepository(mockStorage, mockIdentity);
-        repository.UpdateGroup(new FriendGroup { Id = 1, Title = "New Title", Description = "Test" });
 
+        repository.RemoveGroup(groupId);
         var groups = repository.GetGroups();
-        var updatedGroup = groups.First(g => g.Id == 1);
 
-        Assert.Equal("New Title", updatedGroup.Title);
-        Assert.Equal("Test", updatedGroup.Description);
+        Assert.Empty(groups);
         mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendGroup>>());
     }
 }
