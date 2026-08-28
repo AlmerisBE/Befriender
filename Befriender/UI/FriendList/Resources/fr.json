@@ -104,5 +104,12 @@
   "Tooltip_OpenNativeList": "Ouvrir la liste d'amis native (Vanilla)",
   "Tooltip_Tracked": "Alertes de connexion activées",
   "Group_Unassigned": "Non assigné",
-  "List_GroupByGroups": "Affichage par groupes"
+  "List_GroupByGroups": "Affichage par groupes",
+  "Column_Actions": "Actions",
+  "Column_UsageCount": "Utilisations",
+  "Tab_General": "Général",
+  "Tab_Tags": "Tags",
+  "Tag_Delete": "Supprimer le tag",
+  "Tag_NewNameHint": "Nom du nouveau tag",
+  "Tag_NoTags": "Aucun tag créé."
 }

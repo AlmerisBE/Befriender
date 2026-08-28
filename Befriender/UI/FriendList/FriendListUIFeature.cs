@@ -29,11 +29,12 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<ArchiveTableComponent>();
         services.AddSingleton<FriendProfilePanelComponent>();
         services.AddSingleton<FriendStatusBarComponent>();
+        services.AddSingleton<GroupManagementComponent>();
+        services.AddSingleton<TagManagementComponent>();
 
         // Register the List tab orchestrator
         services.AddSingleton<ITab, ListTab>();
         services.AddSingleton<ITab, ArchiveTab>();
-        services.AddSingleton<ITab, GroupsTab>();
         services.AddSingleton<ITab, AboutTab>();
 
         services.AddSingleton<FriendListWindow>();

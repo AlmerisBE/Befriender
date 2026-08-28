@@ -104,5 +104,12 @@
   "Tooltip_OpenNativeList": "Open Native Friend List (Vanilla)",
   "Tooltip_Tracked": "Login alerts enabled",
   "Group_Unassigned": "Unassigned",
-  "List_GroupByGroups": "Group by custom groups"
+  "List_GroupByGroups": "Group by custom groups",
+  "Column_Actions": "Actions",
+  "Column_UsageCount": "Usage count",
+  "Tab_General": "General",
+  "Tab_Tags": "Tags",
+  "Tag_Delete": "Delete tag",
+  "Tag_NewNameHint": "New tag name",
+  "Tag_NoTags": "No tags created."
 }

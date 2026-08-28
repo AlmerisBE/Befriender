@@ -104,5 +104,12 @@
   "Tooltip_OpenNativeList": "公式フレンドリストを開く（バニラ）",
   "Tooltip_Tracked": "ログイン通知が有効です",
   "Group_Unassigned": "未割り当て",
-  "List_GroupByGroups": "グループごとに表示"
+  "List_GroupByGroups": "グループごとに表示",
+  "Column_Actions": "アクション",
+  "Column_UsageCount": "使用数",
+  "Tab_General": "一般",
+  "Tab_Tags": "タグ",
+  "Tag_Delete": "タグを削除",
+  "Tag_NewNameHint": "新しいタグ名",
+  "Tag_NoTags": "タグが作成されていません。"
 }

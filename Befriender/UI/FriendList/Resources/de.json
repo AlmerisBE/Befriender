@@ -104,5 +104,12 @@
   "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)",
   "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
   "Group_Unassigned": "Nicht zugewiesen",
-  "List_GroupByGroups": "Nach Gruppen gruppieren"
+  "List_GroupByGroups": "Nach Gruppen gruppieren",
+  "Column_Actions": "Aktionen",
+  "Column_UsageCount": "Verwendungen",
+  "Tab_General": "Allgemein",
+  "Tab_Tags": "Tags",
+  "Tag_Delete": "Tag löschen",
+  "Tag_NewNameHint": "Neuer Tag-Name",
+  "Tag_NoTags": "Keine Tags erstellt."
 }
