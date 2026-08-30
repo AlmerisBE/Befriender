@@ -20,11 +20,9 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<IFriendDisplayService, FriendDisplayService>();
         services.AddSingleton<VanillaFriendListModifierService>();
 
-        // Register feature-specific localization provider
         services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
         services.AddSingleton<IFriendSearchService, FriendSearchService>();
 
-        // Register UI Components
         services.AddSingleton<ListToolbarComponent>();
         services.AddSingleton<FriendListTableComponent>();
         services.AddSingleton<ArchiveTableComponent>();
@@ -33,9 +31,10 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<GroupManagementComponent>();
         services.AddSingleton<TagManagementComponent>();
 
-        // Register the List tab orchestrator
+        // Register the tabs
         services.AddSingleton<ITab, ListTab>();
         services.AddSingleton<ITab, ArchiveTab>();
+        services.AddSingleton<ITab, FreeCompanyTab>();
         services.AddSingleton<ITab, AboutTab>();
 
         services.AddSingleton<FriendListWindow>();

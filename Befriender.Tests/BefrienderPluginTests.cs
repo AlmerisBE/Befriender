@@ -1,5 +1,6 @@
 ﻿namespace Befriender.Tests;
 
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using NSubstitute;
@@ -21,6 +22,11 @@ public class BefrienderPluginTests {
         var mockLogger = Substitute.For<IPluginLog>();
         var mockFramework = Substitute.For<IFramework>();
         var mockObjectTable = Substitute.For<IObjectTable>();
+
+        // Explicitly return null for LocalPlayer to simulate plugin startup at the main menu
+        // Prevents NSubstitute from returning a proxy object with null properties (like SeString Name)
+        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter)null!);
+
         var mockDataManager = Substitute.For<IDataManager>();
         var mockTextureProvider = Substitute.For<ITextureProvider>();
         var mockGameInteropProvider = Substitute.For<IGameInteropProvider>();

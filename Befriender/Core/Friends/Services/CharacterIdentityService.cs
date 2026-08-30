@@ -16,6 +16,11 @@ public class CharacterIdentityService : ICharacterIdentityService {
             return string.Empty;
         }
 
-        return $"{localPlayer.Name.TextValue}_{localPlayer.HomeWorld.RowId}";
+        var name = localPlayer.Name?.TextValue;
+        if (string.IsNullOrEmpty(name)) {
+            return string.Empty;
+        }
+
+        return $"{name}_{localPlayer.HomeWorld.RowId}";
     }
 }
