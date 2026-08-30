@@ -5,6 +5,7 @@ using Befriender.Core.Framework;
 using Befriender.Core.Friends.Services;
 using Befriender.Core.Input.Services;
 using Befriender.Core.Notifications.Services;
+using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.FriendList.Services;
 using Dalamud.Interface.Windowing;
@@ -62,7 +63,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<VanillaFriendListModifierService>();
         this.serviceProvider.GetRequiredService<HotkeyService>();
         this.serviceProvider.GetRequiredService<OnlineNotificationService>();
-        this.serviceProvider.GetRequiredService<Befriender.Core.Proximity.Contracts.IProximityService>();
+        this.serviceProvider.GetRequiredService<IProximityService>();
 
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {
