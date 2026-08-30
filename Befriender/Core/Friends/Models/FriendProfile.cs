@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 
 public class FriendProfile {
+    // Unique identity for IPC and character consolidation
+    public Guid Id { get; set; } = Guid.Empty;
+
     public ulong ContentId { get; set; }
     public string Name { get; set; } = string.Empty;
     public uint HomeWorldId { get; set; }

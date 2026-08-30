@@ -334,4 +334,49 @@ public class FriendRepositoryTests {
         Assert.Equal(0u, friend.CurrentWorldId);
         Assert.Equal(123u, friend.LocationId);
     }
+
+    [Fact]
+    public void EnsureLoaded_MigratesEmptyGuidsToNewGuids() {
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var legacyFriend = new FriendProfile { Id = Guid.Empty, ContentId = 1, Name = "Legacy Friend" };
+        mockStorage.Load("Almeris_33").Returns(new List<FriendProfile> { legacyFriend });
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        // Accessing the collection triggers EnsureLoaded
+        var friends = repository.GetFriends();
+
+        Assert.NotEqual(Guid.Empty, friends[0].Id);
+        mockStorage.Received(1).Save("Almeris_33", Arg.Any<IEnumerable<FriendProfile>>());
+    }
+
+    [Fact]
+    public void GetCharacters_ProjectsFriendProfilesToCharactersWithCustomProperties() {
+        var mockStorage = Substitute.For<IFriendStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
+
+        var profileId = Guid.NewGuid();
+        var friend = new FriendProfile { Id = profileId, ContentId = 1, Name = "Alice", IsArchived = true };
+        mockStorage.Load("Almeris_33").Returns(new List<FriendProfile> { friend });
+
+        var repository = new FriendRepository(mockStorage, mockIdentityService, mockClientState, mockObjectTable);
+
+        var characters = repository.GetCharacters().ToList();
+
+        Assert.Single(characters);
+        var chara = characters[0];
+        Assert.Equal(profileId, chara.Id);
+        Assert.Equal("Alice", chara.Name);
+        Assert.Equal("True", chara.CustomProperties["Befriender_IsArchived"]);
+    }
 }

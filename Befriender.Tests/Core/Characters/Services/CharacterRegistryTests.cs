@@ -11,7 +11,8 @@ using Xunit;
 public class CharacterRegistryTests {
     [Fact]
     public void RegisterSource_ConsolidatesCharactersAndCustomProperties() {
-        var registry = new CharacterRegistry();
+        // Fix: Inject empty array to satisfy constructor parameters
+        var registry = new CharacterRegistry(Array.Empty<ICharacterSource>());
 
         var sourceId1 = Guid.NewGuid();
         var source1 = Substitute.For<ICharacterSource>();
@@ -31,7 +32,7 @@ public class CharacterRegistryTests {
 
         var char2 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = true, Level = 90 };
         char2.CustomProperties["Another_Data"] = "Test";
-        char2.CustomProperties["ExtPlugin_Rank"] = "Platinum"; // Should overwrite because higher priority
+        char2.CustomProperties["ExtPlugin_Rank"] = "Platinum";
         source2.GetCharacters().Returns(new List<Character> { char2 });
 
         registry.RegisterSource(source1);
@@ -47,7 +48,6 @@ public class CharacterRegistryTests {
         Assert.Contains(sourceId1, alice.ActiveSourceIds);
         Assert.Contains(sourceId2, alice.ActiveSourceIds);
 
-        // Check Custom Properties merging
         Assert.Equal("Test", alice.CustomProperties["Another_Data"]);
         Assert.Equal("Platinum", alice.CustomProperties["ExtPlugin_Rank"]);
     }

@@ -13,6 +13,12 @@ public class CharacterRegistry : ICharacterRegistry {
 
     public event Action? RegistryUpdated;
 
+    public CharacterRegistry(IEnumerable<ICharacterSource> initialSources) {
+        foreach (var source in initialSources) {
+            this.RegisterSource(source);
+        }
+    }
+
     public void RegisterSource(ICharacterSource source) {
         lock (this.lockObj) {
             if (this.sources.Any(s => s.SourceId == source.SourceId)) {
