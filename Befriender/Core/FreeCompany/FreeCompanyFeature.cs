@@ -12,6 +12,10 @@ public class FreeCompanyFeature : IFeatureModule {
         services.AddSingleton<IFreeCompanyScanner, MemoryFreeCompanyScanner>();
 
         services.AddSingleton<FreeCompanyRepository>();
+        services.AddSingleton<IFreeCompanyRepository>(provider => provider.GetRequiredService<FreeCompanyRepository>());
         services.AddSingleton<ICharacterSource>(provider => provider.GetRequiredService<FreeCompanyRepository>());
+
+        services.AddSingleton<FreeCompanySyncService>();
+        services.AddSingleton<IFreeCompanySyncService>(provider => provider.GetRequiredService<FreeCompanySyncService>());
     }
 }

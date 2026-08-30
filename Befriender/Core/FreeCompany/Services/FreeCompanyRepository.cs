@@ -2,13 +2,14 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.FreeCompany.Contracts;
 using Befriender.Core.FreeCompany.Models;
-using Befriender.Core.Friends.Contracts; // Used for ICharacterIdentityService, consider moving this to a shared Core.Identity module later
+using Befriender.Core.Friends.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class FreeCompanyRepository : ICharacterSource {
+public class FreeCompanyRepository : IFreeCompanyRepository, ICharacterSource {
     private List<Character> cachedMembers = new();
     private readonly object lockObj = new();
     private ICharacterStorage storage;
