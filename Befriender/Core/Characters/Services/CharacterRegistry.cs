@@ -15,7 +15,7 @@ public class CharacterRegistry : ICharacterRegistry {
 
     public void RegisterSource(ICharacterSource source) {
         lock (this.lockObj) {
-            if (this.sources.Any(s => s.SourceId.Equals(source.SourceId, StringComparison.OrdinalIgnoreCase))) {
+            if (this.sources.Any(s => s.SourceId == source.SourceId)) {
                 return;
             }
 
@@ -26,9 +26,9 @@ public class CharacterRegistry : ICharacterRegistry {
         this.ConsolidateData();
     }
 
-    public void UnregisterSource(string sourceId) {
+    public void UnregisterSource(Guid sourceId) {
         lock (this.lockObj) {
-            var source = this.sources.FirstOrDefault(s => s.SourceId.Equals(sourceId, StringComparison.OrdinalIgnoreCase));
+            var source = this.sources.FirstOrDefault(s => s.SourceId == sourceId);
             if (source == null) {
                 return;
             }
@@ -43,6 +43,12 @@ public class CharacterRegistry : ICharacterRegistry {
     public IReadOnlyList<Character> GetConsolidatedCharacters() {
         lock (this.lockObj) {
             return this.consolidatedCache.ToList();
+        }
+    }
+
+    public Character? GetCharacterById(Guid id) {
+        lock (this.lockObj) {
+            return this.consolidatedCache.FirstOrDefault(c => c.Id == id);
         }
     }
 
@@ -63,6 +69,7 @@ public class CharacterRegistry : ICharacterRegistry {
 
                     if (existing == null) {
                         existing = new Character {
+                            Id = sourceChar.Id != Guid.Empty ? sourceChar.Id : Guid.NewGuid(),
                             ContentId = sourceChar.ContentId,
                             Name = sourceChar.Name,
                             HomeWorldId = sourceChar.HomeWorldId
@@ -70,7 +77,6 @@ public class CharacterRegistry : ICharacterRegistry {
                         newCache.Add(existing);
                     }
 
-                    // Lower priority data is naturally overwritten by higher priority data due to the loop order
                     if (sourceChar.ContentId > 0) {
                         existing.ContentId = sourceChar.ContentId;
                     }
@@ -95,10 +101,17 @@ public class CharacterRegistry : ICharacterRegistry {
                         existing.FcTag = sourceChar.FcTag;
                     }
 
-                    // Boolean flags are tricky; we assume higher priority defines the definitive state
-                    existing.IsOnline = sourceChar.IsOnline;
+                    // Always favor online status if any source detects it
+                    if (sourceChar.IsOnline) {
+                        existing.IsOnline = true;
+                    }
 
-                    existing.ActiveSources.Add(source.SourceId);
+                    // Merge custom properties (higher priority overwrites)
+                    foreach (var kvp in sourceChar.CustomProperties) {
+                        existing.CustomProperties[kvp.Key] = kvp.Value;
+                    }
+
+                    existing.ActiveSourceIds.Add(source.SourceId);
                 }
             }
 

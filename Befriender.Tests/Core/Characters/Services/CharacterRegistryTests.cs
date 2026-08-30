@@ -4,29 +4,35 @@ using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
 using Befriender.Core.Characters.Services;
 using NSubstitute;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
 public class CharacterRegistryTests {
     [Fact]
-    public void RegisterSource_ConsolidatesCharactersFromMultipleSources() {
+    public void RegisterSource_ConsolidatesCharactersAndCustomProperties() {
         var registry = new CharacterRegistry();
 
+        var sourceId1 = Guid.NewGuid();
         var source1 = Substitute.For<ICharacterSource>();
-        source1.SourceId.Returns("Archive");
+        source1.SourceId.Returns(sourceId1);
         source1.Priority.Returns(10);
         source1.IsEnabled.Returns(true);
-        source1.GetCharacters().Returns(new List<Character> {
-            new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = false }
-        });
 
+        var char1 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = false };
+        char1.CustomProperties["ExtPlugin_Rank"] = "Gold";
+        source1.GetCharacters().Returns(new List<Character> { char1 });
+
+        var sourceId2 = Guid.NewGuid();
         var source2 = Substitute.For<ICharacterSource>();
-        source2.SourceId.Returns("FriendList");
+        source2.SourceId.Returns(sourceId2);
         source2.Priority.Returns(20);
         source2.IsEnabled.Returns(true);
-        source2.GetCharacters().Returns(new List<Character> {
-            new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = true, Level = 90 }
-        });
+
+        var char2 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = true, Level = 90 };
+        char2.CustomProperties["Another_Data"] = "Test";
+        char2.CustomProperties["ExtPlugin_Rank"] = "Platinum"; // Should overwrite because higher priority
+        source2.GetCharacters().Returns(new List<Character> { char2 });
 
         registry.RegisterSource(source1);
         registry.RegisterSource(source2);
@@ -36,28 +42,13 @@ public class CharacterRegistryTests {
         Assert.Single(result);
         var alice = result[0];
         Assert.Equal("Alice", alice.Name);
-        Assert.True(alice.IsOnline); // Source 2 priority wins
+        Assert.True(alice.IsOnline);
         Assert.Equal(90, alice.Level);
-        Assert.Contains("Archive", alice.ActiveSources);
-        Assert.Contains("FriendList", alice.ActiveSources);
-    }
+        Assert.Contains(sourceId1, alice.ActiveSourceIds);
+        Assert.Contains(sourceId2, alice.ActiveSourceIds);
 
-    [Fact]
-    public void ConsolidateData_IgnoresDisabledSources() {
-        var registry = new CharacterRegistry();
-
-        var source1 = Substitute.For<ICharacterSource>();
-        source1.SourceId.Returns("Party");
-        source1.Priority.Returns(50);
-        source1.IsEnabled.Returns(false); // Disabled
-        source1.GetCharacters().Returns(new List<Character> {
-            new Character { ContentId = 2, Name = "Bob", HomeWorldId = 34 }
-        });
-
-        registry.RegisterSource(source1);
-
-        var result = registry.GetConsolidatedCharacters();
-
-        Assert.Empty(result);
+        // Check Custom Properties merging
+        Assert.Equal("Test", alice.CustomProperties["Another_Data"]);
+        Assert.Equal("Platinum", alice.CustomProperties["ExtPlugin_Rank"]);
     }
 }

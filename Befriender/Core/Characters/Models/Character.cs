@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 
 public class Character {
+    public Guid Id { get; set; } = Guid.NewGuid();
     public ulong ContentId { get; set; }
     public string Name { get; set; } = string.Empty;
     public uint HomeWorldId { get; set; }
@@ -14,10 +15,12 @@ public class Character {
     public bool IsOnline { get; set; }
     public string FcTag { get; set; } = string.Empty;
 
-    // Identifies which sources currently "see" or know this character (e.g., "FriendList", "Proximity", "Party")
-    public HashSet<string> ActiveSources { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    // Identifies which sources currently provide data for this character
+    public HashSet<Guid> ActiveSourceIds { get; set; } = new();
 
-    // Determines if the character shares the exact identity with another
+    // Allows internal features or third-party plugins to inject arbitrary key-value metadata
+    public Dictionary<string, string> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
     public bool IsSameIdentity(ulong otherContentId, string otherName, uint otherHomeWorldId) {
         if (this.ContentId > 0 && otherContentId > 0 && this.ContentId == otherContentId) {
             return true;

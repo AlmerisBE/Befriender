@@ -8,7 +8,8 @@ public interface ICharacterRegistry {
     event Action? RegistryUpdated;
 
     void RegisterSource(ICharacterSource source);
-    void UnregisterSource(string sourceId);
+    void UnregisterSource(Guid sourceId);
 
     IReadOnlyList<Character> GetConsolidatedCharacters();
+    Character? GetCharacterById(Guid id);
 }
