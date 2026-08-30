@@ -28,7 +28,6 @@ public class CharacterRegistry : ICharacterRegistry {
             this.sources.Add(source);
             source.DataUpdated += this.ConsolidateData;
         }
-
         this.ConsolidateData();
     }
 
@@ -42,7 +41,6 @@ public class CharacterRegistry : ICharacterRegistry {
             source.DataUpdated -= this.ConsolidateData;
             this.sources.Remove(source);
         }
-
         this.ConsolidateData();
     }
 
@@ -83,6 +81,7 @@ public class CharacterRegistry : ICharacterRegistry {
                         newCache.Add(existing);
                     }
 
+                    // Overwrite basic data based on priority order
                     if (sourceChar.ContentId > 0) {
                         existing.ContentId = sourceChar.ContentId;
                     }
@@ -107,12 +106,85 @@ public class CharacterRegistry : ICharacterRegistry {
                         existing.FcTag = sourceChar.FcTag;
                     }
 
-                    // Always favor online status if any source detects it
-                    if (sourceChar.IsOnline) {
-                        existing.IsOnline = true;
+                    if (sourceChar.OnlineStateMask > 0) {
+                        existing.OnlineStateMask = sourceChar.OnlineStateMask;
                     }
 
-                    // Merge custom properties (higher priority overwrites)
+                    if (sourceChar.OnlineStatusId > 0) {
+                        existing.OnlineStatusId = sourceChar.OnlineStatusId;
+                    }
+
+                    if (sourceChar.ClientLanguages > 0) {
+                        existing.ClientLanguages = sourceChar.ClientLanguages;
+                    }
+
+                    if (sourceChar.TitleId > 0) {
+                        existing.TitleId = sourceChar.TitleId;
+                    }
+
+                    if (sourceChar.Race > 0) {
+                        existing.Race = sourceChar.Race;
+                    }
+
+                    if (sourceChar.Tribe > 0) {
+                        existing.Tribe = sourceChar.Tribe;
+                    }
+
+                    if (sourceChar.Gender > 0) {
+                        existing.Gender = sourceChar.Gender;
+                    }
+
+                    if (sourceChar.GrandCompany > 0) {
+                        existing.GrandCompany = sourceChar.GrandCompany;
+                    }
+
+                    if (sourceChar.AddedLocationId > 0) {
+                        existing.AddedLocationId = sourceChar.AddedLocationId;
+                    }
+
+                    if (sourceChar.AddedAt > DateTime.MinValue) {
+                        existing.AddedAt = sourceChar.AddedAt;
+                    }
+
+                    if (sourceChar.ArchivedAt > DateTime.MinValue) {
+                        existing.ArchivedAt = sourceChar.ArchivedAt;
+                    }
+
+                    if (sourceChar.LastSeenAt > existing.LastSeenAt) {
+                        existing.LastSeenAt = sourceChar.LastSeenAt;
+                    }
+
+                    if (sourceChar.CustomGroupId.HasValue) {
+                        existing.CustomGroupId = sourceChar.CustomGroupId;
+                    }
+
+                    if (!string.IsNullOrEmpty(sourceChar.Notes)) {
+                        existing.Notes = sourceChar.Notes;
+                    }
+
+                    // Boolean flags logic: Combine via OR so active states persist across consolidation
+                    existing.IsOnline |= sourceChar.IsOnline;
+                    existing.IsFantasiaDetected |= sourceChar.IsFantasiaDetected;
+                    existing.IsArchived |= sourceChar.IsArchived;
+                    existing.IsCharacterDeleted |= sourceChar.IsCharacterDeleted;
+                    existing.IsMarkedForRemoval |= sourceChar.IsMarkedForRemoval;
+                    existing.IsMissing |= sourceChar.IsMissing;
+                    existing.IsTrackedForNotifications |= sourceChar.IsTrackedForNotifications;
+
+                    // Merge collection data
+                    foreach (var tag in sourceChar.Tags) {
+                        if (!existing.Tags.Contains(tag)) {
+                            existing.Tags.Add(tag);
+                        }
+                    }
+
+                    foreach (var prevName in sourceChar.PreviousNames) {
+                        if (!existing.PreviousNames.Contains(prevName)) {
+                            existing.PreviousNames.Add(prevName);
+                        }
+                    }
+
+                    // Merge IPC custom properties
                     foreach (var kvp in sourceChar.CustomProperties) {
                         existing.CustomProperties[kvp.Key] = kvp.Value;
                     }

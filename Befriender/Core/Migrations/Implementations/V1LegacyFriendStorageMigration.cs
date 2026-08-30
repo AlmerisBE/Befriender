@@ -23,7 +23,6 @@ public class V1LegacyFriendStorageMigration : IMigration {
     public void Execute(string accountIdentity) {
         string legacyPath = Path.Combine(this.pluginInterface.ConfigDirectory.FullName, $"friends_{accountIdentity}.json");
 
-        // The migration is idempotent: if the file is already migrated (renamed to .bak) or doesn't exist, we skip
         if (!File.Exists(legacyPath)) {
             return;
         }
@@ -45,34 +44,32 @@ public class V1LegacyFriendStorageMigration : IMigration {
                     Level = profile.Level,
                     LocationId = profile.LocationId,
                     IsOnline = profile.IsOnline,
-                    FcTag = profile.FcTag ?? string.Empty
+                    FcTag = profile.FcTag ?? string.Empty,
+                    OnlineStateMask = profile.OnlineStateMask,
+                    OnlineStatusId = profile.OnlineStatusId,
+                    ClientLanguages = profile.ClientLanguages,
+                    TitleId = profile.TitleId,
+                    Race = profile.Race,
+                    Tribe = profile.Tribe,
+                    Gender = profile.Gender,
+                    IsFantasiaDetected = profile.IsFantasiaDetected,
+                    AddedAt = profile.AddedAt,
+                    AddedLocationId = profile.AddedLocationId,
+                    LastSeenAt = profile.LastSeenAt,
+                    ArchivedAt = profile.ArchivedAt,
+                    CustomGroupId = profile.CustomGroupId,
+                    Tags = profile.Tags ?? new List<Guid>(),
+                    PreviousNames = profile.PreviousNames ?? new List<string>(),
+                    Notes = profile.Notes ?? string.Empty,
+                    IsArchived = profile.IsArchived,
+                    IsCharacterDeleted = profile.IsCharacterDeleted,
+                    IsMarkedForRemoval = profile.IsMarkedForRemoval,
+                    IsMissing = profile.IsMissing,
+                    GrandCompany = profile.GrandCompany,
+                    IsTrackedForNotifications = profile.IsTrackedForNotifications
                 };
 
-                character.ActiveSourceIds.Add(Guid.Parse("A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5")); // FriendList SourceId
-
-                character.CustomProperties["Befriender_OnlineStateMask"] = profile.OnlineStateMask.ToString();
-                character.CustomProperties["Befriender_OnlineStatusId"] = profile.OnlineStatusId.ToString();
-                character.CustomProperties["Befriender_ClientLanguages"] = profile.ClientLanguages.ToString();
-                character.CustomProperties["Befriender_TitleId"] = profile.TitleId.ToString();
-                character.CustomProperties["Befriender_Race"] = profile.Race.ToString();
-                character.CustomProperties["Befriender_Tribe"] = profile.Tribe.ToString();
-                character.CustomProperties["Befriender_Gender"] = profile.Gender.ToString();
-                character.CustomProperties["Befriender_IsFantasiaDetected"] = profile.IsFantasiaDetected.ToString();
-                character.CustomProperties["Befriender_AddedAt"] = profile.AddedAt.ToString("O");
-                character.CustomProperties["Befriender_AddedLocationId"] = profile.AddedLocationId.ToString();
-                character.CustomProperties["Befriender_LastSeenAt"] = profile.LastSeenAt.ToString("O");
-                character.CustomProperties["Befriender_ArchivedAt"] = profile.ArchivedAt.ToString("O");
-                character.CustomProperties["Befriender_CustomGroupId"] = profile.CustomGroupId?.ToString() ?? string.Empty;
-                character.CustomProperties["Befriender_Tags"] = JsonSerializer.Serialize(profile.Tags ?? new List<Guid>());
-                character.CustomProperties["Befriender_PreviousNames"] = JsonSerializer.Serialize(profile.PreviousNames ?? new List<string>());
-                character.CustomProperties["Befriender_Notes"] = profile.Notes ?? string.Empty;
-                character.CustomProperties["Befriender_IsArchived"] = profile.IsArchived.ToString();
-                character.CustomProperties["Befriender_IsCharacterDeleted"] = profile.IsCharacterDeleted.ToString();
-                character.CustomProperties["Befriender_IsMarkedForRemoval"] = profile.IsMarkedForRemoval.ToString();
-                character.CustomProperties["Befriender_IsMissing"] = profile.IsMissing.ToString();
-                character.CustomProperties["Befriender_GrandCompany"] = profile.GrandCompany.ToString();
-                character.CustomProperties["Befriender_IsTrackedForNotifications"] = profile.IsTrackedForNotifications.ToString();
-
+                character.ActiveSourceIds.Add(Guid.Parse("A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5"));
                 characters.Add(character);
             }
 
@@ -82,7 +79,6 @@ public class V1LegacyFriendStorageMigration : IMigration {
         File.Move(legacyPath, $"{legacyPath}.bak");
     }
 
-    // Private internal class representing the exact legacy schema
     private class LegacyFriendProfile {
         public Guid Id { get; set; }
         public ulong ContentId { get; set; }
