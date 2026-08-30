@@ -4,6 +4,7 @@ using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Models;
+using Befriender.Core.Migrations.Contracts;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
 using System;
@@ -13,7 +14,8 @@ using System.Linq;
 public class FriendRepository : IFriendRepository, ICharacterSource {
     private List<FriendProfile> friends = new();
     private readonly object lockObj = new();
-    private IFriendStorage storage;
+    private ICharacterStorage storage;
+    private IMigrationService migrationService;
     private ICharacterIdentityService identityService;
     private IClientState clientState;
     private IObjectTable objectTable;
@@ -22,15 +24,15 @@ public class FriendRepository : IFriendRepository, ICharacterSource {
     public event Action? CacheCleared;
     public event Action<FriendProfile>? FriendLoggedOn;
 
-    // --- ICharacterSource Implementation ---
     public Guid SourceId { get; } = Guid.Parse("A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5");
     public string Name => "FriendList";
     public int Priority => 10;
     public bool IsEnabled { get; set; } = true;
     public event Action? DataUpdated;
 
-    public FriendRepository(IFriendStorage storage, ICharacterIdentityService identityService, IClientState clientState, IObjectTable objectTable) {
+    public FriendRepository(ICharacterStorage storage, IMigrationService migrationService, ICharacterIdentityService identityService, IClientState clientState, IObjectTable objectTable) {
         this.storage = storage;
+        this.migrationService = migrationService;
         this.identityService = identityService;
         this.clientState = clientState;
         this.objectTable = objectTable;
@@ -39,49 +41,164 @@ public class FriendRepository : IFriendRepository, ICharacterSource {
     private void EnsureLoaded() {
         var currentId = this.identityService.GetCurrentCharacterId();
         if (!string.IsNullOrEmpty(currentId) && this.loadedCharacterId != currentId) {
-            this.friends = this.storage.Load(currentId).ToList();
+            this.migrationService.RunMigrations(currentId);
+
+            var characters = this.storage.Load("FriendList", currentId);
+            this.friends = characters.Select(this.MapFromCharacter).ToList();
             this.loadedCharacterId = currentId;
-
-            bool migrated = false;
-            foreach (var friend in this.friends) {
-                if (friend.Id == Guid.Empty) {
-                    friend.Id = Guid.NewGuid();
-                    migrated = true;
-                }
-            }
-
-            if (migrated) {
-                this.storage.Save(this.loadedCharacterId, this.friends);
-            }
         }
+    }
+
+    private FriendProfile MapFromCharacter(Character character) {
+        var profile = new FriendProfile {
+            Id = character.Id,
+            ContentId = character.ContentId,
+            Name = character.Name,
+            HomeWorldId = character.HomeWorldId,
+            CurrentWorldId = character.CurrentWorldId,
+            JobId = character.JobId,
+            Level = character.Level,
+            LocationId = character.LocationId,
+            IsOnline = character.IsOnline,
+            FcTag = character.FcTag
+        };
+
+        if (character.CustomProperties.TryGetValue("Befriender_OnlineStateMask", out var val) && ulong.TryParse(val, out var mask)) {
+            profile.OnlineStateMask = mask;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_OnlineStatusId", out val) && byte.TryParse(val, out var statusId)) {
+            profile.OnlineStatusId = statusId;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_ClientLanguages", out val) && byte.TryParse(val, out var lang)) {
+            profile.ClientLanguages = lang;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_TitleId", out val) && ushort.TryParse(val, out var titleId)) {
+            profile.TitleId = titleId;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_Race", out val) && byte.TryParse(val, out var race)) {
+            profile.Race = race;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_Tribe", out val) && byte.TryParse(val, out var tribe)) {
+            profile.Tribe = tribe;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_Gender", out val) && byte.TryParse(val, out var gender)) {
+            profile.Gender = gender;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_IsFantasiaDetected", out val) && bool.TryParse(val, out var fantasia)) {
+            profile.IsFantasiaDetected = fantasia;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_AddedAt", out val) && DateTime.TryParse(val, null, System.Globalization.DateTimeStyles.RoundtripKind, out var addedAt)) {
+            profile.AddedAt = addedAt;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_AddedLocationId", out val) && uint.TryParse(val, out var addedLoc)) {
+            profile.AddedLocationId = addedLoc;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_LastSeenAt", out val) && DateTime.TryParse(val, null, System.Globalization.DateTimeStyles.RoundtripKind, out var lastSeenAt)) {
+            profile.LastSeenAt = lastSeenAt;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_ArchivedAt", out val) && DateTime.TryParse(val, null, System.Globalization.DateTimeStyles.RoundtripKind, out var archivedAt)) {
+            profile.ArchivedAt = archivedAt;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_CustomGroupId", out val) && Guid.TryParse(val, out var groupId)) {
+            profile.CustomGroupId = groupId;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_Tags", out val)) {
+            try { profile.Tags = System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(val) ?? new(); } catch { }
+        }
+        if (character.CustomProperties.TryGetValue("Befriender_PreviousNames", out val)) {
+            try { profile.PreviousNames = System.Text.Json.JsonSerializer.Deserialize<List<string>>(val) ?? new(); } catch { }
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_Notes", out val)) {
+            profile.Notes = val;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_IsArchived", out val) && bool.TryParse(val, out var isArchived)) {
+            profile.IsArchived = isArchived;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_IsCharacterDeleted", out val) && bool.TryParse(val, out var isDeleted)) {
+            profile.IsCharacterDeleted = isDeleted;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_IsMarkedForRemoval", out val) && bool.TryParse(val, out var isMarked)) {
+            profile.IsMarkedForRemoval = isMarked;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_IsMissing", out val) && bool.TryParse(val, out var isMissing)) {
+            profile.IsMissing = isMissing;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_GrandCompany", out val) && byte.TryParse(val, out var gc)) {
+            profile.GrandCompany = gc;
+        }
+
+        if (character.CustomProperties.TryGetValue("Befriender_IsTrackedForNotifications", out val) && bool.TryParse(val, out var isTracked)) {
+            profile.IsTrackedForNotifications = isTracked;
+        }
+
+        return profile;
+    }
+
+    private Character MapToCharacter(FriendProfile profile) {
+        var character = new Character {
+            Id = profile.Id,
+            ContentId = profile.ContentId,
+            Name = profile.Name,
+            HomeWorldId = profile.HomeWorldId,
+            CurrentWorldId = profile.CurrentWorldId,
+            JobId = profile.JobId,
+            Level = profile.Level,
+            LocationId = profile.LocationId,
+            IsOnline = profile.IsOnline,
+            FcTag = profile.FcTag
+        };
+
+        character.ActiveSourceIds.Add(this.SourceId);
+
+        character.CustomProperties["Befriender_OnlineStateMask"] = profile.OnlineStateMask.ToString();
+        character.CustomProperties["Befriender_OnlineStatusId"] = profile.OnlineStatusId.ToString();
+        character.CustomProperties["Befriender_ClientLanguages"] = profile.ClientLanguages.ToString();
+        character.CustomProperties["Befriender_TitleId"] = profile.TitleId.ToString();
+        character.CustomProperties["Befriender_Race"] = profile.Race.ToString();
+        character.CustomProperties["Befriender_Tribe"] = profile.Tribe.ToString();
+        character.CustomProperties["Befriender_Gender"] = profile.Gender.ToString();
+        character.CustomProperties["Befriender_IsFantasiaDetected"] = profile.IsFantasiaDetected.ToString();
+        character.CustomProperties["Befriender_AddedAt"] = profile.AddedAt.ToString("O");
+        character.CustomProperties["Befriender_AddedLocationId"] = profile.AddedLocationId.ToString();
+        character.CustomProperties["Befriender_LastSeenAt"] = profile.LastSeenAt.ToString("O");
+        character.CustomProperties["Befriender_ArchivedAt"] = profile.ArchivedAt.ToString("O");
+        character.CustomProperties["Befriender_CustomGroupId"] = profile.CustomGroupId?.ToString() ?? string.Empty;
+        character.CustomProperties["Befriender_Tags"] = System.Text.Json.JsonSerializer.Serialize(profile.Tags);
+        character.CustomProperties["Befriender_PreviousNames"] = System.Text.Json.JsonSerializer.Serialize(profile.PreviousNames);
+        character.CustomProperties["Befriender_Notes"] = profile.Notes;
+        character.CustomProperties["Befriender_IsArchived"] = profile.IsArchived.ToString();
+        character.CustomProperties["Befriender_IsCharacterDeleted"] = profile.IsCharacterDeleted.ToString();
+        character.CustomProperties["Befriender_IsMarkedForRemoval"] = profile.IsMarkedForRemoval.ToString();
+        character.CustomProperties["Befriender_IsMissing"] = profile.IsMissing.ToString();
+        character.CustomProperties["Befriender_GrandCompany"] = profile.GrandCompany.ToString();
+        character.CustomProperties["Befriender_IsTrackedForNotifications"] = profile.IsTrackedForNotifications.ToString();
+
+        return character;
     }
 
     public IEnumerable<Character> GetCharacters() {
         lock (this.lockObj) {
             this.EnsureLoaded();
-            var characters = new List<Character>();
-
-            foreach (var friend in this.friends) {
-                var character = new Character {
-                    Id = friend.Id,
-                    ContentId = friend.ContentId,
-                    Name = friend.Name,
-                    HomeWorldId = friend.HomeWorldId,
-                    CurrentWorldId = friend.CurrentWorldId,
-                    JobId = friend.JobId,
-                    Level = friend.Level,
-                    LocationId = friend.LocationId,
-                    IsOnline = friend.IsOnline,
-                    FcTag = friend.FcTag
-                };
-
-                character.CustomProperties["Befriender_IsArchived"] = friend.IsArchived.ToString();
-                character.CustomProperties["Befriender_IsCharacterDeleted"] = friend.IsCharacterDeleted.ToString();
-
-                characters.Add(character);
-            }
-
-            return characters;
+            return this.friends.Select(this.MapToCharacter).ToList();
         }
     }
 
@@ -188,7 +305,8 @@ public class FriendRepository : IFriendRepository, ICharacterSource {
             }
 
             this.friends = repositoryDict.Values.ToList();
-            this.storage.Save(this.loadedCharacterId, this.friends);
+            var charactersToSave = this.friends.Select(this.MapToCharacter).ToList();
+            this.storage.Save("FriendList", this.loadedCharacterId, charactersToSave);
         }
 
         this.DataUpdated?.Invoke();
@@ -217,7 +335,6 @@ public class FriendRepository : IFriendRepository, ICharacterSource {
             }
 
             unsafe {
-                // Fix: Fully qualify the native struct to prevent ambiguity with our managed Character model
                 var csChar = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address;
                 if (csChar != null) {
                     if (friend.TitleId != csChar->TitleId) { friend.TitleId = csChar->TitleId; changed = true; }
@@ -263,7 +380,8 @@ public class FriendRepository : IFriendRepository, ICharacterSource {
 
     public void Save() {
         lock (this.lockObj) {
-            this.storage.Save(this.loadedCharacterId, this.friends);
+            var charactersToSave = this.friends.Select(this.MapToCharacter).ToList();
+            this.storage.Save("FriendList", this.loadedCharacterId, charactersToSave);
         }
         this.DataUpdated?.Invoke();
     }
