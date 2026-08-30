@@ -2,7 +2,7 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Friends.Contracts;
-using Befriender.Core.GameData.Contracts;
+using Befriender.Core.Friends.Models;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
 using Dalamud.Game.ClientState.Objects.SubKinds;
@@ -20,12 +20,11 @@ public class ProximityService : IProximityService, IDisposable {
     private INotificationManager notificationManager;
     private ILocalizationService loc;
     private IClientState clientState;
-    private IGameDataService gameDataService;
 
     private HashSet<ulong> currentlyNearbyIds = new();
     private DateTime lastScanTime = DateTime.MinValue;
 
-    public ProximityService(IObjectTable objectTable, IFramework framework, IFriendRepository friendRepository, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc, IClientState clientState, IGameDataService gameDataService) {
+    public ProximityService(IObjectTable objectTable, IFramework framework, IFriendRepository friendRepository, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc, IClientState clientState) {
         this.objectTable = objectTable;
         this.framework = framework;
         this.friendRepository = friendRepository;
@@ -33,7 +32,6 @@ public class ProximityService : IProximityService, IDisposable {
         this.notificationManager = notificationManager;
         this.loc = loc;
         this.clientState = clientState;
-        this.gameDataService = gameDataService;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
@@ -56,14 +54,22 @@ public class ProximityService : IProximityService, IDisposable {
 
         var friends = this.friendRepository.GetFriends();
         var newNearbyIds = new HashSet<ulong>();
-        var lookup = friends.ToDictionary(f => $"{f.Name}@{f.HomeWorldId}");
 
-        foreach (var obj in this.objectTable) {
+        // Safely map the dictionary to prevent ArgumentException if duplicate characters exist (e.g., GPose)
+        var lookup = new Dictionary<string, FriendProfile>();
+        foreach (var f in friends) {
+            lookup[$"{f.Name}@{f.HomeWorldId}"] = f;
+        }
+
+        // Use a length-based for loop to avoid InvalidOperationException during concurrent modifications
+        for (int i = 0; i < this.objectTable.Length; i++) {
+            var obj = this.objectTable[i];
             if (obj is not IPlayerCharacter pc) {
                 continue;
             }
 
-            if (this.objectTable.LocalPlayer != null && pc.Address == this.objectTable.LocalPlayer.Address) {
+            var localPlayer = this.objectTable.LocalPlayer;
+            if (localPlayer != null && pc.Address == localPlayer.Address) {
                 continue;
             }
 
@@ -72,10 +78,7 @@ public class ProximityService : IProximityService, IDisposable {
             if (lookup.TryGetValue(key, out var friend)) {
                 newNearbyIds.Add(friend.ContentId);
 
-                uint currentTerritory = this.clientState.TerritoryType;
-                uint territoryToUpdate = this.gameDataService.IsStandardTerritory(currentTerritory) ? currentTerritory : friend.LocationId;
-
-                this.friendRepository.UpdateFriendFromCharacter(friend.ContentId, pc, territoryToUpdate);
+                this.friendRepository.UpdateFriendFromCharacter(friend.ContentId, pc, this.clientState.TerritoryType);
 
                 if (!this.currentlyNearbyIds.Contains(friend.ContentId)) {
                     bool shouldNotify = (!friend.IsArchived && config.NotifyOnNearbyFriends) || (friend.IsArchived && config.NotifyOnNearbyArchived);
@@ -95,8 +98,6 @@ public class ProximityService : IProximityService, IDisposable {
     }
 
     public bool IsFriendNearby(ulong contentId) => this.currentlyNearbyIds.Contains(contentId);
-
     public IReadOnlyList<ulong> GetNearbyFriendIds() => this.currentlyNearbyIds.ToList();
-
     public void Dispose() => this.framework.Update -= this.OnFrameworkUpdate;
 }

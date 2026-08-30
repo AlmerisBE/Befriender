@@ -5,7 +5,7 @@ using Befriender.Core.Input.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 
 public unsafe class HotkeyService : IHotkeyService, IDisposable {
@@ -40,14 +40,17 @@ public unsafe class HotkeyService : IHotkeyService, IDisposable {
                 isInputFocused = true;
             }
 
-            var atkStage = AtkStage.Instance();
-            if (atkStage != null && atkStage->GetFocus() != null) {
-                isInputFocused = true;
+            // Infallible check via the native FFXIV UI engine for Chat, Crafting Log, Market Board, etc.
+            var uiModule = UIModule.Instance();
+            if (uiModule != null) {
+                var raptureAtkModule = uiModule->GetRaptureAtkModule();
+                if (raptureAtkModule != null && raptureAtkModule->AtkModule.IsTextInputActive()) {
+                    isInputFocused = true;
+                }
             }
         }
         catch { } // Silently swallow exceptions in isolated unit test environments
 
-        // Trigger only if the key is just pressed AND no text input is currently focused
         if (isKeyPressed && !this.wasKeyPressed && !isInputFocused) {
             bool ctrlPressed = this.keyState[VirtualKey.CONTROL];
             bool shiftPressed = this.keyState[VirtualKey.SHIFT];
@@ -60,7 +63,6 @@ public unsafe class HotkeyService : IHotkeyService, IDisposable {
             }
         }
 
-        // Always track the physical key state accurately to avoid stuck logic
         this.wasKeyPressed = isKeyPressed;
     }
 
