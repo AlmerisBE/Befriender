@@ -33,7 +33,6 @@ public class FriendListWindowTests {
 
         mockConfig.GetConfig().Returns(new PluginConfiguration());
 
-        // Instantiate the concrete StatusBar component with its required mocks
         var mockLoc = Substitute.For<ILocalizationService>();
         var mockFriendRepo = Substitute.For<IFriendRepository>();
         var statusBarComponent = new FriendStatusBarComponent(mockSync, mockLoc, mockFriendRepo);

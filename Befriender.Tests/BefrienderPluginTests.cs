@@ -10,22 +10,20 @@ using Xunit;
 public class BefrienderPluginTests {
     [Fact]
     public void Plugin_OnInitialization_BuildsDependencyInjectionWithoutErrors() {
-        // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-
-        // We provide a dummy directory to avoid NullReferenceException in storage services
         mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(Path.GetTempPath()));
 
         var mockChatGui = Substitute.For<IChatGui>();
         var mockCommandManager = Substitute.For<ICommandManager>();
+
         var mockClientState = Substitute.For<IClientState>();
+        mockClientState.IsLoggedIn.Returns(false); // Simulate title screen
+
         var mockLogger = Substitute.For<IPluginLog>();
         var mockFramework = Substitute.For<IFramework>();
-        var mockObjectTable = Substitute.For<IObjectTable>();
 
-        // Explicitly return null for LocalPlayer to simulate plugin startup at the main menu
-        // Prevents NSubstitute from returning a proxy object with null properties (like SeString Name)
-        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter)null!);
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter)null!); // Simulate unallocated memory
 
         var mockDataManager = Substitute.For<IDataManager>();
         var mockTextureProvider = Substitute.For<ITextureProvider>();
@@ -34,7 +32,6 @@ public class BefrienderPluginTests {
         var mockKeyState = Substitute.For<IKeyState>();
         var mockNotificationManager = Substitute.For<INotificationManager>();
 
-        // Act & Assert
         var exception = Record.Exception(() => new BefrienderPlugin(
             mockPluginInterface,
             mockChatGui,

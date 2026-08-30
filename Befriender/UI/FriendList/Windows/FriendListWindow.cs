@@ -99,15 +99,11 @@ public class FriendListWindow : Window, IDisposable {
     public override void OnOpen() {
         this.syncService.IsWindowOpen = true;
         this.syncService.RequestServerRefresh();
-
-        // Start polling the Free Company roster
         this.fcSyncService.StartSync();
     }
 
     public override void OnClose() {
         this.syncService.IsWindowOpen = false;
-
-        // Stop polling to preserve resources
         this.fcSyncService.StopSync();
     }
 

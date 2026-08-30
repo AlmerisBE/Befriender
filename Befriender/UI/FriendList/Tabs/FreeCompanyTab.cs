@@ -32,7 +32,6 @@ public class FreeCompanyTab : ITab {
         var fcSourceId = this.fcRepository.SourceId;
         var palette = this.themeService.CurrentPalette;
 
-        // Fetch characters tracked by the Free Company source
         var members = this.registry.GetConsolidatedCharacters()
             .Where(c => c.ActiveSourceIds.Contains(fcSourceId))
             .OrderByDescending(c => c.IsOnline)
@@ -55,11 +54,9 @@ public class FreeCompanyTab : ITab {
             foreach (var member in members) {
                 ImGui.TableNextRow();
 
-                // --- Name ---
                 ImGui.TableNextColumn();
                 ImGui.Text(member.Name);
 
-                // --- Status ---
                 ImGui.TableNextColumn();
                 if (member.IsOnline) {
                     ImGui.TextColored(palette.TextOnline, this.loc.Translate("Profile_Online"));
@@ -68,17 +65,20 @@ public class FreeCompanyTab : ITab {
                     ImGui.TextColored(palette.TextOffline, this.loc.Translate("Status_Offline"));
                 }
 
-                // --- Level / Job ---
                 ImGui.TableNextColumn();
                 if (member.JobId > 0) {
                     var jobAbbr = this.gameDataService.GetJobAbbreviation(member.JobId);
-                    ImGui.Text(member.Level > 0 ? $"Lv {member.Level} {jobAbbr}" : jobAbbr);
+                    if (member.Level > 0) {
+                        ImGui.Text($"Lv {member.Level} {jobAbbr}");
+                    }
+                    else {
+                        ImGui.Text(jobAbbr);
+                    }
                 }
                 else {
                     ImGui.Text(this.loc.Translate("Profile_Unknown"));
                 }
 
-                // --- Notes ---
                 ImGui.TableNextColumn();
                 ImGui.Text(member.Notes);
             }

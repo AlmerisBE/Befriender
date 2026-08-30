@@ -135,5 +135,7 @@
   "Section_Status": "Status & Location",
   "Section_System": "System Data",
   "Status_Offline": "Offline",
-  "About_Discord": "Discord Server"
+  "About_Discord": "Discord Server",
+  "Tab_FreeCompany": "Free Company",
+  "FreeCompany_Empty": "No Free Company members to display."
 }
