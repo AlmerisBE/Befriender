@@ -17,19 +17,17 @@ using Microsoft.Extensions.DependencyInjection;
 public class FriendListUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IWindowNavigationService, WindowNavigationService>();
-        services.AddSingleton<IFriendDisplayService, FriendDisplayService>();
         services.AddSingleton<VanillaFriendListModifierService>();
 
         services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
-        services.AddSingleton<IFriendSearchService, FriendSearchService>();
 
+        // Components
         services.AddSingleton<ListToolbarComponent>();
-        services.AddSingleton<FriendListTableComponent>();
-        services.AddSingleton<ArchiveTableComponent>();
         services.AddSingleton<CharacterProfilePanelComponent>();
         services.AddSingleton<FriendStatusBarComponent>();
         services.AddSingleton<GroupManagementComponent>();
         services.AddSingleton<TagManagementComponent>();
+        services.AddSingleton<RemoveConfirmationModalComponent>();
 
         // Register the tabs
         services.AddSingleton<ITab, ListTab>();
@@ -37,6 +35,7 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<ITab, FreeCompanyTab>();
         services.AddSingleton<ITab, AboutTab>();
 
+        // Window & Command
         services.AddSingleton<FriendListWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<FriendListWindow>());
         services.AddSingleton<ICommand, OpenFriendListCommand>();

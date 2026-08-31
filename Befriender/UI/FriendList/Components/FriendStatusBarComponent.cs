@@ -1,22 +1,28 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
-using Befriender.Core.Friends.Contracts;
+using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 public class FriendStatusBarComponent {
-    private IFriendSyncService syncService;
+    private ICharacterRegistry registry;
     private ILocalizationService loc;
-    private IFriendRepository friendRepository;
+    private Guid friendSourceId;
 
-    public FriendStatusBarComponent(IFriendSyncService syncService, ILocalizationService loc, IFriendRepository friendRepository) {
-        this.syncService = syncService;
+    public FriendStatusBarComponent(ICharacterRegistry registry, IEnumerable<ICharacterSource> sources, ILocalizationService loc) {
+        this.registry = registry;
         this.loc = loc;
-        this.friendRepository = friendRepository;
+
+        var friendSource = sources.FirstOrDefault(s => s.Name == "FriendList");
+        if (friendSource != null) {
+            this.friendSourceId = friendSource.SourceId;
+        }
     }
 
     public void Draw() {
@@ -35,51 +41,27 @@ public class FriendStatusBarComponent {
 
         ImGui.SameLine();
 
-        var rawFriends = this.friendRepository.GetFriends();
+        var allCharacters = this.registry.GetAllCharacters();
 
         int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;
-        foreach (var f in rawFriends) {
-            if (!f.IsArchived) {
+        foreach (var c in allCharacters) {
+            if (c.ActiveSourceIds.Contains(this.friendSourceId)) {
                 vanillaCount++;
-                if (f.IsOnline && !f.IsCharacterDeleted) {
+                if (c.IsOnline && !string.IsNullOrEmpty(c.Name)) {
                     onlineCount++;
                 }
             }
-            if (f.IsArchived) {
+            if (!c.IsActivelyTracked && !string.IsNullOrEmpty(c.Name)) {
                 archivedCount++;
             }
 
-            if (f.IsCharacterDeleted) {
+            if (string.IsNullOrEmpty(c.Name)) {
                 deletedCount++;
             }
         }
 
-        string syncText;
-        if (this.syncService.IsSyncPending || this.syncService.LastSyncTime == DateTime.MinValue) {
-            syncText = this.loc.Translate("Status_Scanning");
-        }
-        else {
-            var diff = DateTime.Now - this.syncService.LastSyncTime;
-            string timeStr;
-
-            if (diff.TotalDays >= 1) {
-                timeStr = this.loc.Translate("Status_DaysAgo", (int)diff.TotalDays);
-            }
-            else if (diff.TotalHours >= 1) {
-                timeStr = this.loc.Translate("Status_HoursAgo", (int)diff.TotalHours);
-            }
-            else if (diff.TotalMinutes >= 1) {
-                timeStr = this.loc.Translate("Status_MinutesAgo", (int)diff.TotalMinutes);
-            }
-            else {
-                timeStr = this.loc.Translate("Status_JustNow");
-            }
-
-            syncText = this.loc.Translate("Status_LastSync", timeStr);
-        }
-
-        var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, rawFriends.Count);
-        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, rawFriends.Count);
+        var compactText = this.loc.Translate("Status_CompactCounts", "Befriender", onlineCount, allCharacters.Count);
+        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, allCharacters.Count);
 
         var textSize = ImGui.CalcTextSize(compactText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2);

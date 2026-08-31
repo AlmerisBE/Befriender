@@ -1,5 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
+using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
@@ -10,14 +11,13 @@ using System.Numerics;
 
 public class TagManagementComponent {
     private IFriendTagRepository tagRepository;
-    private IFriendRepository friendRepository;
+    private ICharacterRegistry registry;
     private ILocalizationService loc;
-
     private string newTagBuffer = string.Empty;
 
-    public TagManagementComponent(IFriendTagRepository tagRepository, IFriendRepository friendRepository, ILocalizationService loc) {
+    public TagManagementComponent(IFriendTagRepository tagRepository, ICharacterRegistry registry, ILocalizationService loc) {
         this.tagRepository = tagRepository;
-        this.friendRepository = friendRepository;
+        this.registry = registry;
         this.loc = loc;
     }
 
@@ -36,7 +36,7 @@ public class TagManagementComponent {
         ImGui.Spacing();
 
         var tags = this.tagRepository.GetTags();
-        var friends = this.friendRepository.GetFriends();
+        var characters = this.registry.GetAllCharacters();
 
         if (tags.Count == 0) {
             ImGui.TextDisabled(this.loc.Translate("Tag_NoTags"));
@@ -54,7 +54,6 @@ public class TagManagementComponent {
                 ImGui.TableNextRow();
                 ImGui.PushID(tag.Id.ToString());
 
-                // --- Name Column ---
                 ImGui.TableNextColumn();
                 string nameBuffer = tag.Name;
                 ImGui.SetNextItemWidth(-1);
@@ -63,22 +62,19 @@ public class TagManagementComponent {
                     this.tagRepository.UpdateTag(tag);
                 }
 
-                // --- Usage Column ---
                 ImGui.TableNextColumn();
-                int usageCount = friends.Count(f => f.Tags.Contains(tag.Id));
+                int usageCount = characters.Count(c => c.Tags.Contains(tag.Id));
                 ImGui.Text(usageCount.ToString());
 
-                // --- Actions Column ---
                 ImGui.TableNextColumn();
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.TrashAlt)) {
-                    // Remove tag from all friends before deleting
-                    var friendsWithTag = friends.Where(f => f.Tags.Contains(tag.Id)).ToList();
-                    foreach (var f in friendsWithTag) {
-                        f.Tags.Remove(tag.Id);
+                    var charsWithTag = characters.Where(c => c.Tags.Contains(tag.Id)).ToList();
+                    foreach (var c in charsWithTag) {
+                        c.Tags.Remove(tag.Id);
                     }
 
-                    if (friendsWithTag.Count > 0) {
-                        this.friendRepository.Save();
+                    if (charsWithTag.Count > 0) {
+                        this.registry.SaveMasterList();
                     }
 
                     this.tagRepository.RemoveTag(tag.Id);
@@ -90,7 +86,6 @@ public class TagManagementComponent {
 
                 ImGui.PopID();
             }
-
             ImGui.EndTable();
         }
     }

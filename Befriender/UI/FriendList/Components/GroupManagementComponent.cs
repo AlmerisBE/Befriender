@@ -1,5 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
+using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
@@ -11,7 +12,7 @@ using System.Numerics;
 
 public class GroupManagementComponent {
     private IFriendGroupRepository groupRepository;
-    private IFriendRepository friendRepository;
+    private ICharacterRegistry registry;
     private ILocalizationService loc;
 
     private string newGroupBuffer = string.Empty;
@@ -21,9 +22,9 @@ public class GroupManagementComponent {
     public string Name => this.loc.Translate("Tab_Groups");
     public bool IsProfilePanelOpen => false;
 
-    public GroupManagementComponent(IFriendGroupRepository groupRepository, IFriendRepository friendRepository, ILocalizationService loc) {
+    public GroupManagementComponent(IFriendGroupRepository groupRepository, ICharacterRegistry registry, ILocalizationService loc) {
         this.groupRepository = groupRepository;
-        this.friendRepository = friendRepository;
+        this.registry = registry;
         this.loc = loc;
     }
 
@@ -42,7 +43,7 @@ public class GroupManagementComponent {
         ImGui.Spacing();
 
         var groups = this.groupRepository.GetGroups().ToList();
-        var friends = this.friendRepository.GetFriends();
+        var characters = this.registry.GetAllCharacters();
 
         if (groups.Count == 0) {
             ImGui.TextDisabled(this.loc.Translate("Group_NoGroups"));
@@ -51,10 +52,8 @@ public class GroupManagementComponent {
 
         for (int i = 0; i < groups.Count; i++) {
             var group = groups[i];
-
             ImGui.PushID(group.Id.ToString());
 
-            // Force the accordion to stay open if it was just moved
             if (this.groupToOpen == group.Id) {
                 ImGui.SetNextItemOpen(true);
                 this.groupToOpen = null;
@@ -63,12 +62,10 @@ public class GroupManagementComponent {
             if (ImGui.CollapsingHeader($"{group.Title}###Header_{group.Id}")) {
                 ImGui.Spacing();
 
-                // --- Actions Toolbar ---
                 bool canMoveUp = i > 0;
                 bool canMoveDown = i < groups.Count - 1;
                 float frameHeight = ImGui.GetFrameHeight();
 
-                // Up Arrow
                 if (!canMoveUp) {
                     ImGui.BeginDisabled();
                 }
@@ -81,22 +78,20 @@ public class GroupManagementComponent {
                     ImGui.EndDisabled();
                 }
 
-                // Delete Button
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, this.loc.Translate("Group_Delete"))) {
-                    var friendsInGroup = friends.Where(f => f.CustomGroupId == group.Id).ToList();
-                    foreach (var f in friendsInGroup) {
-                        f.CustomGroupId = null;
+                    var charsInGroup = characters.Where(c => c.CustomGroupId == group.Id).ToList();
+                    foreach (var c in charsInGroup) {
+                        c.CustomGroupId = null;
                     }
 
-                    if (friendsInGroup.Count > 0) {
-                        this.friendRepository.Save();
+                    if (charsInGroup.Count > 0) {
+                        this.registry.SaveMasterList();
                     }
 
                     this.groupRepository.RemoveGroup(group.Id);
                 }
 
-                // Down Arrow (Pushed to the right edge)
                 ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - frameHeight);
                 if (!canMoveDown) {
                     ImGui.BeginDisabled();
@@ -114,7 +109,6 @@ public class GroupManagementComponent {
                 ImGui.Separator();
                 ImGui.Spacing();
 
-                // --- Inputs ---
                 string titleBuffer = group.Title;
                 ImGui.SetNextItemWidth(-1);
                 if (ImGui.InputText(this.loc.Translate("Group_Title"), ref titleBuffer, 50)) {
@@ -133,21 +127,18 @@ public class GroupManagementComponent {
                 ImGui.Separator();
                 ImGui.Spacing();
 
-                // --- Members ---
-                var groupFriends = friends.Where(f => f.CustomGroupId == group.Id && !f.IsArchived).ToList();
-                ImGui.Text($"{this.loc.Translate("Group_Members")} ({groupFriends.Count})");
+                var groupChars = characters.Where(c => c.CustomGroupId == group.Id && c.IsActivelyTracked).ToList();
+                ImGui.Text($"{this.loc.Translate("Group_Members")} ({groupChars.Count})");
 
                 if (ImGui.BeginListBox($"##GroupList_{group.Id}", new Vector2(-1, -1))) {
-                    foreach (var friend in groupFriends) {
-                        ImGui.Text(friend.Name);
+                    foreach (var c in groupChars) {
+                        ImGui.Text(c.Name);
                     }
 
                     ImGui.EndListBox();
                 }
-
                 ImGui.Spacing();
             }
-
             ImGui.PopID();
         }
     }

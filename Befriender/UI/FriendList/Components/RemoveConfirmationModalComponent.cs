@@ -1,34 +1,33 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
-using Befriender.Core.Actions.Contracts;
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Numerics;
 
 public class RemoveConfirmationModalComponent : IDisposable {
-    private IRemoveFriendRequestService requestService;
-    private IFriendRepository friendRepository;
+    private IRemoveCharacterRequestService requestService;
+    private ICharacterRegistry registry;
     private ILocalizationService loc;
-    private FriendProfile? pendingFriend = null;
+    private Character? pendingCharacter = null;
     private bool triggerOpen = false;
 
-    public RemoveConfirmationModalComponent(IRemoveFriendRequestService requestService, IFriendRepository friendRepository, ILocalizationService loc) {
+    public RemoveConfirmationModalComponent(IRemoveCharacterRequestService requestService, ICharacterRegistry registry, ILocalizationService loc) {
         this.requestService = requestService;
-        this.friendRepository = friendRepository;
+        this.registry = registry;
         this.loc = loc;
         this.requestService.OnRemoveRequested += this.HandleRemoveRequested;
     }
 
-    private void HandleRemoveRequested(FriendProfile friend) {
-        this.pendingFriend = friend;
+    private void HandleRemoveRequested(Character character) {
+        this.pendingCharacter = character;
         this.triggerOpen = true;
     }
 
     public void Draw() {
-        if (this.triggerOpen && this.pendingFriend != null) {
+        if (this.triggerOpen && this.pendingCharacter != null) {
             ImGui.OpenPopup("ConfirmRemovalPopup");
             this.triggerOpen = false;
         }
@@ -38,17 +37,17 @@ public class RemoveConfirmationModalComponent : IDisposable {
 
         bool isModalOpen = true;
         if (ImGui.BeginPopupModal("ConfirmRemovalPopup", ref isModalOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove)) {
-            if (this.pendingFriend == null) {
+            if (this.pendingCharacter == null) {
                 ImGui.CloseCurrentPopup();
                 ImGui.EndPopup();
                 return;
             }
 
-            string displayName = this.pendingFriend.Name;
-            if (this.pendingFriend.IsCharacterDeleted || string.IsNullOrEmpty(displayName)) {
+            string displayName = this.pendingCharacter.Name;
+            if (string.IsNullOrEmpty(displayName)) {
                 displayName = this.loc.Translate("Profile_DeletedCharacter");
-                if (this.pendingFriend.PreviousNames != null && this.pendingFriend.PreviousNames.Count > 0) {
-                    displayName += $" ({this.pendingFriend.PreviousNames[0]})";
+                if (this.pendingCharacter.PreviousNames != null && this.pendingCharacter.PreviousNames.Count > 0) {
+                    displayName += $" ({this.pendingCharacter.PreviousNames[0]})";
                 }
             }
 
@@ -57,10 +56,10 @@ public class RemoveConfirmationModalComponent : IDisposable {
             ImGui.Spacing();
 
             if (ImGui.Button(this.loc.Translate("Action_Confirm"), new Vector2(120, 0))) {
-                this.pendingFriend.IsMarkedForRemoval = true;
-                this.friendRepository.Save();
+                this.pendingCharacter.IsMarkedForRemoval = true;
+                this.registry.SaveMasterList();
                 ImGui.CloseCurrentPopup();
-                this.pendingFriend = null;
+                this.pendingCharacter = null;
             }
 
             ImGui.SetItemDefaultFocus();
@@ -68,14 +67,14 @@ public class RemoveConfirmationModalComponent : IDisposable {
 
             if (ImGui.Button(this.loc.Translate("Action_Cancel"), new Vector2(120, 0))) {
                 ImGui.CloseCurrentPopup();
-                this.pendingFriend = null;
+                this.pendingCharacter = null;
             }
 
             ImGui.EndPopup();
         }
 
         if (!isModalOpen) {
-            this.pendingFriend = null;
+            this.pendingCharacter = null;
         }
     }
 
