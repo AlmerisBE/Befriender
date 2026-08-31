@@ -138,5 +138,7 @@
   "Tooltip_OpenNativeList": "Ouvrir la liste d'amis native (Vanilla)",
   "Tooltip_ToggleFilters": "Afficher / Masquer les filtres",
   "Tooltip_Tracked": "Alertes de connexion activées",
-  "List_Empty": "Aucun ami ne correspond aux filtres actuels."
+  "List_Empty": "Aucun ami ne correspond aux filtres actuels.",
+  "StatusBar_Status": "MAJ : il y a {0} | {1}/{2} En ligne",
+  "Tooltip_QuickActions": "Actions rapides"
 }

@@ -5,72 +5,58 @@ using Befriender.UI.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
-public class FriendStatusBarComponent {
+public class FriendStatusBarComponent : IDisposable {
     private ICharacterRegistry registry;
     private ILocalizationService loc;
-    private Guid friendSourceId;
+    private DateTime lastUpdateTime;
 
-    public FriendStatusBarComponent(ICharacterRegistry registry, IEnumerable<ICharacterSource> sources, ILocalizationService loc) {
+    public FriendStatusBarComponent(ICharacterRegistry registry, ILocalizationService loc) {
         this.registry = registry;
         this.loc = loc;
+        this.lastUpdateTime = DateTime.Now;
 
-        var friendSource = sources.FirstOrDefault(s => s.Name == "FriendList");
-        if (friendSource != null) {
-            this.friendSourceId = friendSource.SourceId;
-        }
+        this.registry.RegistryUpdated += this.OnRegistryUpdated;
+    }
+
+    private void OnRegistryUpdated() {
+        this.lastUpdateTime = DateTime.Now;
     }
 
     public void Draw() {
+        // Draw the contextual actions menu icon on the far left
         if (ImGuiComponents.IconButton(FontAwesomeIcon.AddressBook)) {
-            unsafe {
-                var uiModule = UIModule.Instance();
-                if (uiModule != null) {
-                    uiModule->ExecuteMainCommand(13);
-                }
-            }
+            // Future implementation for quick actions or settings
         }
 
         if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip(this.loc.Translate("Tooltip_OpenNativeList"));
+            ImGui.SetTooltip(this.loc.Translate("Tooltip_QuickActions"));
         }
-
-        ImGui.SameLine();
 
         var allCharacters = this.registry.GetAllCharacters();
+        int total = allCharacters.Count;
+        int online = allCharacters.Count(c => c.IsOnline);
 
-        int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;
-        foreach (var c in allCharacters) {
-            if (c.ActiveSourceIds.Contains(this.friendSourceId)) {
-                vanillaCount++;
-                if (c.IsOnline && !string.IsNullOrEmpty(c.Name)) {
-                    onlineCount++;
-                }
-            }
-            if (!c.IsActivelyTracked && !string.IsNullOrEmpty(c.Name)) {
-                archivedCount++;
-            }
+        var elapsed = DateTime.Now - this.lastUpdateTime;
 
-            if (string.IsNullOrEmpty(c.Name)) {
-                deletedCount++;
-            }
-        }
+        // Format the elapsed time to be user-friendly (e.g., "2m 15s" or "45s")
+        string timeString = elapsed.TotalMinutes >= 1
+            ? $"{(int)elapsed.TotalMinutes}m {elapsed.Seconds}s"
+            : $"{(int)elapsed.TotalSeconds}s";
 
-        var compactText = this.loc.Translate("Status_CompactCounts", "Befriender", onlineCount, allCharacters.Count);
-        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, allCharacters.Count);
+        string statusText = this.loc.Translate("StatusBar_Status", timeString, online, total);
 
-        var textSize = ImGui.CalcTextSize(compactText);
-        var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2);
+        float textWidth = ImGui.CalcTextSize(statusText).X;
+        float availableWidth = ImGui.GetContentRegionAvail().X;
 
-        ImGui.SetCursorPosX(Math.Max(rightAlignPos, ImGui.GetCursorPosX()));
-        ImGui.Text(compactText);
+        // Push the text to the absolute right of the available space on the same line
+        ImGui.SameLine(Math.Max(0, availableWidth - textWidth + ImGui.GetCursorPosX()));
+        ImGui.TextDisabled(statusText);
+    }
 
-        if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip(tooltipText);
-        }
+    public void Dispose() {
+        this.registry.RegistryUpdated -= this.OnRegistryUpdated;
     }
 }

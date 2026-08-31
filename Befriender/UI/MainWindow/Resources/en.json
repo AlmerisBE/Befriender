@@ -138,5 +138,7 @@
   "Tooltip_OpenNativeList": "Open Native Friend List (Vanilla)",
   "Tooltip_ToggleFilters": "Show / Hide filters",
   "Tooltip_Tracked": "Login alerts enabled",
-  "List_Empty": "No friends found matching the current filters."
+  "List_Empty": "No friends found matching the current filters.",
+  "StatusBar_Status": "Updated: {0} ago | {1}/{2} Online",
+  "Tooltip_QuickActions": "Quick Actions"
 }

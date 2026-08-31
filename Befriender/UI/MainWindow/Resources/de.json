@@ -138,5 +138,7 @@
   "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)",
   "Tooltip_ToggleFilters": "Filter umschalten",
   "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
-  "List_Empty": "Es wurden keine Freunde gefunden, die den aktuellen Filtern entsprechen."
+  "List_Empty": "Es wurden keine Freunde gefunden, die den aktuellen Filtern entsprechen.",
+  "StatusBar_Status": "Aktualisiert vor {0} | {1}/{2} Online",
+  "Tooltip_QuickActions": "Schnellaktionen"
 }
