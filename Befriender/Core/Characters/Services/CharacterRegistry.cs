@@ -169,10 +169,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
 
                     if (incoming.IsOnline) {
                         existing.LastSeenAt = DateTime.Now;
-
-                        if (source.SourceId != Guid.Parse("51000000-0000-0000-0000-000000000003")) {
-                            existing.OnlineStateMask = incoming.OnlineStateMask;
-                        }
+                        existing.OnlineStateMask = incoming.OnlineStateMask;
                     }
 
                     if (incoming.JobId > 0) {
@@ -193,10 +190,9 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 }
 
                 existing.ActiveSourceIds.Add(source.SourceId);
-                processedIds.Add(existing.Id); // On sauvegarde le Guid de l'entité confirmée
+                processedIds.Add(existing.Id);
             }
 
-            // NOUVEAU : Nettoyage basé sur la certitude des Ids traités dans cette boucle
             foreach (var character in this.masterList) {
                 if (character.ActiveSourceIds.Contains(source.SourceId) && !processedIds.Contains(character.Id)) {
                     character.ActiveSourceIds.Remove(source.SourceId);

@@ -1,9 +1,11 @@
 ﻿namespace Befriender.Core.Proximity.Services;
 
 using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using System;
@@ -12,23 +14,44 @@ using System.Linq;
 
 public class ProximityService : IProximityService, IDisposable {
     private ICharacterRegistry registry;
+    private IObjectTable objectTable;
+    private IClientState clientState;
     private IConfigurationService configService;
     private INotificationManager notificationManager;
     private ILocalizationService loc;
+    private IFramework framework;
 
-    private Guid proximitySourceId = Guid.Parse("51000000-0000-0000-0000-000000000003");
     private HashSet<Guid> currentlyNearbyIds = new();
+    private DateTime lastScanTime = DateTime.MinValue;
 
-    public ProximityService(ICharacterRegistry registry, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc) {
+    public ProximityService(
+        ICharacterRegistry registry,
+        IObjectTable objectTable,
+        IClientState clientState,
+        IConfigurationService configService,
+        INotificationManager notificationManager,
+        ILocalizationService loc,
+        IFramework framework) {
+
         this.registry = registry;
+        this.objectTable = objectTable;
+        this.clientState = clientState;
         this.configService = configService;
         this.notificationManager = notificationManager;
         this.loc = loc;
+        this.framework = framework;
 
-        this.registry.RegistryUpdated += this.OnRegistryUpdated;
+        this.framework.Update += this.OnFrameworkUpdate;
     }
 
-    private void OnRegistryUpdated() {
+    private void OnFrameworkUpdate(IFramework fw) {
+        var now = DateTime.Now;
+        if ((now - this.lastScanTime).TotalSeconds < 2.0) {
+            return;
+        }
+
+        this.lastScanTime = now;
+
         var config = this.configService.GetConfig();
         if (!config.EnableProximityDetection) {
             if (this.currentlyNearbyIds.Count > 0) {
@@ -37,27 +60,72 @@ public class ProximityService : IProximityService, IDisposable {
             return;
         }
 
-        var nearbyCharacters = this.registry.GetCharactersBySource(this.proximitySourceId);
+        var allCharacters = this.registry.GetAllCharacters();
+
+        var lookup = new Dictionary<(string, uint), Character>();
+        foreach (var c in allCharacters) {
+            lookup[(c.Name, c.HomeWorldId)] = c;
+        }
+
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) {
+            return;
+        }
+
+        var currentTerritory = this.clientState.TerritoryType;
+        var localCurrentWorld = localPlayer.CurrentWorld.RowId;
+
         var newNearbyIds = new HashSet<Guid>();
+        bool stateChanged = false;
 
-        foreach (var character in nearbyCharacters) {
-            newNearbyIds.Add(character.Id);
+        for (int i = 0; i < this.objectTable.Length; i++) {
+            var obj = this.objectTable[i];
 
-            if (!this.currentlyNearbyIds.Contains(character.Id)) {
-                bool shouldNotify = (character.IsActivelyTracked && config.NotifyOnNearbyFriends) ||
-                                    (!character.IsActivelyTracked && config.NotifyOnNearbyArchived);
+            if (obj is IPlayerCharacter pc && pc.Address != localPlayer.Address && pc.HomeWorld.RowId > 0) {
+                var key = (pc.Name.TextValue, pc.HomeWorld.RowId);
 
-                if (shouldNotify) {
-                    this.notificationManager.AddNotification(new Notification {
-                        Title = "Befriender",
-                        Content = this.loc.Translate("Notification_FriendNearby", character.Name),
-                        Type = NotificationType.Info
-                    });
+                if (lookup.TryGetValue(key, out var friend)) {
+                    newNearbyIds.Add(friend.Id);
+
+                    bool changed = false;
+
+                    if (friend.LocationId != currentTerritory) { friend.LocationId = currentTerritory; changed = true; }
+                    if (friend.CurrentWorldId != localCurrentWorld) { friend.CurrentWorldId = localCurrentWorld; changed = true; }
+                    if (friend.JobId != pc.ClassJob.RowId) { friend.JobId = (byte)pc.ClassJob.RowId; changed = true; }
+                    if (friend.Level != pc.Level) { friend.Level = pc.Level; changed = true; }
+                    if (!friend.IsOnline) { friend.IsOnline = true; changed = true; }
+
+                    if ((now - friend.LastSeenAt).TotalMinutes > 5) {
+                        friend.LastSeenAt = now;
+                        changed = true;
+                    }
+
+                    if (changed) {
+                        stateChanged = true;
+                    }
+
+                    // Notification si c'est la première fois qu'on le détecte
+                    if (!this.currentlyNearbyIds.Contains(friend.Id)) {
+                        bool shouldNotify = (friend.IsActivelyTracked && config.NotifyOnNearbyFriends) ||
+                                            (!friend.IsActivelyTracked && config.NotifyOnNearbyArchived);
+
+                        if (shouldNotify) {
+                            this.notificationManager.AddNotification(new Notification {
+                                Title = "Befriender",
+                                Content = this.loc.Translate("Notification_FriendNearby", friend.Name),
+                                Type = NotificationType.Info
+                            });
+                        }
+                    }
                 }
             }
         }
 
         this.currentlyNearbyIds = newNearbyIds;
+
+        if (stateChanged) {
+            this.registry.SaveMasterList();
+        }
     }
 
     public bool IsFriendNearby(ulong contentId) {
@@ -73,6 +141,6 @@ public class ProximityService : IProximityService, IDisposable {
     }
 
     public void Dispose() {
-        this.registry.RegistryUpdated -= this.OnRegistryUpdated;
+        this.framework.Update -= this.OnFrameworkUpdate;
     }
 }

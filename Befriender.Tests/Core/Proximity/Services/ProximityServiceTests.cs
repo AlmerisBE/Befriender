@@ -1,47 +1,42 @@
 ﻿namespace Befriender.Tests.Core.Proximity.Services;
 
-using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using global::Befriender.Core.Characters.Contracts;
-using global::Befriender.Core.Characters.Models;
 using global::Befriender.Core.Configuration.Contracts;
-using global::Befriender.Core.Configuration.Models;
 using global::Befriender.Core.Localization.Contracts;
 using global::Befriender.Core.Proximity.Services;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
 using Xunit;
 
 public class ProximityServiceTests {
     [Fact]
-    public void OnRegistryUpdated_Notifies_IfTrackedFriendIsNearby() {
+    public void Constructor_SubscribesToFrameworkUpdate_AndDisposesCleanly() {
         // Arrange
         var mockRegistry = Substitute.For<ICharacterRegistry>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockClientState = Substitute.For<IClientState>();
         var mockConfig = Substitute.For<IConfigurationService>();
         var mockNotif = Substitute.For<INotificationManager>();
         var mockLoc = Substitute.For<ILocalizationService>();
-
-        mockConfig.GetConfig().Returns(new PluginConfiguration { EnableProximityDetection = true, NotifyOnNearbyFriends = true });
-
-        var service = new ProximityService(mockRegistry, mockConfig, mockNotif, mockLoc);
-
-        var trackedChar = new Character {
-            Id = Guid.NewGuid(),
-            ContentId = 123,
-            Name = "Alice",
-            IsOnline = true
-        };
-        trackedChar.ActiveSourceIds.Add(Guid.Parse("51000000-0000-0000-0000-000000000003")); // Source Proximity
-
-        mockRegistry.GetCharactersBySource(Arg.Any<Guid>()).Returns(new List<Character> { trackedChar });
-        mockRegistry.GetAllCharacters().Returns(new List<Character> { trackedChar });
+        var mockFramework = Substitute.For<IFramework>();
 
         // Act
-        mockRegistry.RegistryUpdated += Raise.Event<Action>();
+        var service = new ProximityService(
+            mockRegistry,
+            mockObjectTable,
+            mockClientState,
+            mockConfig,
+            mockNotif,
+            mockLoc,
+            mockFramework);
 
-        // Assert
-        mockNotif.Received(1).AddNotification(Arg.Any<Notification>());
-        Assert.True(service.IsFriendNearby(123));
+        // Assert Subscription
+        mockFramework.Received(1).Update += Arg.Any<IFramework.OnUpdateDelegate>();
+
+        // Act Dispose
+        service.Dispose();
+
+        // Assert Unsubscription
+        mockFramework.Received(1).Update -= Arg.Any<IFramework.OnUpdateDelegate>();
     }
 }
