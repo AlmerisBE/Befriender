@@ -3,17 +3,33 @@
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
 using Befriender.Core.Characters.Services;
+using Befriender.Core.Migrations.Contracts;
+using Dalamud.Plugin.Services;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
 using Xunit;
 
 public class CharacterRegistryTests {
+    private ICharacterStorage mockStorage;
+    private IMigrationService mockMigration;
+    private ICharacterIdentityService mockIdentity;
+    private IClientState mockClientState;
+
+    public CharacterRegistryTests() {
+        this.mockStorage = Substitute.For<ICharacterStorage>();
+        this.mockMigration = Substitute.For<IMigrationService>();
+        this.mockIdentity = Substitute.For<ICharacterIdentityService>();
+        this.mockClientState = Substitute.For<IClientState>();
+    }
+
+    private CharacterRegistry CreateRegistry() {
+        return new CharacterRegistry(this.mockStorage, Array.Empty<ICharacterSource>(), this.mockMigration, this.mockIdentity, this.mockClientState);
+    }
+
     [Fact]
     public void ProcessSourceUpdate_AddsNewCharacterAndLinksSourceId() {
-        var mockStorage = Substitute.For<ICharacterStorage>();
-        var registry = new CharacterRegistry(mockStorage, Array.Empty<ICharacterSource>());
-
+        var registry = this.CreateRegistry();
         var mockSource = Substitute.For<ICharacterSource>();
         var sourceId = Guid.NewGuid();
         mockSource.SourceId.Returns(sourceId);
@@ -22,8 +38,6 @@ public class CharacterRegistryTests {
         mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
 
         registry.RegisterSource(mockSource);
-
-        // Simulate DataUpdated event
         mockSource.DataUpdated += Raise.Event<Action>();
 
         var allChars = registry.GetAllCharacters();
@@ -34,28 +48,25 @@ public class CharacterRegistryTests {
 
     [Fact]
     public void ProcessSourceUpdate_RemovesSourceIdFromMissingCharacters() {
-        var mockStorage = Substitute.For<ICharacterStorage>();
-        var registry = new CharacterRegistry(mockStorage, Array.Empty<ICharacterSource>());
+        var registry = this.CreateRegistry();
         registry.LoadMasterList("TestAccount");
 
         var mockSource = Substitute.For<ICharacterSource>();
         var sourceId = Guid.NewGuid();
         mockSource.SourceId.Returns(sourceId);
 
-        // First pass: Alice is in the source
         var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33 };
         mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
 
         registry.RegisterSource(mockSource);
         mockSource.DataUpdated += Raise.Event<Action>();
 
-        // Second pass: Alice is no longer in the source (e.g. removed from friends)
         mockSource.GetCurrentState().Returns(new List<Character>());
         mockSource.DataUpdated += Raise.Event<Action>();
 
         var allChars = registry.GetAllCharacters();
-        Assert.Single(allChars); // Alice remains in the Master List (Archived state)
-        Assert.Empty(allChars[0].ActiveSourceIds); // But she is no longer tracked by any source
+        Assert.Single(allChars);
+        Assert.Empty(allChars[0].ActiveSourceIds);
         Assert.False(allChars[0].IsActivelyTracked);
     }
 }

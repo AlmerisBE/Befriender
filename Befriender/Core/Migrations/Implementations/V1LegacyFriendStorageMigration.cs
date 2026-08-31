@@ -37,7 +37,8 @@ public class V1LegacyFriendStorageMigration : IMigration {
                 var character = new Character {
                     Id = profile.Id != Guid.Empty ? profile.Id : Guid.NewGuid(),
                     ContentId = profile.ContentId,
-                    Name = profile.Name ?? string.Empty,
+                    // Map a deleted character natively to an empty name to respect the new domain logic
+                    Name = profile.IsCharacterDeleted ? string.Empty : (profile.Name ?? string.Empty),
                     HomeWorldId = profile.HomeWorldId,
                     CurrentWorldId = profile.CurrentWorldId,
                     JobId = profile.JobId,
@@ -56,24 +57,24 @@ public class V1LegacyFriendStorageMigration : IMigration {
                     AddedAt = profile.AddedAt,
                     AddedLocationId = profile.AddedLocationId,
                     LastSeenAt = profile.LastSeenAt,
-                    ArchivedAt = profile.ArchivedAt,
                     CustomGroupId = profile.CustomGroupId,
                     Tags = profile.Tags ?? new List<Guid>(),
                     PreviousNames = profile.PreviousNames ?? new List<string>(),
                     Notes = profile.Notes ?? string.Empty,
-                    IsArchived = profile.IsArchived,
-                    IsCharacterDeleted = profile.IsCharacterDeleted,
-                    IsMarkedForRemoval = profile.IsMarkedForRemoval,
-                    IsMissing = profile.IsMissing,
                     GrandCompany = profile.GrandCompany,
                     IsTrackedForNotifications = profile.IsTrackedForNotifications
                 };
 
-                character.ActiveSourceIds.Add(Guid.Parse("A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5"));
+                // In the new DDD architecture, a character is considered "Archived" if they are not actively tracked.
+                // If the legacy profile was not archived or missing, we link them to the FriendList source.
+                if (!profile.IsArchived && !profile.IsMissing) {
+                    character.ActiveSourceIds.Add(Guid.Parse("S1000000-0000-0000-0000-000000000001"));
+                }
+
                 characters.Add(character);
             }
 
-            this.characterStorage.Save("FriendList", accountIdentity, characters);
+            this.characterStorage.Save("MasterCharacterList", accountIdentity, characters);
         }
 
         File.Move(legacyPath, $"{legacyPath}.bak");

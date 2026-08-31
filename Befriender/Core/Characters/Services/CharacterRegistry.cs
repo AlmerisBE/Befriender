@@ -2,24 +2,63 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.Migrations.Contracts;
+using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class CharacterRegistry : ICharacterRegistry {
+public class CharacterRegistry : ICharacterRegistry, IDisposable {
     private List<ICharacterSource> sources = new();
     private List<Character> masterList = new();
+
     private ICharacterStorage storage;
+    private IMigrationService migrationService;
+    private ICharacterIdentityService identityService;
+    private IClientState clientState;
+
     private string currentAccountIdentity = string.Empty;
     private readonly object lockObj = new();
 
     public event Action? RegistryUpdated;
 
-    public CharacterRegistry(ICharacterStorage storage, IEnumerable<ICharacterSource> initialSources) {
+    public CharacterRegistry(
+        ICharacterStorage storage,
+        IEnumerable<ICharacterSource> initialSources,
+        IMigrationService migrationService,
+        ICharacterIdentityService identityService,
+        IClientState clientState) {
+
         this.storage = storage;
+        this.migrationService = migrationService;
+        this.identityService = identityService;
+        this.clientState = clientState;
+
         foreach (var source in initialSources) {
             this.RegisterSource(source);
         }
+
+        this.clientState.Login += this.OnLogin;
+        this.clientState.Logout += this.OnLogout;
+
+        // Trigger load immediately if the plugin is loaded while already logged into the game
+        this.OnLogin();
+    }
+
+    private void OnLogin() {
+        var accountId = this.identityService.GetCurrentCharacterId();
+        if (!string.IsNullOrEmpty(accountId)) {
+            this.migrationService.RunMigrations(accountId);
+            this.LoadMasterList(accountId);
+        }
+    }
+
+    private void OnLogout(int type, int code) {
+        lock (this.lockObj) {
+            this.masterList.Clear();
+            this.currentAccountIdentity = string.Empty;
+        }
+        this.RegistryUpdated?.Invoke();
     }
 
     public void LoadMasterList(string accountIdentity) {
@@ -57,8 +96,6 @@ public class CharacterRegistry : ICharacterRegistry {
             }
 
             this.sources.Remove(source);
-            // We do NOT remove the SourceId from characters here. Unregistering a source
-            // just means the module is disabled, not that the characters left the source.
         }
     }
 
@@ -83,7 +120,6 @@ public class CharacterRegistry : ICharacterRegistry {
                     this.masterList.Add(existing);
                 }
                 else {
-                    // Update Intrinsic Data
                     if (incoming.ContentId > 0) {
                         existing.ContentId = incoming.ContentId;
                     }
@@ -104,10 +140,10 @@ public class CharacterRegistry : ICharacterRegistry {
                         if (!existing.PreviousNames.Contains(existing.Name)) {
                             existing.PreviousNames.Add(existing.Name);
                         }
+
                         existing.Name = incoming.Name;
                     }
 
-                    // Update Volatile Data (Later we can implement Priority checks here)
                     existing.IsOnline = incoming.IsOnline;
                     existing.CurrentWorldId = incoming.CurrentWorldId;
                     existing.LocationId = incoming.LocationId;
@@ -129,7 +165,6 @@ public class CharacterRegistry : ICharacterRegistry {
                         existing.FcTag = incoming.FcTag;
                     }
 
-                    // Update Source Specific Data
                     if (incoming.SourceSpecificData.TryGetValue(source.SourceId, out var specificData)) {
                         existing.SourceSpecificData[source.SourceId] = specificData;
                     }
@@ -138,12 +173,9 @@ public class CharacterRegistry : ICharacterRegistry {
                 existing.ActiveSourceIds.Add(source.SourceId);
             }
 
-            // Remove this source's ID from characters that are no longer present in the source update
             foreach (var character in this.masterList) {
                 if (character.ActiveSourceIds.Contains(source.SourceId) && !sourceIdsInUpdate.Contains(character.ContentId)) {
                     character.ActiveSourceIds.Remove(source.SourceId);
-
-                    // If the character drops offline because it left the source, update it
                     if (!character.IsActivelyTracked) {
                         character.IsOnline = false;
                     }
@@ -152,7 +184,6 @@ public class CharacterRegistry : ICharacterRegistry {
 
             this.SaveMasterList();
         }
-
         this.RegistryUpdated?.Invoke();
     }
 
@@ -182,4 +213,8 @@ public class CharacterRegistry : ICharacterRegistry {
         this.RegistryUpdated?.Invoke();
     }
 
+    public void Dispose() {
+        this.clientState.Login -= this.OnLogin;
+        this.clientState.Logout -= this.OnLogout;
+    }
 }
