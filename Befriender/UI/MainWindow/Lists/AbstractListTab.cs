@@ -106,7 +106,6 @@ public abstract class AbstractListTab : ITab {
                 if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
-
                 if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
@@ -135,14 +134,8 @@ public abstract class AbstractListTab : ITab {
 
             if (this.groupByGroups) {
                 var allGroups = this.groupRepository.GetGroups();
-                var unassignedChars = charactersList.Where(c => c.CustomGroupId == null).ToList();
 
-                if (unassignedChars.Count > 0) {
-                    if (ImGui.CollapsingHeader($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.DefaultOpen)) {
-                        this.DrawCharacterTable($"{this.InternalName}_Table_Unassigned", unassignedChars, palette, textOffsetY, false);
-                    }
-                }
-
+                // 1. On dessine d'abord les groupes personnalisés
                 foreach (var group in allGroups) {
                     var groupChars = charactersList.Where(c => c.CustomGroupId == group.Id).ToList();
                     if (groupChars.Count == 0) {
@@ -151,6 +144,14 @@ public abstract class AbstractListTab : ITab {
 
                     if (ImGui.CollapsingHeader($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.DefaultOpen)) {
                         this.DrawCharacterTable($"{this.InternalName}_Table_{group.Id}", groupChars, palette, textOffsetY, false);
+                    }
+                }
+
+                // 2. On dessine ensuite les non assignés
+                var unassignedChars = charactersList.Where(c => c.CustomGroupId == null).ToList();
+                if (unassignedChars.Count > 0) {
+                    if (ImGui.CollapsingHeader($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.DefaultOpen)) {
+                        this.DrawCharacterTable($"{this.InternalName}_Table_Unassigned", unassignedChars, palette, textOffsetY, false);
                     }
                 }
             }
@@ -230,7 +231,6 @@ public abstract class AbstractListTab : ITab {
             if (actions.Count == 0) {
                 ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
             }
-
             foreach (var action in actions) {
                 if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
                     action.Execute(character);
@@ -287,7 +287,6 @@ public abstract class AbstractListTab : ITab {
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
             }
-
             ImGui.SameLine();
         }
 
@@ -321,7 +320,6 @@ public abstract class AbstractListTab : ITab {
                     if (ImGui.IsItemHovered()) {
                         ImGui.SetTooltip(jobAbbr);
                     }
-
                     iconDrawn = true;
                 }
             }

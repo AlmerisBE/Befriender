@@ -32,27 +32,32 @@ public class ConfigTab : ITab {
     }
 
     public void Draw() {
-        if (ImGui.BeginTabBar("ConfigurationTabBar")) {
-            if (ImGui.BeginTabItem(this.loc.Translate("Tab_General"))) {
-                ImGui.Spacing();
-                this.DrawGeneralConfiguration();
-                ImGui.EndTabItem();
-            }
+        float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
 
-            if (ImGui.BeginTabItem(this.loc.Translate("Tab_Groups"))) {
-                ImGui.Spacing();
-                this.groupComponent.Draw();
-                ImGui.EndTabItem();
-            }
+        if (ImGui.BeginChild("ConfigContent", new Vector2(0, -footerHeight))) {
+            if (ImGui.BeginTabBar("ConfigurationTabBar")) {
+                if (ImGui.BeginTabItem(this.loc.Translate("Tab_General"))) {
+                    ImGui.Spacing();
+                    this.DrawGeneralConfiguration();
+                    ImGui.EndTabItem();
+                }
 
-            if (ImGui.BeginTabItem(this.loc.Translate("Tab_Tags"))) {
-                ImGui.Spacing();
-                this.tagComponent.Draw();
-                ImGui.EndTabItem();
-            }
+                if (ImGui.BeginTabItem(this.loc.Translate("Tab_Groups"))) {
+                    ImGui.Spacing();
+                    this.groupComponent.Draw();
+                    ImGui.EndTabItem();
+                }
 
-            ImGui.EndTabBar();
+                if (ImGui.BeginTabItem(this.loc.Translate("Tab_Tags"))) {
+                    ImGui.Spacing();
+                    this.tagComponent.Draw();
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.EndTabBar();
+            }
         }
+        ImGui.EndChild();
     }
 
     private void DrawGeneralConfiguration() {

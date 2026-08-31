@@ -6,6 +6,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using System.Diagnostics;
+using System.Numerics;
 using System.Reflection;
 
 public class AboutTab : ITab {
@@ -22,59 +23,63 @@ public class AboutTab : ITab {
     }
 
     public void Draw() {
-        ImGui.TextWrapped(this.loc.Translate("About_Description"));
+        float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
 
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
+        if (ImGui.BeginChild("AboutContent", new Vector2(0, -footerHeight))) {
+            ImGui.TextWrapped(this.loc.Translate("About_Description"));
 
-        ImGui.TextDisabled(this.loc.Translate("About_FeaturesHeader"));
-        ImGui.Spacing();
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
 
-        ImGui.Bullet();
-        ImGui.TextWrapped(this.loc.Translate("About_Feature1"));
+            ImGui.TextDisabled(this.loc.Translate("About_FeaturesHeader"));
+            ImGui.Spacing();
 
-        ImGui.Bullet();
-        ImGui.TextWrapped(this.loc.Translate("About_Feature2"));
+            ImGui.Bullet();
+            ImGui.TextWrapped(this.loc.Translate("About_Feature1"));
 
-        ImGui.Bullet();
-        ImGui.TextWrapped(this.loc.Translate("About_Feature3"));
+            ImGui.Bullet();
+            ImGui.TextWrapped(this.loc.Translate("About_Feature2"));
 
-        ImGui.Bullet();
-        ImGui.TextWrapped(this.loc.Translate("About_Feature4"));
+            ImGui.Bullet();
+            ImGui.TextWrapped(this.loc.Translate("About_Feature3"));
 
-        ImGui.Bullet();
-        ImGui.TextWrapped(this.loc.Translate("About_Feature5"));
+            ImGui.Bullet();
+            ImGui.TextWrapped(this.loc.Translate("About_Feature4"));
 
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
+            ImGui.Bullet();
+            ImGui.TextWrapped(this.loc.Translate("About_Feature5"));
 
-        ImGui.Text($"{this.loc.Translate("About_Version")}: {this.pluginVersion}");
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
 
-        ImGui.Spacing();
+            ImGui.Text($"{this.loc.Translate("About_Version")}: {this.pluginVersion}");
 
-        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.CodeBranch, this.loc.Translate("About_GitHub"))) {
-            try {
-                Process.Start(new ProcessStartInfo {
-                    FileName = "https://github.com/AlmerisBE/Befriender",
-                    UseShellExecute = true
-                });
+            ImGui.Spacing();
+
+            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.CodeBranch, this.loc.Translate("About_GitHub"))) {
+                try {
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "https://github.com/AlmerisBE/Befriender",
+                        UseShellExecute = true
+                    });
+                }
+                catch { } // Silently ignore if the OS fails to open the browser
             }
-            catch { } // Silently ignore if the OS fails to open the browser
-        }
 
-        ImGui.SameLine();
+            ImGui.SameLine();
 
-        // Utilisation de FontAwesomeIcon.Comments à la place de l'icône de marque manquante
-        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Comments, this.loc.Translate("About_Discord"))) {
-            try {
-                Process.Start(new ProcessStartInfo {
-                    FileName = "https://discord.gg/3VKgxb3Sy",
-                    UseShellExecute = true
-                });
+            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Comments, this.loc.Translate("About_Discord"))) {
+                try {
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "https://discord.gg/3VKgxb3Sy",
+                        UseShellExecute = true
+                    });
+                }
+                catch { } // Silently ignore if the OS fails to open the browser
             }
-            catch { } // Silently ignore if the OS fails to open the browser
         }
+        ImGui.EndChild();
     }
 }
