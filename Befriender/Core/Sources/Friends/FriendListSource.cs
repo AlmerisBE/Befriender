@@ -16,10 +16,14 @@ public class FriendListSource : ICharacterSource, IDisposable {
     private ulong pendingHash = 0;
     private DateTime dataStabilizedTime = DateTime.MaxValue;
     private List<Character> currentState = new();
+    private bool isManualRefreshPending = false;
 
     public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000001");
     public string Name => "FriendList";
     public int Priority => 10;
+
+    // Le statut est actif si une mise à jour manuelle a été demandée OU si la mémoire est en cours de stabilisation
+    public bool IsSyncing => this.isManualRefreshPending || this.dataStabilizedTime != DateTime.MaxValue;
 
     public event Action? DataUpdated;
 
@@ -33,7 +37,12 @@ public class FriendListSource : ICharacterSource, IDisposable {
         return this.currentState.ToList();
     }
 
+    public void RequestManualRefresh() {
+        this.TriggerManualRefresh();
+    }
+
     public void TriggerManualRefresh() {
+        this.isManualRefreshPending = true;
         this.scanner.RequestServerUpdate();
     }
 
@@ -43,12 +52,10 @@ public class FriendListSource : ICharacterSource, IDisposable {
         if (currentHash != this.lastStateHash) {
             if (currentHash != this.pendingHash) {
                 this.pendingHash = currentHash;
-                // Debounce: wait 1 second after the last memory shift to ensure data has fully streamed
                 this.dataStabilizedTime = DateTime.Now.AddSeconds(1);
             }
         }
         else if (this.pendingHash != this.lastStateHash) {
-            // Reverted back to the stable hash before the timer finished
             this.pendingHash = this.lastStateHash;
             this.dataStabilizedTime = DateTime.MaxValue;
         }
@@ -70,11 +77,8 @@ public class FriendListSource : ICharacterSource, IDisposable {
         }
 
         this.currentState = scannedCharacters;
+        this.isManualRefreshPending = false; // La tâche est terminée
         this.DataUpdated?.Invoke();
-    }
-
-    public void RequestManualRefresh() {
-        this.TriggerManualRefresh();
     }
 
     public void Dispose() {

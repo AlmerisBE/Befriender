@@ -36,7 +36,8 @@ public class MainWindowTests {
         var tabs = new List<ITab> { mockTab1, mockTab2 };
 
         // Act
-        using var window = new MainWindow(tabs, mockSources, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
+        // Correction de l'erreur CS1503 : On injecte mockRegistry comme 2ème paramètre pour respecter la signature
+        using var window = new MainWindow(tabs, mockRegistry, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
 
         // Assert
         Assert.NotNull(window);

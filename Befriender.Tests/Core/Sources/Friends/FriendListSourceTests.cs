@@ -35,4 +35,21 @@ public class FriendListSourceTests {
         // Assert - Event is fired now that data is stable
         Assert.True(eventFired);
     }
+
+    [Fact]
+    public void IsSyncing_ReturnsTrue_WhenManualRefreshIsTriggered() {
+        // Arrange
+        var mockScanner = Substitute.For<IFriendListScanner>();
+        var mockFramework = Substitute.For<IFramework>();
+        using var source = new FriendListSource(mockScanner, mockFramework);
+
+        Assert.False(source.IsSyncing);
+
+        // Act
+        source.TriggerManualRefresh();
+
+        // Assert
+        Assert.True(source.IsSyncing);
+        mockScanner.Received(1).RequestServerUpdate();
+    }
 }

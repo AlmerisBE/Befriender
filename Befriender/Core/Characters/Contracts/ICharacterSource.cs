@@ -8,6 +8,7 @@ public interface ICharacterSource {
     Guid SourceId { get; }
     string Name { get; }
     int Priority { get; }
+    bool IsSyncing { get; }
 
     event Action? DataUpdated;
 

@@ -19,4 +19,5 @@ public interface ICharacterRegistry {
     Character? GetCharacterById(Guid id);
 
     void RemoveCharacter(Guid id);
+    void RequestManualRefresh();
 }

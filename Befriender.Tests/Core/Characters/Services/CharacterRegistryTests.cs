@@ -93,4 +93,16 @@ public class CharacterRegistryTests {
         this.mockMigration.Received(1).RunMigrations("TestAccount_33");
         this.mockStorage.Received(1).Load("MasterCharacterList", "TestAccount_33");
     }
+
+    [Fact]
+    public void RequestManualRefresh_InvokesRefreshOnAllRegisteredSources() {
+        var registry = this.CreateRegistry();
+        var mockSource = Substitute.For<ICharacterSource>();
+        mockSource.SourceId.Returns(Guid.NewGuid());
+
+        registry.RegisterSource(mockSource);
+        registry.RequestManualRefresh();
+
+        mockSource.Received(1).RequestManualRefresh();
+    }
 }

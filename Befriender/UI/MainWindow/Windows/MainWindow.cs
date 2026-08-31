@@ -17,7 +17,7 @@ using System.Numerics;
 
 public class MainWindow : Window, IDisposable {
     private IEnumerable<ITab> tabs = null!;
-    private IEnumerable<ICharacterSource> sources = null!;
+    private ICharacterRegistry registry = null!;
     private IConfigurationService configurationService = null!;
     private ILocalizationService loc = null!;
     private IWindowNavigationService navService = null!;
@@ -33,7 +33,7 @@ public class MainWindow : Window, IDisposable {
 
     public MainWindow(
         IEnumerable<ITab> tabs,
-        IEnumerable<ICharacterSource> sources,
+        ICharacterRegistry registry,
         IConfigurationService configurationService,
         ILocalizationService loc,
         IWindowNavigationService navService,
@@ -44,7 +44,7 @@ public class MainWindow : Window, IDisposable {
         : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs;
-        this.sources = sources;
+        this.registry = registry;
         this.configurationService = configurationService;
         this.loc = loc;
         this.navService = navService;
@@ -73,6 +73,17 @@ public class MainWindow : Window, IDisposable {
         if (this.hotkeyService != null) {
             this.hotkeyService.OnHotkeyPressed += this.Toggle;
         }
+
+        this.TitleBarButtons.Add(new TitleBarButton {
+            Icon = FontAwesomeIcon.SyncAlt,
+            IconOffset = new Vector2(1, 1),
+            ShowTooltip = () => {
+                ImGui.SetTooltip(this.loc.Translate("Action_ManualRefresh"));
+            },
+            Click = (mouseButton) => {
+                this.registry.RequestManualRefresh();
+            }
+        });
     }
 
     private void SetTab(string tabInternalName) {
@@ -121,21 +132,6 @@ public class MainWindow : Window, IDisposable {
                     ImGui.EndTabItem();
                 }
             }
-
-            ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
-            bool refreshClicked = ImGui.TabItemButton(((char)FontAwesomeIcon.SyncAlt).ToString(), ImGuiTabItemFlags.Trailing | ImGuiTabItemFlags.NoTooltip);
-            ImGui.PopFont();
-
-            if (refreshClicked) {
-                foreach (var source in this.sources) {
-                    source.RequestManualRefresh();
-                }
-            }
-
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip(this.loc.Translate("Action_ManualRefresh"));
-            }
-
             this.tabToFocus = null;
             ImGui.EndTabBar();
         }

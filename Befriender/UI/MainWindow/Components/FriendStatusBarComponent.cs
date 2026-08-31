@@ -10,19 +10,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class FriendStatusBarComponent {
+public class FriendStatusBarComponent : IDisposable {
     private ICharacterRegistry registry;
     private ILocalizationService loc;
-    private Guid friendSourceId;
+    private ICharacterSource? friendSource;
+
+    private DateTime lastSyncTime = DateTime.MinValue;
 
     public FriendStatusBarComponent(ICharacterRegistry registry, IEnumerable<ICharacterSource> sources, ILocalizationService loc) {
         this.registry = registry;
         this.loc = loc;
 
-        var friendSource = sources.FirstOrDefault(s => s.Name == "FriendList");
-        if (friendSource != null) {
-            this.friendSourceId = friendSource.SourceId;
-        }
+        this.friendSource = sources.FirstOrDefault(s => s.Name == "FriendList");
+        this.registry.RegistryUpdated += this.OnRegistryUpdated;
+    }
+
+    private void OnRegistryUpdated() {
+        this.lastSyncTime = DateTime.Now;
     }
 
     public void Draw() {
@@ -45,22 +49,52 @@ public class FriendStatusBarComponent {
 
         int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;
         foreach (var c in allCharacters) {
-            if (c.ActiveSourceIds.Contains(this.friendSourceId)) {
+            bool isDeleted = string.IsNullOrEmpty(c.Name);
+            bool isVanilla = this.friendSource != null && c.ActiveSourceIds.Contains(this.friendSource.SourceId);
+
+            if (isVanilla && !isDeleted) {
                 vanillaCount++;
-                if (c.IsOnline && !string.IsNullOrEmpty(c.Name)) {
+                if (c.IsOnline) {
                     onlineCount++;
                 }
             }
-            if (!c.IsActivelyTracked && !string.IsNullOrEmpty(c.Name)) {
+            if (!c.IsActivelyTracked && !isDeleted) {
                 archivedCount++;
             }
 
-            if (string.IsNullOrEmpty(c.Name)) {
+            if (isDeleted) {
                 deletedCount++;
             }
         }
 
-        var compactText = this.loc.Translate("Status_CompactCounts", "Befriender", onlineCount, allCharacters.Count);
+        // On consulte dynamiquement la source concernée
+        bool isCurrentlySyncing = (this.friendSource != null && this.friendSource.IsSyncing) || this.lastSyncTime == DateTime.MinValue;
+
+        string syncText;
+        if (isCurrentlySyncing) {
+            syncText = this.loc.Translate("Status_Scanning");
+        }
+        else {
+            var diff = DateTime.Now - this.lastSyncTime;
+            string timeStr;
+
+            if (diff.TotalDays >= 1) {
+                timeStr = this.loc.Translate("Status_DaysAgo", (int)diff.TotalDays);
+            }
+            else if (diff.TotalHours >= 1) {
+                timeStr = this.loc.Translate("Status_HoursAgo", (int)diff.TotalHours);
+            }
+            else if (diff.TotalMinutes >= 1) {
+                timeStr = this.loc.Translate("Status_MinutesAgo", (int)diff.TotalMinutes);
+            }
+            else {
+                timeStr = this.loc.Translate("Status_JustNow");
+            }
+
+            syncText = this.loc.Translate("Status_LastSync", timeStr);
+        }
+
+        var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, allCharacters.Count);
         var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, allCharacters.Count);
 
         var textSize = ImGui.CalcTextSize(compactText);
@@ -72,5 +106,9 @@ public class FriendStatusBarComponent {
         if (ImGui.IsItemHovered()) {
             ImGui.SetTooltip(tooltipText);
         }
+    }
+
+    public void Dispose() {
+        this.registry.RegistryUpdated -= this.OnRegistryUpdated;
     }
 }

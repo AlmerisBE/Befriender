@@ -14,6 +14,7 @@ public class ProximitySource : ICharacterSource, IDisposable {
     private List<Character> currentState = new();
 
     private DateTime lastScanTime = DateTime.MinValue;
+    public bool IsSyncing => false;
     private readonly TimeSpan scanInterval = TimeSpan.FromSeconds(2); // Scan every 2 seconds
 
     public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000003");

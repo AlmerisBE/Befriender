@@ -84,6 +84,14 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         }
     }
 
+    public void RequestManualRefresh() {
+        lock (this.lockObj) {
+            foreach (var source in this.sources) {
+                source.RequestManualRefresh();
+            }
+        }
+    }
+
     public void RegisterSource(ICharacterSource source) {
         lock (this.lockObj) {
             if (this.sources.Any(s => s.SourceId == source.SourceId)) {

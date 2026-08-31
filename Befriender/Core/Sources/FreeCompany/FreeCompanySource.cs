@@ -17,6 +17,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private bool isInitialized = false;
     private DateTime lastSyncTime = DateTime.MinValue;
     private DateTime pendingSyncTime = DateTime.MaxValue;
+    public bool IsSyncing => this.isSyncActive && this.pendingSyncTime != DateTime.MaxValue;
     private DateTime dataStabilizedTime = DateTime.MaxValue;
     private int lastPolledCount = 0;
 

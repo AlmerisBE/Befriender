@@ -216,7 +216,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
     }
 
     private void DrawCharacterTable(string tableId, IEnumerable<Character> characters, ThemePalette palette, float textOffsetY, bool useScrollY) {
-        // NOUVEAU : Ajout de ImGuiTableFlags.Sortable
         var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable | ImGuiTableFlags.Sortable;
 
         if (useScrollY) {
@@ -224,7 +223,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
         }
 
         if (ImGui.BeginTable(tableId, 4, flags)) {
-            // NOUVEAU : Attribution d'un ID d'utilisateur pour chaque colonne via le 4ème paramètre pour le moteur de tri
             ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.DefaultSort, 0f, 0u);
             ImGui.TableSetupColumn(this.loc.Translate("Column_Name"), ImGuiTableColumnFlags.None, 0f, 1u);
             ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed, 0f, 2u);
@@ -236,7 +234,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
             ImGui.TableHeadersRow();
 
-            // NOUVEAU : Lecture des spécifications de tri fournies par l'utilisateur (via un clic sur l'en-tête)
             var sortSpecs = ImGui.TableGetSortSpecs();
             IEnumerable<Character> sortedCharacters = characters;
 
