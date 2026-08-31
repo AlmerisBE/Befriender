@@ -147,12 +147,13 @@ public abstract class AbstractListTab : ITab {
                     var unassignedChars = charactersList.Where(c => c.CustomGroupId == null).ToList();
                     if (unassignedChars.Count > 0) {
                         ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(1); // On se place dans la colonne du Nom pour l'accordéon
-                        if (ImGui.TreeNodeEx($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
+                        ImGui.TableSetColumnIndex(0); // On se place sur la toute première colonne pour laisser l'accordéon s'étendre
+
+                        // Utilisation du CollapsingHeader natif (comme dans le profil)
+                        if (ImGui.CollapsingHeader($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
                             foreach (var character in unassignedChars) {
                                 this.DrawCharacterRow(character, palette, textOffsetY);
                             }
-                            ImGui.TreePop();
                         }
                     }
 
@@ -163,12 +164,12 @@ public abstract class AbstractListTab : ITab {
                         }
 
                         ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(1);
-                        if (ImGui.TreeNodeEx($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
+                        ImGui.TableSetColumnIndex(0);
+
+                        if (ImGui.CollapsingHeader($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
                             foreach (var character in groupChars) {
                                 this.DrawCharacterRow(character, palette, textOffsetY);
                             }
-                            ImGui.TreePop();
                         }
                     }
                 }
