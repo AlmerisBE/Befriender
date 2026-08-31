@@ -1,5 +1,6 @@
-﻿namespace Befriender.UI.MainWindow;
+﻿namespace Befriender.UI.MainWindow.Windows;
 
+using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Input.Contracts;
@@ -7,6 +8,7 @@ using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using System;
 using System.Collections.Generic;
@@ -14,22 +16,24 @@ using System.Linq;
 using System.Numerics;
 
 public class MainWindow : Window, IDisposable {
-    private IEnumerable<ITab> tabs;
-    private IConfigurationService configurationService;
-    private ILocalizationService loc;
-    private IWindowNavigationService navService;
-    private FriendStatusBarComponent statusBar;
-    private RemoveConfirmationModalComponent removeModal;
-    private IHotkeyService hotkeyService;
-    private IThemeService themeService;
+    private IEnumerable<ITab> tabs = null!;
+    private IEnumerable<ICharacterSource> sources = null!;
+    private IConfigurationService configurationService = null!;
+    private ILocalizationService loc = null!;
+    private IWindowNavigationService navService = null!;
+    private FriendStatusBarComponent statusBar = null!;
+    private RemoveConfirmationModalComponent removeModal = null!;
+    private IHotkeyService hotkeyService = null!;
+    private IThemeService themeService = null!;
 
-    private ITab currentTab;
+    private ITab? currentTab;
     private ITab? tabToFocus;
     private bool wasProfilePanelOpen = false;
     private const float PanelWidth = 300f;
 
     public MainWindow(
         IEnumerable<ITab> tabs,
+        IEnumerable<ICharacterSource> sources,
         IConfigurationService configurationService,
         ILocalizationService loc,
         IWindowNavigationService navService,
@@ -40,6 +44,7 @@ public class MainWindow : Window, IDisposable {
         : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs;
+        this.sources = sources;
         this.configurationService = configurationService;
         this.loc = loc;
         this.navService = navService;
@@ -48,20 +53,26 @@ public class MainWindow : Window, IDisposable {
         this.hotkeyService = hotkeyService;
         this.themeService = themeService;
 
-        this.currentTab = this.tabs.First();
+        if (this.tabs != null && this.tabs.Any()) {
+            this.currentTab = this.tabs.First();
+        }
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(400, 300),
             MaximumSize = new Vector2(9999, 9999)
         };
 
-        // Initialize state based on the last saved configuration to counteract ImGui state persistence
-        var config = this.configurationService.GetConfig();
-        this.wasProfilePanelOpen = config.IsProfilePanelOpen;
+        var config = this.configurationService?.GetConfig();
+        this.wasProfilePanelOpen = config?.IsProfilePanelOpen ?? false;
 
-        this.navService.OnTabRequested += this.SetTab;
-        this.navService.OnWindowToggleRequested += this.Toggle;
-        this.hotkeyService.OnHotkeyPressed += this.Toggle;
+        if (this.navService != null) {
+            this.navService.OnTabRequested += this.SetTab;
+            this.navService.OnWindowToggleRequested += this.Toggle;
+        }
+
+        if (this.hotkeyService != null) {
+            this.hotkeyService.OnHotkeyPressed += this.Toggle;
+        }
     }
 
     private void SetTab(string tabInternalName) {
@@ -110,6 +121,21 @@ public class MainWindow : Window, IDisposable {
                     ImGui.EndTabItem();
                 }
             }
+
+            ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+            bool refreshClicked = ImGui.TabItemButton(((char)FontAwesomeIcon.SyncAlt).ToString(), ImGuiTabItemFlags.Trailing | ImGuiTabItemFlags.NoTooltip);
+            ImGui.PopFont();
+
+            if (refreshClicked) {
+                foreach (var source in this.sources) {
+                    source.RequestManualRefresh();
+                }
+            }
+
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.loc.Translate("Action_ManualRefresh"));
+            }
+
             this.tabToFocus = null;
             ImGui.EndTabBar();
         }
@@ -132,12 +158,13 @@ public class MainWindow : Window, IDisposable {
                 ImGui.SetWindowSize(new Vector2(Math.Max(this.SizeConstraints?.MinimumSize.X ?? 400, size.X - PanelWidth - ImGui.GetStyle().ItemSpacing.X), size.Y));
             }
 
-            // Sync state and save to config to prevent ImGui.ini inflation on reload
             if (this.wasProfilePanelOpen != isPanelOpen) {
                 this.wasProfilePanelOpen = isPanelOpen;
-                var config = this.configurationService.GetConfig();
-                config.IsProfilePanelOpen = isPanelOpen;
-                this.configurationService.Save();
+                var config = this.configurationService?.GetConfig();
+                if (config != null) {
+                    config.IsProfilePanelOpen = isPanelOpen;
+                    this.configurationService?.Save();
+                }
             }
         }
     }
@@ -147,8 +174,13 @@ public class MainWindow : Window, IDisposable {
     }
 
     public void Dispose() {
-        this.navService.OnTabRequested -= this.SetTab;
-        this.navService.OnWindowToggleRequested -= this.Toggle;
-        this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        if (this.navService != null) {
+            this.navService.OnTabRequested -= this.SetTab;
+            this.navService.OnWindowToggleRequested -= this.Toggle;
+        }
+
+        if (this.hotkeyService != null) {
+            this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        }
     }
 }

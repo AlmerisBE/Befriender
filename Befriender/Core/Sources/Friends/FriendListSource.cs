@@ -73,6 +73,10 @@ public class FriendListSource : ICharacterSource, IDisposable {
         this.DataUpdated?.Invoke();
     }
 
+    public void RequestManualRefresh() {
+        this.TriggerManualRefresh();
+    }
+
     public void Dispose() {
         this.framework.Update -= this.OnFrameworkUpdate;
     }

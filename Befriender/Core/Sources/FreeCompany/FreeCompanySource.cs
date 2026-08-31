@@ -56,6 +56,10 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         this.lastPolledCount = 0;
     }
 
+    public void RequestManualRefresh() {
+        this.RequestServerRefresh();
+    }
+
     private void ForceSync() {
         this.currentState = this.scanner.ScanMembers().ToList();
         this.lastSyncTime = DateTime.Now;

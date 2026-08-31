@@ -140,5 +140,6 @@
   "Tooltip_Tracked": "Login alerts enabled",
   "List_Empty": "No friends found matching the current filters.",
   "StatusBar_Status": "Updated: {0} ago | {1}/{2} Online",
-  "Tooltip_QuickActions": "Quick Actions"
+  "Tooltip_QuickActions": "Quick Actions",
+  "Action_ManualRefresh": "Manual Refresh"
 }

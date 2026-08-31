@@ -45,6 +45,10 @@ public class ProximitySource : ICharacterSource, IDisposable {
         this.DataUpdated?.Invoke();
     }
 
+    public void RequestManualRefresh() {
+        this.RefreshState();
+    }
+
     public void Dispose() {
         this.framework.Update -= this.OnFrameworkUpdate;
     }

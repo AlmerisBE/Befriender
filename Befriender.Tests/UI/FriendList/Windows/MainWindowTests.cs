@@ -1,9 +1,9 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Windows;
 
 using Befriender.UI.Input.Contracts;
-using Befriender.UI.MainWindow;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
+using Befriender.UI.MainWindow.Windows;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Configuration.Contracts;
 using global::Befriender.Core.Localization.Contracts;
@@ -12,7 +12,7 @@ using NSubstitute;
 using System.Collections.Generic;
 using Xunit;
 
-public class FriendListWindowTests {
+public class MainWindowTests {
     [Fact]
     public void Constructor_SetsFirstTabAsDefault() {
         // Arrange
@@ -30,14 +30,13 @@ public class FriendListWindowTests {
         var mockHotkeys = Substitute.For<IHotkeyService>();
         var mockThemeService = Substitute.For<IThemeService>();
 
-        // Instantiate the required UI components with mocked dependencies
         var statusBar = new FriendStatusBarComponent(mockRegistry, mockSources, mockLoc);
         var removeModal = new RemoveConfirmationModalComponent(mockRequestService, mockRegistry, mockLoc);
 
         var tabs = new List<ITab> { mockTab1, mockTab2 };
 
         // Act
-        using var window = new MainWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
+        using var window = new MainWindow(tabs, mockSources, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
 
         // Assert
         Assert.NotNull(window);
