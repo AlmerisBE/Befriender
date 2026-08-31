@@ -80,7 +80,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
             if (currentCount > this.lastPolledCount) {
                 this.lastPolledCount = currentCount;
                 this.dataStabilizedTime = now.AddSeconds(5);
-                this.ForceSync(); // Stream partial data instantly
+                // Removed partial streaming to ensure visual update happens all at once
             }
 
             bool isStabilized = currentCount > 0 && now >= this.dataStabilizedTime;

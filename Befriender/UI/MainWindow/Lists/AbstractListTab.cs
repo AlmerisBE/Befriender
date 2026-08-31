@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-public abstract class AbstractListTab : ITab {
+public abstract class AbstractListTab : ITab, IDisposable {
     protected ICharacterRegistry registry;
     protected ILocalizationService loc;
     protected IGameDataService gameDataService;
@@ -37,6 +37,10 @@ public abstract class AbstractListTab : ITab {
 
     protected Character? selectedCharacter = null;
     protected const float PanelWidth = 300f;
+
+    // Cache properties
+    protected List<Character> cachedCharacterList = new();
+    protected bool requiresListRebuild = true;
 
     public abstract string InternalName { get; }
     public abstract string Name { get; }
@@ -71,22 +75,22 @@ public abstract class AbstractListTab : ITab {
         this.tagRepository = tagRepository;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
+
+        this.registry.RegistryUpdated += this.OnRegistryUpdated;
+    }
+
+    private void OnRegistryUpdated() {
+        this.requiresListRebuild = true;
     }
 
     protected virtual IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {
         return characters.OrderByDescending(c => c.IsOnline).ThenBy(c => c.Name);
     }
 
-    public void Draw() {
-        var palette = this.themeService.CurrentPalette;
-
-        this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, this.ShowOnlineFilter);
-
-        ImGui.Separator();
-        ImGui.Spacing();
-
+    private void RebuildCache() {
         var baseList = this.GetBaseCharacterList();
         if (baseList == null) {
+            this.cachedCharacterList = new List<Character>();
             return;
         }
 
@@ -106,6 +110,7 @@ public abstract class AbstractListTab : ITab {
                 if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
+
                 if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
@@ -119,9 +124,24 @@ public abstract class AbstractListTab : ITab {
             });
         }
 
-        var charactersList = this.SortCharacterList(baseList).ToList();
+        this.cachedCharacterList = this.SortCharacterList(baseList).ToList();
+    }
 
-        if (charactersList.Count == 0) {
+    public void Draw() {
+        var palette = this.themeService.CurrentPalette;
+
+        // Draw returns true if any filter was modified by the user
+        bool filtersChanged = this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, this.ShowOnlineFilter);
+
+        if (filtersChanged || this.requiresListRebuild) {
+            this.RebuildCache();
+            this.requiresListRebuild = false;
+        }
+
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        if (this.cachedCharacterList.Count == 0) {
             ImGui.TextDisabled(this.loc.Translate(this.EmptyListMessageKey));
             return;
         }
@@ -135,9 +155,8 @@ public abstract class AbstractListTab : ITab {
             if (this.groupByGroups) {
                 var allGroups = this.groupRepository.GetGroups();
 
-                // 1. On dessine d'abord les groupes personnalisés
                 foreach (var group in allGroups) {
-                    var groupChars = charactersList.Where(c => c.CustomGroupId == group.Id).ToList();
+                    var groupChars = this.cachedCharacterList.Where(c => c.CustomGroupId == group.Id).ToList();
                     if (groupChars.Count == 0) {
                         continue;
                     }
@@ -147,8 +166,7 @@ public abstract class AbstractListTab : ITab {
                     }
                 }
 
-                // 2. On dessine ensuite les non assignés
-                var unassignedChars = charactersList.Where(c => c.CustomGroupId == null).ToList();
+                var unassignedChars = this.cachedCharacterList.Where(c => c.CustomGroupId == null).ToList();
                 if (unassignedChars.Count > 0) {
                     if (ImGui.CollapsingHeader($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.DefaultOpen)) {
                         this.DrawCharacterTable($"{this.InternalName}_Table_Unassigned", unassignedChars, palette, textOffsetY, false);
@@ -156,7 +174,7 @@ public abstract class AbstractListTab : ITab {
                 }
             }
             else {
-                this.DrawCharacterTable($"{this.InternalName}_Table", charactersList, palette, textOffsetY, true);
+                this.DrawCharacterTable($"{this.InternalName}_Table", this.cachedCharacterList, palette, textOffsetY, true);
             }
         }
         ImGui.EndChild();
@@ -342,5 +360,9 @@ public abstract class AbstractListTab : ITab {
         ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName);
 
         ImGui.PopStyleColor();
+    }
+
+    public virtual void Dispose() {
+        this.registry.RegistryUpdated -= this.OnRegistryUpdated;
     }
 }
