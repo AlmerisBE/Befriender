@@ -1,10 +1,10 @@
 ﻿namespace Befriender.Tests.Core.Characters.Services;
 
-using Befriender.Core.Characters.Contracts;
-using Befriender.Core.Characters.Models;
-using Befriender.Core.Characters.Services;
-using Befriender.Core.Migrations.Contracts;
 using Dalamud.Plugin.Services;
+using global::Befriender.Core.Characters.Contracts;
+using global::Befriender.Core.Characters.Models;
+using global::Befriender.Core.Characters.Services;
+using global::Befriender.Core.Migrations.Contracts;
 using NSubstitute;
 using System;
 using System.Collections.Generic;

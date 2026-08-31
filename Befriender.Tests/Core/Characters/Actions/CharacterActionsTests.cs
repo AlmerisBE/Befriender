@@ -1,10 +1,10 @@
 ﻿namespace Befriender.Tests.Core.Characters.Actions;
 
-using Befriender.Core.Characters.Actions;
-using Befriender.Core.Characters.Contracts;
-using Befriender.Core.Characters.Models;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
+using global::Befriender.Core.Characters.Actions;
+using global::Befriender.Core.Characters.Contracts;
+using global::Befriender.Core.Characters.Models;
 using NSubstitute;
 using System;
 using Xunit;

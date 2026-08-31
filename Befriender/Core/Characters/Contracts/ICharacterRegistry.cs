@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 public interface ICharacterRegistry {
     event Action? RegistryUpdated;
+    event Action<Character>? CharacterLoggedOn;
 
     void RegisterSource(ICharacterSource source);
     void UnregisterSource(Guid sourceId);

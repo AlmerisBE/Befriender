@@ -1,152 +1,72 @@
 ﻿namespace Befriender.UI.FriendList.Windows;
 
 using Befriender.Core.Configuration.Contracts;
-using Befriender.Core.FreeCompany.Contracts;
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Input.Contracts;
-using Befriender.UI.FriendList.Components;
+using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Contracts;
-using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 public class FriendListWindow : Window, IDisposable {
     private IEnumerable<ITab> tabs;
-    private IFriendSyncService syncService;
-    private IFreeCompanySyncService fcSyncService;
-    private IThemeService themeService;
-    private IHotkeyService hotkeyService;
+    private IConfigurationService configurationService;
+    private ILocalizationService loc;
     private IWindowNavigationService navService;
-    private IConfigurationService configService;
-    private FriendStatusBarComponent statusBarComponent;
 
-    private string? pendingTabSelection;
-    private bool isProfilePanelOpen;
-    private const float ProfilePanelWidth = 300f;
+    private ITab currentTab;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IFreeCompanySyncService fcSyncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService, FriendStatusBarComponent statusBarComponent) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(
+        IEnumerable<ITab> tabs,
+        IConfigurationService configurationService,
+        ILocalizationService loc,
+        IWindowNavigationService navService)
+        : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+
         this.tabs = tabs;
-        this.syncService = syncService;
-        this.fcSyncService = fcSyncService;
-        this.themeService = themeService;
-        this.hotkeyService = hotkeyService;
+        this.configurationService = configurationService;
+        this.loc = loc;
         this.navService = navService;
-        this.configService = configService;
-        this.statusBarComponent = statusBarComponent;
 
-        this.isProfilePanelOpen = this.configService.GetConfig().IsProfilePanelOpen;
-
-        this.hotkeyService.OnHotkeyPressed += this.Toggle;
-        this.navService.OnWindowToggleRequested += this.Toggle;
-        this.navService.OnTabRequested += this.HandleTabRequest;
+        this.currentTab = this.tabs.First();
 
         this.SizeConstraints = new WindowSizeConstraints {
-            MinimumSize = new Vector2(500, 600),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+            MinimumSize = new Vector2(400, 300),
+            MaximumSize = new Vector2(9999, 9999)
         };
 
-        this.TitleBarButtons.Add(new TitleBarButton {
-            Icon = FontAwesomeIcon.Sync,
-            IconOffset = new Vector2(1, 1),
-            Click = (mouseButton) => {
-                this.syncService.RequestServerRefresh();
-                this.fcSyncService.RequestServerRefresh();
-            }
-        });
+        this.navService.OnTabRequested += this.SetTab;
+        this.navService.OnWindowToggleRequested += this.Toggle;
     }
 
-    private void HandleTabRequest(string tabInternalName) {
-        this.pendingTabSelection = tabInternalName;
-        this.IsOpen = true;
-    }
-
-    public override void PreDraw() {
-        var p = this.themeService.CurrentPalette;
-
-        ImGui.PushStyleColor(ImGuiCol.WindowBg, p.WindowBg);
-        ImGui.PushStyleColor(ImGuiCol.Text, p.Text);
-        ImGui.PushStyleColor(ImGuiCol.ChildBg, p.ChildBg);
-        ImGui.PushStyleColor(ImGuiCol.PopupBg, p.PopupBg);
-        ImGui.PushStyleColor(ImGuiCol.FrameBg, p.FrameBg);
-        ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, p.FrameBgHovered);
-        ImGui.PushStyleColor(ImGuiCol.FrameBgActive, p.FrameBgActive);
-        ImGui.PushStyleColor(ImGuiCol.TitleBg, p.TitleBg);
-        ImGui.PushStyleColor(ImGuiCol.TitleBgActive, p.TitleBgActive);
-        ImGui.PushStyleColor(ImGuiCol.TitleBgCollapsed, p.TitleBgCollapsed);
-        ImGui.PushStyleColor(ImGuiCol.TableHeaderBg, p.TableHeaderBg);
-        ImGui.PushStyleColor(ImGuiCol.TableRowBg, p.TableRowBg);
-        ImGui.PushStyleColor(ImGuiCol.TableRowBgAlt, p.TableRowBgAlt);
-        ImGui.PushStyleColor(ImGuiCol.Border, p.Border);
-        ImGui.PushStyleColor(ImGuiCol.Tab, p.Tab);
-        ImGui.PushStyleColor(ImGuiCol.TabHovered, p.TabHovered);
-        ImGui.PushStyleColor(ImGuiCol.TabActive, p.TabActive);
-        ImGui.PushStyleColor(ImGuiCol.TabUnfocused, p.TabUnfocused);
-        ImGui.PushStyleColor(ImGuiCol.TabUnfocusedActive, p.TabUnfocusedActive);
-        ImGui.PushStyleColor(ImGuiCol.Button, p.Button);
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, p.ButtonHovered);
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, p.ButtonActive);
-    }
-
-    public override void PostDraw() {
-        ImGui.PopStyleColor(22);
-    }
-
-    public override void OnOpen() {
-        this.syncService.IsWindowOpen = true;
-        this.syncService.RequestServerRefresh();
-        this.fcSyncService.StartSync();
-    }
-
-    public override void OnClose() {
-        this.syncService.IsWindowOpen = false;
-        this.fcSyncService.StopSync();
+    private void SetTab(string tabInternalName) {
+        var tab = this.tabs.FirstOrDefault(t => t.InternalName == tabInternalName);
+        if (tab != null) {
+            this.currentTab = tab;
+            this.IsOpen = true;
+        }
     }
 
     public override void Draw() {
-        bool activeTabWantsPanel = false;
-        float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
+        if (Dalamud.Bindings.ImGui.ImGui.BeginTabBar("BefrienderMainTabBar")) {
+            foreach (var tab in this.tabs) {
+                var flags = this.currentTab == tab ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None;
 
-        if (ImGui.BeginChild("MainContent", new Vector2(0, -footerHeight))) {
-            if (ImGui.BeginTabBar("MainTabBar")) {
-                foreach (var tab in this.tabs) {
-                    var flags = ImGuiTabItemFlags.None;
-
-                    if (this.pendingTabSelection != null && this.pendingTabSelection.Equals(tab.InternalName, StringComparison.OrdinalIgnoreCase)) {
-                        flags |= ImGuiTabItemFlags.SetSelected;
-                    }
-
-                    if (ImGui.BeginTabItem(tab.Name, flags)) {
-                        tab.Draw();
-                        activeTabWantsPanel = tab.IsProfilePanelOpen;
-                        ImGui.EndTabItem();
-                    }
+                if (Dalamud.Bindings.ImGui.ImGui.BeginTabItem(tab.Name, flags)) {
+                    this.currentTab = tab;
+                    tab.Draw();
+                    Dalamud.Bindings.ImGui.ImGui.EndTabItem();
                 }
-
-                this.pendingTabSelection = null;
-                ImGui.EndTabBar();
             }
+            Dalamud.Bindings.ImGui.ImGui.EndTabBar();
         }
-        ImGui.EndChild();
-
-        if (this.isProfilePanelOpen != activeTabWantsPanel) {
-            float delta = activeTabWantsPanel ? ProfilePanelWidth : -ProfilePanelWidth;
-            var currentSize = ImGui.GetWindowSize();
-            ImGui.SetWindowSize(new Vector2(Math.Max(500f, currentSize.X + delta), currentSize.Y));
-            this.isProfilePanelOpen = activeTabWantsPanel;
-        }
-
-        ImGui.Separator();
-        this.statusBarComponent.Draw();
     }
 
     public void Dispose() {
-        this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        this.navService.OnTabRequested -= this.SetTab;
         this.navService.OnWindowToggleRequested -= this.Toggle;
-        this.navService.OnTabRequested -= this.HandleTabRequest;
     }
 }

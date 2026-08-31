@@ -1,6 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Services;
 
-using Befriender.Core.Friends.Contracts;
+using Befriender.Core.Characters.Contracts;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Memory;
@@ -18,17 +18,16 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
     }
 
     private IAddonLifecycle addonLifecycle;
-    private IFriendRepository friendRepository;
+    private ICharacterRegistry registry;
     private IPluginLog pluginLog;
 
-    // Caches to track and restore native colors dynamically
     private Dictionary<nint, NodeState> originalNodeStates = new();
     private HashSet<nint> activeNodesThisFrame = new();
     private List<nint> staleKeysToRemove = new();
 
-    public VanillaFriendListModifierService(IAddonLifecycle addonLifecycle, IFriendRepository friendRepository, IPluginLog pluginLog) {
+    public VanillaFriendListModifierService(IAddonLifecycle addonLifecycle, ICharacterRegistry registry, IPluginLog pluginLog) {
         this.addonLifecycle = addonLifecycle;
-        this.friendRepository = friendRepository;
+        this.registry = registry;
         this.pluginLog = pluginLog;
 
         this.addonLifecycle.RegisterListener(AddonEvent.PreDraw, "FriendList", this.OnFriendListPreDraw);
@@ -40,19 +39,16 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
 
             var addon = (AtkUnitBase*)args.Addon.Address;
             if (addon == null || !addon->IsVisible) {
-                // Clear cache aggressively when addon hides to avoid memory leaks or stale pointers
                 this.originalNodeStates.Clear();
                 return;
             }
 
-            var markedFriends = this.friendRepository.GetFriends()
-                .Where(f => f.IsMarkedForRemoval)
-                .Select(f => f.Name)
+            var markedCharacters = this.registry.GetAllCharacters()
+                .Where(c => c.IsMarkedForRemoval)
+                .Select(c => c.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            this.TraverseAndColor(&addon->UldManager, markedFriends);
-
-            // Clean up nodes that are no longer marked to restore their original vanilla color
+            this.TraverseAndColor(&addon->UldManager, markedCharacters);
             this.CleanupStaleNodes();
         }
         catch (Exception ex) {
@@ -73,7 +69,8 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
 
             if (node->Type == NodeType.Text) {
                 var textNode = (AtkTextNode*)node;
-                var stringPtr = (byte*)textNode->NodeText.StringPtr;
+
+                byte* stringPtr = textNode->NodeText.StringPtr;
 
                 if (stringPtr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue.Trim();
@@ -82,7 +79,6 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
                         var nodePtr = (nint)textNode;
 
                         if (markedNames.Contains(text)) {
-                            // Cache the original native state before applying our custom red color
                             if (!this.originalNodeStates.TryGetValue(nodePtr, out var state) || state.Text != text) {
                                 this.originalNodeStates[nodePtr] = new NodeState {
                                     Text = text,
@@ -113,14 +109,12 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
                 var nodePtr = kvp.Key;
                 var state = kvp.Value;
                 var textNode = (AtkTextNode*)nodePtr;
-                var stringPtr = (byte*)textNode->NodeText.StringPtr;
+
+                byte* stringPtr = textNode->NodeText.StringPtr;
 
                 if (stringPtr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue.Trim();
 
-                    // Only restore the color if the node is still displaying the SAME friend.
-                    // If the text differs, it means the node was recycled by FFXIV (scrolling),
-                    // and the vanilla engine has already correctly applied the native color.
                     if (string.Equals(text, state.Text, StringComparison.OrdinalIgnoreCase)) {
                         textNode->TextColor = state.Color;
                     }

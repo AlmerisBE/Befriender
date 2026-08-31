@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class CharacterRegistry : ICharacterRegistry, IDisposable {
+    public event Action<Character>? CharacterLoggedOn;
     private List<ICharacterSource> sources = new();
     private List<Character> masterList = new();
 
@@ -142,6 +143,11 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                         }
 
                         existing.Name = incoming.Name;
+                    }
+
+                    // Détection de la connexion
+                    if (!existing.IsOnline && incoming.IsOnline) {
+                        this.CharacterLoggedOn?.Invoke(existing);
                     }
 
                     existing.IsOnline = incoming.IsOnline;
