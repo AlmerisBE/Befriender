@@ -137,5 +137,6 @@
   "Tooltip_Nearby": "近くにいる",
   "Tooltip_OpenNativeList": "公式フレンドリストを開く（バニラ）",
   "Tooltip_ToggleFilters": "フィルターの切り替え",
-  "Tooltip_Tracked": "ログイン通知が有効です"
+  "Tooltip_Tracked": "ログイン通知が有効です",
+  "List_Empty": "現在のフィルターに一致するフレンドは見つかりませんでした。"
 }

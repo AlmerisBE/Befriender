@@ -137,5 +137,6 @@
   "Tooltip_Nearby": "Nearby",
   "Tooltip_OpenNativeList": "Open Native Friend List (Vanilla)",
   "Tooltip_ToggleFilters": "Show / Hide filters",
-  "Tooltip_Tracked": "Login alerts enabled"
+  "Tooltip_Tracked": "Login alerts enabled",
+  "List_Empty": "No friends found matching the current filters."
 }

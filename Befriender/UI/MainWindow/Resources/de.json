@@ -137,5 +137,6 @@
   "Tooltip_Nearby": "In der Nähe",
   "Tooltip_OpenNativeList": "Native Freundesliste öffnen (Vanilla)",
   "Tooltip_ToggleFilters": "Filter umschalten",
-  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert"
+  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
+  "List_Empty": "Es wurden keine Freunde gefunden, die den aktuellen Filtern entsprechen."
 }

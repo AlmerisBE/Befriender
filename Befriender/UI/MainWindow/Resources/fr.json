@@ -137,5 +137,6 @@
   "Tooltip_Nearby": "À proximité",
   "Tooltip_OpenNativeList": "Ouvrir la liste d'amis native (Vanilla)",
   "Tooltip_ToggleFilters": "Afficher / Masquer les filtres",
-  "Tooltip_Tracked": "Alertes de connexion activées"
+  "Tooltip_Tracked": "Alertes de connexion activées",
+  "List_Empty": "Aucun ami ne correspond aux filtres actuels."
 }
