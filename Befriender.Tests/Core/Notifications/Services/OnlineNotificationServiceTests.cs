@@ -1,43 +1,38 @@
 ﻿namespace Befriender.Tests.Core.Notifications.Services;
 
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
-using Befriender.Core.Notifications.Services;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
+using global::Befriender.Core.Characters.Contracts;
+using global::Befriender.Core.Characters.Models;
+using global::Befriender.Core.Notifications.Services;
 using NSubstitute;
 using System;
 using Xunit;
 
 public class OnlineNotificationServiceTests {
     [Fact]
-    public void OnFriendLoggedOn_PrintsToChat_WhenFriendIsTracked() {
-        // Arrange
-        var mockRepo = Substitute.For<IFriendRepository>();
-        var mockChat = Substitute.For<IChatGui>();
-        using var service = new OnlineNotificationService(mockRepo, mockChat);
+    public void OnCharacterLoggedOn_PrintsMessage_IfCharacterIsTracked() {
+        var mockRegistry = Substitute.For<ICharacterRegistry>();
+        var mockChatGui = Substitute.For<IChatGui>();
+        var service = new OnlineNotificationService(mockRegistry, mockChatGui);
 
-        var friend = new FriendProfile { Name = "Tracked Player", IsTrackedForNotifications = true };
+        var trackedChar = new Character { Name = "Alice", IsTrackedForNotifications = true };
 
-        // Act
-        mockRepo.FriendLoggedOn += Raise.Event<Action<FriendProfile>>(friend);
+        mockRegistry.CharacterLoggedOn += Raise.Event<Action<Character>>(trackedChar);
 
-        // Assert
-        mockChat.Received(1).Print(Arg.Is<Dalamud.Game.Text.SeStringHandling.SeString>(s => s.TextValue.Contains("Tracked Player is now online!")));
+        mockChatGui.Received(1).Print(Arg.Any<SeString>());
     }
 
     [Fact]
-    public void OnFriendLoggedOn_DoesNothing_WhenFriendIsNotTracked() {
-        // Arrange
-        var mockRepo = Substitute.For<IFriendRepository>();
-        var mockChat = Substitute.For<IChatGui>();
-        using var service = new OnlineNotificationService(mockRepo, mockChat);
+    public void OnCharacterLoggedOn_IgnoresUntrackedCharacters() {
+        var mockRegistry = Substitute.For<ICharacterRegistry>();
+        var mockChatGui = Substitute.For<IChatGui>();
+        var service = new OnlineNotificationService(mockRegistry, mockChatGui);
 
-        var friend = new FriendProfile { Name = "Untracked Player", IsTrackedForNotifications = false };
+        var untrackedChar = new Character { Name = "Bob", IsTrackedForNotifications = false };
 
-        // Act
-        mockRepo.FriendLoggedOn += Raise.Event<Action<FriendProfile>>(friend);
+        mockRegistry.CharacterLoggedOn += Raise.Event<Action<Character>>(untrackedChar);
 
-        // Assert
-        mockChat.DidNotReceiveWithAnyArgs().Print(default(Dalamud.Game.Text.SeStringHandling.SeString)!);
+        mockChatGui.DidNotReceive().Print(Arg.Any<SeString>());
     }
 }

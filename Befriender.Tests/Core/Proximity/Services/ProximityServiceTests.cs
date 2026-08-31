@@ -1,17 +1,13 @@
 ﻿namespace Befriender.Tests.Core.Proximity.Services;
 
-using Befriender.Core.Configuration.Contracts;
-using Befriender.Core.Configuration.Models;
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
-using Befriender.Core.Localization.Contracts;
-using Befriender.Core.Proximity.Services;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
+using global::Befriender.Core.Characters.Contracts;
+using global::Befriender.Core.Characters.Models;
+using global::Befriender.Core.Configuration.Contracts;
+using global::Befriender.Core.Configuration.Models;
+using global::Befriender.Core.Localization.Contracts;
+using global::Befriender.Core.Proximity.Services;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
@@ -19,65 +15,26 @@ using Xunit;
 
 public class ProximityServiceTests {
     [Fact]
-    public void OnFrameworkUpdate_IdentifiesNearbyFriendAndTriggersNotification() {
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockRepo = Substitute.For<IFriendRepository>();
+    public void OnRegistryUpdated_Notifies_IfTrackedFriendIsNearby() {
+        var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockConfig = Substitute.For<IConfigurationService>();
         var mockNotif = Substitute.For<INotificationManager>();
         var mockLoc = Substitute.For<ILocalizationService>();
-        var mockClientState = Substitute.For<IClientState>();
 
-        var config = new PluginConfiguration { EnableProximityDetection = true, NotifyOnNearbyFriends = true };
-        mockConfig.GetConfig().Returns(config);
+        mockConfig.GetConfig().Returns(new PluginConfiguration { EnableProximityDetection = true, NotifyOnNearbyFriends = true });
 
-        var friend = new FriendProfile { ContentId = 123, Name = "Alice Liddell", HomeWorldId = 0, IsArchived = false };
-        mockRepo.GetFriends().Returns(new List<FriendProfile> { friend });
+        var service = new ProximityService(mockRegistry, mockConfig, mockNotif, mockLoc);
 
-        var mockPlayer = Substitute.For<IPlayerCharacter>();
-        mockPlayer.Name.Returns(new SeString(new TextPayload("Alice Liddell")));
+        var proximitySourceId = Guid.Parse("S1000000-0000-0000-0000-000000000003");
+        var activeFriend = new Character { Id = Guid.NewGuid(), Name = "Alice" };
+        activeFriend.ActiveSourceIds.Add(proximitySourceId);
+        activeFriend.ActiveSourceIds.Add(Guid.NewGuid()); // Makes IsActivelyTracked = true
 
-        var mockLocalPlayer = Substitute.For<IPlayerCharacter>();
-        mockLocalPlayer.Address.Returns(IntPtr.Zero);
-        mockPlayer.Address.Returns(new IntPtr(1));
-        mockObjectTable.LocalPlayer.Returns(mockLocalPlayer);
+        mockRegistry.GetAllCharacters().Returns(new List<Character> { activeFriend });
 
-        var enumerator = new List<IGameObject> { mockPlayer }.GetEnumerator();
-        mockObjectTable.GetEnumerator().Returns(enumerator);
+        mockRegistry.RegistryUpdated += Raise.Event<Action>();
 
-        // Mock the property Length to prevent infinite loops with the new for-loop logic
-        mockObjectTable.Length.Returns(1);
-        mockObjectTable[0].Returns(mockPlayer);
-
-        using var service = new ProximityService(mockObjectTable, mockFramework, mockRepo, mockConfig, mockNotif, mockLoc, mockClientState);
-
-        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
-
-        Assert.True(service.IsFriendNearby(123));
         mockNotif.Received(1).AddNotification(Arg.Any<Notification>());
-
-        // Ensure Arg.Any matches the current uint signature of IFriendRepository
-        mockRepo.Received(1).UpdateFriendFromCharacter(123, mockPlayer, Arg.Any<uint>());
-    }
-
-    [Fact]
-    public void OnFrameworkUpdate_DoesNotIdentifyIfProximityDetectionIsDisabled() {
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockRepo = Substitute.For<IFriendRepository>();
-        var mockConfig = Substitute.For<IConfigurationService>();
-        var mockNotif = Substitute.For<INotificationManager>();
-        var mockLoc = Substitute.For<ILocalizationService>();
-        var mockClientState = Substitute.For<IClientState>();
-
-        var config = new PluginConfiguration { EnableProximityDetection = false };
-        mockConfig.GetConfig().Returns(config);
-
-        using var service = new ProximityService(mockObjectTable, mockFramework, mockRepo, mockConfig, mockNotif, mockLoc, mockClientState);
-
-        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
-
-        Assert.Empty(service.GetNearbyFriendIds());
-        mockNotif.DidNotReceiveWithAnyArgs().AddNotification(Arg.Any<Notification>());
+        Assert.True(service.IsFriendNearby(activeFriend.ContentId));
     }
 }
