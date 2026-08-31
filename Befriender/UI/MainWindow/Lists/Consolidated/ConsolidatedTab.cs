@@ -2,6 +2,7 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
@@ -27,8 +28,9 @@ public class ConsolidatedTab : AbstractListTab {
         ICharacterGroupRepository groupRepository,
         ICharacterTagRepository tagRepository,
         ListToolbarComponent toolbarComponent,
-        CharacterProfilePanelComponent profilePanelComponent)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent) {
+        CharacterProfilePanelComponent profilePanelComponent,
+        IConfigurationService configurationService)
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService) {
     }
 
     protected override IEnumerable<Character> GetBaseCharacterList() {

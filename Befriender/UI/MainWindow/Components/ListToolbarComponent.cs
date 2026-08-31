@@ -7,17 +7,16 @@ using Dalamud.Interface.Components;
 
 public class ListToolbarComponent {
     private ILocalizationService loc;
-    private bool isFiltersExpanded = false;
 
     public ListToolbarComponent(ILocalizationService loc) {
         this.loc = loc;
     }
 
-    public bool Draw(ref bool showOnlineOnly, ref bool showNearbyOnly, ref bool groupByGroups, ref string searchQuery, bool showOnlineCheckbox) {
+    public bool Draw(ref bool showOnlineOnly, ref bool showNearbyOnly, ref bool groupByGroups, ref string searchQuery, ref bool isFiltersExpanded, bool showOnlineCheckbox) {
         bool forceRefresh = false;
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Filter)) {
-            this.isFiltersExpanded = !this.isFiltersExpanded;
+            isFiltersExpanded = !isFiltersExpanded;
         }
 
         if (ImGui.IsItemHovered()) {
@@ -31,29 +30,25 @@ public class ListToolbarComponent {
             forceRefresh = true;
         }
 
-        if (this.isFiltersExpanded) {
+        if (isFiltersExpanded) {
             ImGui.Spacing();
 
-            // Calculate the absolute right edge of the visible window content
             float windowVisibleX2 = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
             float styleSpacingX = ImGui.GetStyle().ItemSpacing.X;
             float checkboxSquareSize = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X;
 
             bool isFirstItemOnLine = true;
 
-            // Local helper function to draw checkboxes with robust auto-wrapping capabilities
             void DrawWrappingCheckbox(string label, ref bool value) {
                 float itemWidth = checkboxSquareSize + ImGui.CalcTextSize(label).X;
 
                 if (!isFirstItemOnLine) {
-                    // Evaluate if the PREVIOUS item's end + spacing + this item's width exceeds the window
                     float nextItemX2 = ImGui.GetItemRectMax().X + styleSpacingX + itemWidth;
 
                     if (nextItemX2 < windowVisibleX2) {
                         ImGui.SameLine();
                     }
                     else {
-                        // Let ImGui naturally move to the next line
                         isFirstItemOnLine = true;
                     }
                 }

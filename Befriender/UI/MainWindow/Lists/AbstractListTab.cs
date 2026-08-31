@@ -2,6 +2,8 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.Configuration.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
@@ -27,6 +29,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected ICharacterActionService actionService;
     protected ICharacterGroupRepository groupRepository;
     protected ICharacterTagRepository tagRepository;
+    protected IConfigurationService configurationService;
     protected ListToolbarComponent toolbarComponent;
     protected CharacterProfilePanelComponent profilePanelComponent;
 
@@ -34,6 +37,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected bool showOnlineOnly = false;
     protected bool showNearbyOnly = false;
     protected bool groupByGroups = false;
+    protected bool isFiltersExpanded = false;
 
     protected Character? selectedCharacter = null;
     protected const float PanelWidth = 300f;
@@ -61,7 +65,8 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ICharacterGroupRepository groupRepository,
         ICharacterTagRepository tagRepository,
         ListToolbarComponent toolbarComponent,
-        CharacterProfilePanelComponent profilePanelComponent) {
+        CharacterProfilePanelComponent profilePanelComponent,
+        IConfigurationService configurationService) {
 
         this.registry = registry;
         this.loc = loc;
@@ -74,6 +79,16 @@ public abstract class AbstractListTab : ITab, IDisposable {
         this.tagRepository = tagRepository;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
+        this.configurationService = configurationService;
+
+        // Initialize state from configuration
+        var config = this.configurationService.GetConfig();
+        if (config.TabStates.TryGetValue(this.InternalName, out var state)) {
+            this.showOnlineOnly = state.ShowOnlineOnly;
+            this.showNearbyOnly = state.ShowNearbyOnly;
+            this.groupByGroups = state.GroupByGroups;
+            this.isFiltersExpanded = state.IsFiltersExpanded;
+        }
 
         this.registry.RegistryUpdated += this.OnRegistryUpdated;
     }
@@ -128,9 +143,29 @@ public abstract class AbstractListTab : ITab, IDisposable {
     public void Draw() {
         var palette = this.themeService.CurrentPalette;
 
-        bool filtersChanged = this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, this.ShowOnlineFilter);
+        bool oldOnline = this.showOnlineOnly;
+        bool oldNearby = this.showNearbyOnly;
+        bool oldGroup = this.groupByGroups;
+        bool oldExpanded = this.isFiltersExpanded;
 
-        if (filtersChanged || this.requiresListRebuild) {
+        bool listNeedsRefresh = this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, ref this.isFiltersExpanded, this.ShowOnlineFilter);
+
+        // Disconnect I/O configuration saving from search query keystrokes
+        if (oldOnline != this.showOnlineOnly || oldNearby != this.showNearbyOnly || oldGroup != this.groupByGroups || oldExpanded != this.isFiltersExpanded) {
+            var config = this.configurationService.GetConfig();
+            if (!config.TabStates.TryGetValue(this.InternalName, out var state)) {
+                state = new TabState();
+                config.TabStates[this.InternalName] = state;
+            }
+
+            state.ShowOnlineOnly = this.showOnlineOnly;
+            state.ShowNearbyOnly = this.showNearbyOnly;
+            state.GroupByGroups = this.groupByGroups;
+            state.IsFiltersExpanded = this.isFiltersExpanded;
+            this.configurationService.Save();
+        }
+
+        if (listNeedsRefresh || this.requiresListRebuild) {
             this.RebuildCache();
             this.requiresListRebuild = false;
         }
@@ -307,7 +342,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         ImGui.Text(isDeleted ? this.loc.Translate("Profile_DeletedCharacter") : character.Name);
 
-        // NOUVEAU: Affichage de l'icône de cloche pour les alertes actives
         if (character.IsTrackedForNotifications) {
             ImGui.SameLine();
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);

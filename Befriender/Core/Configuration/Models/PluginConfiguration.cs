@@ -3,6 +3,7 @@
 using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
 using System;
+using System.Collections.Generic;
 
 [Serializable]
 public class PluginConfiguration : IPluginConfiguration {
@@ -18,7 +19,7 @@ public class PluginConfiguration : IPluginConfiguration {
     public string SelectedThemeName { get; set; } = "Dark";
 
     public bool IsProfilePanelOpen { get; set; } = false;
-    public bool GroupByCustomGroups { get; set; } = false;
+    public bool GroupByCustomGroups { get; set; } = false; // Legacy fallback
 
     public VirtualKey Hotkey { get; set; } = 0;
     public bool HotkeyCtrl { get; set; } = false;
@@ -28,4 +29,6 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool EnableProximityDetection { get; set; } = true;
     public bool NotifyOnNearbyFriends { get; set; } = true;
     public bool NotifyOnNearbyArchived { get; set; } = false;
+
+    public Dictionary<string, TabState> TabStates { get; set; } = new();
 }
