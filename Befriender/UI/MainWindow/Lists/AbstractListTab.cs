@@ -106,6 +106,7 @@ public abstract class AbstractListTab : ITab {
                 if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
+
                 if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
@@ -146,7 +147,7 @@ public abstract class AbstractListTab : ITab {
                     var unassignedChars = charactersList.Where(c => c.CustomGroupId == null).ToList();
                     if (unassignedChars.Count > 0) {
                         ImGui.TableNextRow();
-                        ImGui.TableNextColumn();
+                        ImGui.TableSetColumnIndex(1); // On se place dans la colonne du Nom pour l'accordéon
                         if (ImGui.TreeNodeEx($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
                             foreach (var character in unassignedChars) {
                                 this.DrawCharacterRow(character, palette, textOffsetY);
@@ -162,7 +163,7 @@ public abstract class AbstractListTab : ITab {
                         }
 
                         ImGui.TableNextRow();
-                        ImGui.TableNextColumn();
+                        ImGui.TableSetColumnIndex(1);
                         if (ImGui.TreeNodeEx($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
                             foreach (var character in groupChars) {
                                 this.DrawCharacterRow(character, palette, textOffsetY);
@@ -225,6 +226,7 @@ public abstract class AbstractListTab : ITab {
             if (actions.Count == 0) {
                 ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
             }
+
             foreach (var action in actions) {
                 if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
                     action.Execute(character);
@@ -281,6 +283,7 @@ public abstract class AbstractListTab : ITab {
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
             }
+
             ImGui.SameLine();
         }
 
@@ -314,6 +317,7 @@ public abstract class AbstractListTab : ITab {
                     if (ImGui.IsItemHovered()) {
                         ImGui.SetTooltip(jobAbbr);
                     }
+
                     iconDrawn = true;
                 }
             }
