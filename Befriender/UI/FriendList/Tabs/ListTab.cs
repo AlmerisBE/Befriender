@@ -13,7 +13,7 @@ using System.Linq;
 public class ListTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
     private FriendListTableComponent tableComponent;
-    private FriendProfilePanelComponent profilePanelComponent;
+    private CharacterProfilePanelComponent profilePanelComponent;
     private ListToolbarComponent toolbarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
@@ -31,7 +31,7 @@ public class ListTab : ITab, IDisposable {
     public string Name => this.loc.Translate("Tab_List");
     public bool IsProfilePanelOpen => this.selectedFriend != null;
 
-    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, ListToolbarComponent toolbarComponent, ILocalizationService loc, IConfigurationService configurationService, RemoveConfirmationModalComponent removeConfirmationModal) {
+    public ListTab(IFriendRepository friendRepository, FriendListTableComponent tableComponent, CharacterProfilePanelComponent profilePanelComponent, ListToolbarComponent toolbarComponent, ILocalizationService loc, IConfigurationService configurationService, RemoveConfirmationModalComponent removeConfirmationModal) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;

@@ -1,8 +1,8 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
-using Befriender.Core.Actions.Contracts;
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Theme.Contracts;
@@ -14,22 +14,31 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-public class FriendProfilePanelComponent {
+public class CharacterProfilePanelComponent {
     private IGameDataService gameDataService;
-    private IFriendRepository friendRepository;
+    private ICharacterRegistry characterRegistry;
     private ILocalizationService loc;
-    private IFriendActionService actionService;
+    private ICharacterActionService actionService;
     private ITextureProvider textureProvider;
     private IFriendGroupRepository groupRepository;
     private IFriendTagRepository tagRepository;
     private IThemeService themeService;
 
     private string notesBuffer = string.Empty;
-    private ulong currentFriendId = 0;
+    private ulong currentCharacterId = 0;
 
-    public FriendProfilePanelComponent(IGameDataService gameDataService, IFriendRepository friendRepository, ILocalizationService loc, IFriendActionService actionService, ITextureProvider textureProvider, IFriendGroupRepository groupRepository, IFriendTagRepository tagRepository, IThemeService themeService) {
+    public CharacterProfilePanelComponent(
+        IGameDataService gameDataService,
+        ICharacterRegistry characterRegistry,
+        ILocalizationService loc,
+        ICharacterActionService actionService,
+        ITextureProvider textureProvider,
+        IFriendGroupRepository groupRepository,
+        IFriendTagRepository tagRepository,
+        IThemeService themeService) {
+
         this.gameDataService = gameDataService;
-        this.friendRepository = friendRepository;
+        this.characterRegistry = characterRegistry;
         this.loc = loc;
         this.actionService = actionService;
         this.textureProvider = textureProvider;
@@ -38,21 +47,22 @@ public class FriendProfilePanelComponent {
         this.themeService = themeService;
     }
 
-    public void Draw(float panelWidth, FriendProfile friend, Action onClose) {
+    public void Draw(float panelWidth, Character character, Action onClose) {
         // Outer child: defines the borders and the overall panel space
         if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, 0), true)) {
-            if (this.currentFriendId != friend.ContentId) {
-                this.currentFriendId = friend.ContentId;
-                this.notesBuffer = friend.Notes ?? string.Empty;
+            if (this.currentCharacterId != character.ContentId) {
+                this.currentCharacterId = character.ContentId;
+                this.notesBuffer = character.Notes ?? string.Empty;
             }
 
             // Pinned Header
-            ImGui.TextUnformatted(string.IsNullOrEmpty(friend.Name) ? this.loc.Translate("Profile_DeletedCharacter") : friend.Name);
+            bool isDeleted = string.IsNullOrEmpty(character.Name);
+            ImGui.TextUnformatted(isDeleted ? this.loc.Translate("Profile_DeletedCharacter") : character.Name);
 
             float closeButtonSize = ImGui.GetFrameHeight();
             ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - closeButtonSize);
 
-            int closeBtnId = unchecked("ClosePanel".GetHashCode() ^ friend.ContentId.GetHashCode());
+            int closeBtnId = unchecked("ClosePanel".GetHashCode() ^ character.ContentId.GetHashCode());
             if (ImGuiComponents.IconButton(closeBtnId, FontAwesomeIcon.Times)) {
                 onClose();
             }
@@ -64,17 +74,17 @@ public class FriendProfilePanelComponent {
                 ImGui.Spacing();
 
                 // --- Actions ---
-                var actions = this.actionService.GetAvailableActions(friend);
+                var actions = this.actionService.GetAvailableActions(character);
                 if (actions.Count > 0) {
                     var style = ImGui.GetStyle();
                     float windowVisibleX2 = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
 
                     for (int i = 0; i < actions.Count; i++) {
                         var action = actions[i];
-                        int buttonId = unchecked((int)action.Icon ^ friend.ContentId.GetHashCode());
+                        int buttonId = unchecked((int)action.Icon ^ character.ContentId.GetHashCode());
 
                         if (ImGuiComponents.IconButton(buttonId, action.Icon)) {
-                            action.Execute(friend);
+                            action.Execute(character);
                         }
 
                         if (ImGui.IsItemHovered()) {
@@ -98,44 +108,43 @@ public class FriendProfilePanelComponent {
                 groupNames.Insert(0, this.loc.Translate("Group_None"));
 
                 int currentIndex = 0;
-                if (friend.CustomGroupId.HasValue) {
-                    var idx = groups.FindIndex(g => g.Id == friend.CustomGroupId.Value);
+                if (character.CustomGroupId.HasValue) {
+                    var idx = groups.FindIndex(g => g.Id == character.CustomGroupId.Value);
                     if (idx >= 0) {
                         currentIndex = idx + 1;
                     }
                 }
 
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                if (ImGui.Combo($"##groupSelect_{friend.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
-                    friend.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
-                    this.friendRepository.Save();
+                if (ImGui.Combo($"##groupSelect_{character.ContentId}", ref currentIndex, groupNames.ToArray(), groupNames.Count)) {
+                    character.CustomGroupId = currentIndex == 0 ? null : groups[currentIndex - 1].Id;
+                    this.characterRegistry.SaveMasterList();
                 }
 
                 var allTags = this.tagRepository.GetTags();
                 if (allTags.Count > 0) {
-                    var assignedTags = allTags.Where(t => friend.Tags.Contains(t.Id)).ToList();
+                    var assignedTags = allTags.Where(t => character.Tags.Contains(t.Id)).ToList();
                     string preview = assignedTags.Count > 0 ? string.Join(", ", assignedTags.Select(t => t.Name)) : this.loc.Translate("Profile_SelectTags");
 
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    if (ImGui.BeginCombo($"##tagSelect_{friend.ContentId}", preview)) {
+                    if (ImGui.BeginCombo($"##tagSelect_{character.ContentId}", preview)) {
                         bool tagsChanged = false;
 
                         foreach (var tag in allTags) {
-                            bool isSelected = friend.Tags.Contains(tag.Id);
+                            bool isSelected = character.Tags.Contains(tag.Id);
                             if (ImGui.Checkbox($"{tag.Name}##{tag.Id}", ref isSelected)) {
                                 if (isSelected) {
-                                    friend.Tags.Add(tag.Id);
+                                    character.Tags.Add(tag.Id);
                                 }
                                 else {
-                                    friend.Tags.Remove(tag.Id);
+                                    character.Tags.Remove(tag.Id);
                                 }
-
                                 tagsChanged = true;
                             }
                         }
 
                         if (tagsChanged) {
-                            this.friendRepository.Save();
+                            this.characterRegistry.SaveMasterList();
                         }
 
                         ImGui.EndCombo();
@@ -148,8 +157,8 @@ public class FriendProfilePanelComponent {
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_Status"), ImGuiTreeNodeFlags.DefaultOpen)) {
                     ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
                     ImGui.SameLine();
-                    ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
-                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, friend.CurrentWorldId, friend.HomeWorldId, friend.LocationId);
+                    ulong effectiveMask = character.IsOnline ? character.OnlineStateMask : 0;
+                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, character.CurrentWorldId, character.HomeWorldId, character.LocationId);
 
                     var statusIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
                     var statusIconWrap = this.textureProvider.GetFromGameIcon(statusIconLookup).GetWrapOrDefault();
@@ -163,17 +172,17 @@ public class FriendProfilePanelComponent {
                     }
                     ImGui.Text(statusInfo.Name);
 
-                    string displayLocation = this.gameDataService.GetDisplayLocation(friend.LocationId, friend.CurrentWorldId, friend.HomeWorldId, friend.OnlineStateMask);
+                    string displayLocation = this.gameDataService.GetDisplayLocation(character.LocationId, character.CurrentWorldId, character.HomeWorldId, character.OnlineStateMask);
                     if (string.IsNullOrEmpty(displayLocation) || displayLocation == "0") {
                         displayLocation = this.loc.Translate("Profile_Unknown");
                     }
 
                     ImGui.Text($"{this.loc.Translate("Column_Location")}: {displayLocation}");
 
-                    string lastSeenStr = friend.IsOnline ? this.loc.Translate("Profile_Online") : (friend.LastSeenAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : this.loc.Translate("Profile_DaysAgo", (int)(DateTime.Now - friend.LastSeenAt).TotalDays));
+                    string lastSeenStr = character.IsOnline ? this.loc.Translate("Profile_Online") : (character.LastSeenAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : this.loc.Translate("Profile_DaysAgo", (int)(DateTime.Now - character.LastSeenAt).TotalDays));
 
-                    if (!friend.IsOnline && friend.LastSeenAt != DateTime.MinValue) {
-                        var diff = DateTime.Now - friend.LastSeenAt;
+                    if (!character.IsOnline && character.LastSeenAt != DateTime.MinValue) {
+                        var diff = DateTime.Now - character.LastSeenAt;
                         if (diff.TotalDays < 1 && diff.TotalHours >= 1) {
                             lastSeenStr = this.loc.Translate("Profile_HoursAgo", (int)diff.TotalHours);
                         }
@@ -191,8 +200,8 @@ public class FriendProfilePanelComponent {
                     ImGui.Text($"{this.loc.Translate("Profile_Job")}: ");
                     ImGui.SameLine();
 
-                    if (friend.JobId > 0) {
-                        var jobIconId = this.gameDataService.GetJobIconId(friend.JobId);
+                    if (character.JobId > 0) {
+                        var jobIconId = this.gameDataService.GetJobIconId(character.JobId);
                         if (jobIconId > 0) {
                             var jobIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = jobIconId };
                             var jobIconWrap = this.textureProvider.GetFromGameIcon(jobIconLookup).GetWrapOrDefault();
@@ -206,45 +215,45 @@ public class FriendProfilePanelComponent {
                             }
                         }
                     }
-                    var jobAbbr = friend.JobId > 0 ? this.gameDataService.GetJobAbbreviation(friend.JobId) : this.loc.Translate("Profile_None");
+                    var jobAbbr = character.JobId > 0 ? this.gameDataService.GetJobAbbreviation(character.JobId) : this.loc.Translate("Profile_None");
                     ImGui.Text(jobAbbr);
 
-                    if (friend.Level > 0) {
-                        ImGui.Text($"{this.loc.Translate("Profile_Level")}: {friend.Level}");
+                    if (character.Level > 0) {
+                        ImGui.Text($"{this.loc.Translate("Profile_Level")}: {character.Level}");
                     }
 
-                    string title = this.gameDataService.GetTitleName(friend.TitleId, friend.Gender);
+                    string title = this.gameDataService.GetTitleName(character.TitleId, character.Gender);
                     if (!string.IsNullOrEmpty(title)) {
                         ImGui.Text($"{this.loc.Translate("Profile_Title")}: {title}");
                     }
 
-                    string race = this.gameDataService.GetRaceName(friend.Race, friend.Gender);
-                    string tribe = this.gameDataService.GetTribeName(friend.Tribe, friend.Gender);
+                    string race = this.gameDataService.GetRaceName(character.Race, character.Gender);
+                    string tribe = this.gameDataService.GetTribeName(character.Tribe, character.Gender);
                     if (!string.IsNullOrEmpty(race)) {
                         ImGui.Text($"{this.loc.Translate("Profile_Race")}: {race} ({tribe})");
                     }
 
-                    if (friend.IsFantasiaDetected) {
+                    if (character.IsFantasiaDetected) {
                         ImGui.PushStyleColor(ImGuiCol.Text, this.themeService.CurrentPalette.TextMarkedForRemoval);
                         ImGui.Text(this.loc.Translate("Profile_FantasiaDetected"));
                         ImGui.PopStyleColor();
                         ImGui.SameLine();
 
                         if (ImGuiComponents.IconButton(FontAwesomeIcon.CheckDouble)) {
-                            friend.IsFantasiaDetected = false;
-                            this.friendRepository.Save();
+                            character.IsFantasiaDetected = false;
+                            this.characterRegistry.SaveMasterList();
                         }
                         if (ImGui.IsItemHovered()) {
                             ImGui.SetTooltip(this.loc.Translate("Action_ClearFantasia"));
                         }
                     }
 
-                    string fcName = string.IsNullOrEmpty(friend.FcTag) ? this.loc.Translate("Profile_None") : friend.FcTag;
+                    string fcName = string.IsNullOrEmpty(character.FcTag) ? this.loc.Translate("Profile_None") : character.FcTag;
                     ImGui.Text($"{this.loc.Translate("Profile_FC")}: {fcName}");
 
                     ImGui.Text($"{this.loc.Translate("Profile_GrandCompany")}: ");
                     ImGui.SameLine();
-                    var gcIconId = this.gameDataService.GetGrandCompanyIconId(friend.GrandCompany);
+                    var gcIconId = this.gameDataService.GetGrandCompanyIconId(character.GrandCompany);
                     if (gcIconId > 0) {
                         var gcIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = gcIconId };
                         var gcIconWrap = this.textureProvider.GetFromGameIcon(gcIconLookup).GetWrapOrDefault();
@@ -258,27 +267,38 @@ public class FriendProfilePanelComponent {
                         }
                     }
 
-                    string gcName = friend.GrandCompany > 0 ? this.gameDataService.GetGrandCompanyName(friend.GrandCompany) : this.loc.Translate("Profile_None");
+                    string gcName = character.GrandCompany > 0 ? this.gameDataService.GetGrandCompanyName(character.GrandCompany) : this.loc.Translate("Profile_None");
                     ImGui.Text(gcName);
-                    ImGui.Text($"{this.loc.Translate("Profile_HomeWorld")}: {this.gameDataService.GetWorldName(friend.HomeWorldId)}");
-                    ImGui.Text($"{this.loc.Translate("Profile_ClientLanguages")}: {this.gameDataService.GetClientLanguageString(friend.ClientLanguages)}");
+                    ImGui.Text($"{this.loc.Translate("Profile_HomeWorld")}: {this.gameDataService.GetWorldName(character.HomeWorldId)}");
+                    ImGui.Text($"{this.loc.Translate("Profile_ClientLanguages")}: {this.gameDataService.GetClientLanguageString(character.ClientLanguages)}");
                     ImGui.Spacing();
                 }
 
                 // --- Accordion: System Data ---
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_System"))) {
-                    var dateStr = friend.AddedAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : friend.AddedAt.ToShortDateString();
-                    var locStr = this.gameDataService.GetLocationName(friend.AddedLocationId);
+                    var dateStr = character.AddedAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : character.AddedAt.ToShortDateString();
+                    var locStr = this.gameDataService.GetLocationName(character.AddedLocationId);
                     ImGui.Text($"{this.loc.Translate("Profile_Added")}: {dateStr}");
                     ImGui.Text($"{this.loc.Translate("Profile_MetAt")}: {locStr}");
 
-                    string listStatus = friend.IsCharacterDeleted ? this.loc.Translate("Profile_StatusDeleted") : (friend.IsArchived ? this.loc.Translate("Profile_StatusArchived") : this.loc.Translate("Profile_StatusActive"));
+                    // Dynamic list status deduction based on Domain-Driven Design constraints
+                    string listStatus;
+                    if (isDeleted) {
+                        listStatus = this.loc.Translate("Profile_StatusDeleted");
+                    }
+                    else if (!character.IsActivelyTracked) {
+                        listStatus = this.loc.Translate("Profile_StatusArchived");
+                    }
+                    else {
+                        listStatus = this.loc.Translate("Profile_StatusActive");
+                    }
+
                     ImGui.Text($"{this.loc.Translate("Profile_ListStatus")}: {listStatus}");
 
-                    if (friend.PreviousNames != null && friend.PreviousNames.Count > 0) {
+                    if (character.PreviousNames != null && character.PreviousNames.Count > 0) {
                         ImGui.Spacing();
                         ImGui.TextUnformatted(this.loc.Translate("Section_NameHistory"));
-                        foreach (var oldName in friend.PreviousNames) {
+                        foreach (var oldName in character.PreviousNames) {
                             ImGui.BulletText(oldName);
                         }
                     }
@@ -289,8 +309,8 @@ public class FriendProfilePanelComponent {
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_Notes"), ImGuiTreeNodeFlags.DefaultOpen)) {
                     ImGui.InputTextMultiline("##notes", ref this.notesBuffer, 2048, new Vector2(-1, 100));
                     if (ImGui.IsItemDeactivatedAfterEdit()) {
-                        friend.Notes = this.notesBuffer;
-                        this.friendRepository.Save();
+                        character.Notes = this.notesBuffer;
+                        this.characterRegistry.SaveMasterList();
                     }
                     ImGui.Spacing();
                 }

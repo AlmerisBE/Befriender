@@ -16,4 +16,6 @@ public interface ICharacterRegistry {
     IReadOnlyList<Character> GetAllCharacters();
     IReadOnlyList<Character> GetCharactersBySource(Guid sourceId);
     Character? GetCharacterById(Guid id);
+
+    void RemoveCharacter(Guid id);
 }

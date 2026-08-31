@@ -35,6 +35,8 @@ public class Character {
     public List<string> PreviousNames { get; set; } = new();
     public string Notes { get; set; } = string.Empty;
     public bool IsFantasiaDetected { get; set; }
+    public bool IsMarkedForRemoval { get; set; }
+    public bool IsTrackedForNotifications { get; set; } // Property added for tracking actions
 
     // --- Tracking & Architecture ---
     public HashSet<Guid> ActiveSourceIds { get; set; } = new();

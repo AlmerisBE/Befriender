@@ -26,7 +26,7 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<ListToolbarComponent>();
         services.AddSingleton<FriendListTableComponent>();
         services.AddSingleton<ArchiveTableComponent>();
-        services.AddSingleton<FriendProfilePanelComponent>();
+        services.AddSingleton<CharacterProfilePanelComponent>();
         services.AddSingleton<FriendStatusBarComponent>();
         services.AddSingleton<GroupManagementComponent>();
         services.AddSingleton<TagManagementComponent>();

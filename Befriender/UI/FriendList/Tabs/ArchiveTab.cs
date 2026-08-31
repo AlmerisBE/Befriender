@@ -13,7 +13,7 @@ using System.Linq;
 public class ArchiveTab : ITab, IDisposable {
     private IFriendRepository friendRepository;
     private ArchiveTableComponent tableComponent;
-    private FriendProfilePanelComponent profilePanelComponent;
+    private CharacterProfilePanelComponent profilePanelComponent;
     private ListToolbarComponent toolbarComponent;
     private ILocalizationService loc;
     private IConfigurationService configurationService;
@@ -29,7 +29,7 @@ public class ArchiveTab : ITab, IDisposable {
     public string Name => this.loc.Translate("Tab_Archives");
     public bool IsProfilePanelOpen => this.selectedFriend != null;
 
-    public ArchiveTab(IFriendRepository friendRepository, ArchiveTableComponent tableComponent, FriendProfilePanelComponent profilePanelComponent, ListToolbarComponent toolbarComponent, ILocalizationService loc, IConfigurationService configurationService) {
+    public ArchiveTab(IFriendRepository friendRepository, ArchiveTableComponent tableComponent, CharacterProfilePanelComponent profilePanelComponent, ListToolbarComponent toolbarComponent, ILocalizationService loc, IConfigurationService configurationService) {
         this.friendRepository = friendRepository;
         this.tableComponent = tableComponent;
         this.profilePanelComponent = profilePanelComponent;

@@ -27,7 +27,7 @@ public class FreeCompanyTab : ITab {
     private ITextureProvider textureProvider;
     private IProximityService proximityService;
     private ListToolbarComponent toolbarComponent;
-    private FriendProfilePanelComponent profilePanelComponent;
+    private CharacterProfilePanelComponent profilePanelComponent;
 
     private string searchQuery = string.Empty;
     private bool showOnlineOnly = false;
@@ -51,7 +51,7 @@ public class FreeCompanyTab : ITab {
         ITextureProvider textureProvider,
         IProximityService proximityService,
         ListToolbarComponent toolbarComponent,
-        FriendProfilePanelComponent profilePanelComponent) {
+        CharacterProfilePanelComponent profilePanelComponent) {
 
         this.registry = registry;
         this.fcRepository = fcRepository;

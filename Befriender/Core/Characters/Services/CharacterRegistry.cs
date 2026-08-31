@@ -173,4 +173,13 @@ public class CharacterRegistry : ICharacterRegistry {
             return this.masterList.FirstOrDefault(c => c.Id == id);
         }
     }
+
+    public void RemoveCharacter(Guid id) {
+        lock (this.lockObj) {
+            this.masterList.RemoveAll(c => c.Id == id);
+        }
+
+        this.RegistryUpdated?.Invoke();
+    }
+
 }
