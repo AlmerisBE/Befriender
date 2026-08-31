@@ -2,7 +2,6 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
-using Befriender.Core.Friends.Contracts;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Theme.Contracts;
@@ -20,8 +19,8 @@ public class CharacterProfilePanelComponent {
     private ILocalizationService loc;
     private ICharacterActionService actionService;
     private ITextureProvider textureProvider;
-    private IFriendGroupRepository groupRepository;
-    private IFriendTagRepository tagRepository;
+    private ICharacterGroupRepository groupRepository;
+    private ICharacterTagRepository tagRepository;
     private IThemeService themeService;
 
     private string notesBuffer = string.Empty;
@@ -33,8 +32,8 @@ public class CharacterProfilePanelComponent {
         ILocalizationService loc,
         ICharacterActionService actionService,
         ITextureProvider textureProvider,
-        IFriendGroupRepository groupRepository,
-        IFriendTagRepository tagRepository,
+        ICharacterGroupRepository groupRepository,
+        ICharacterTagRepository tagRepository,
         IThemeService themeService) {
 
         this.gameDataService = gameDataService;

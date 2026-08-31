@@ -1,7 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
 using Befriender.Core.Characters.Contracts;
-using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -11,7 +10,7 @@ using System.Linq;
 using System.Numerics;
 
 public class GroupManagementComponent {
-    private IFriendGroupRepository groupRepository;
+    private ICharacterGroupRepository groupRepository;
     private ICharacterRegistry registry;
     private ILocalizationService loc;
 
@@ -22,7 +21,7 @@ public class GroupManagementComponent {
     public string Name => this.loc.Translate("Tab_Groups");
     public bool IsProfilePanelOpen => false;
 
-    public GroupManagementComponent(IFriendGroupRepository groupRepository, ICharacterRegistry registry, ILocalizationService loc) {
+    public GroupManagementComponent(ICharacterGroupRepository groupRepository, ICharacterRegistry registry, ILocalizationService loc) {
         this.groupRepository = groupRepository;
         this.registry = registry;
         this.loc = loc;

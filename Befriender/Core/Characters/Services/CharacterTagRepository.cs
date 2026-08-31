@@ -1,13 +1,13 @@
-﻿namespace Befriender.Core.Friends.Services;
+﻿namespace Befriender.Core.Characters.Services;
 
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class FriendTagRepository : IFriendTagRepository {
-    private List<FriendTag> tags = new();
+public class CharacterTagRepository : ICharacterTagRepository {
+    private List<CharacterTag> tags = new();
     private readonly object lockObj = new();
     private ICharacterTagStorage storage;
     private ICharacterIdentityService identityService;
@@ -15,7 +15,7 @@ public class FriendTagRepository : IFriendTagRepository {
 
     public event Action? CacheCleared;
 
-    public FriendTagRepository(ICharacterTagStorage storage, ICharacterIdentityService identityService) {
+    public CharacterTagRepository(ICharacterTagStorage storage, ICharacterIdentityService identityService) {
         this.storage = storage;
         this.identityService = identityService;
     }
@@ -37,7 +37,7 @@ public class FriendTagRepository : IFriendTagRepository {
         return trimmed.Length > 30 ? trimmed[..30] : trimmed;
     }
 
-    public IReadOnlyList<FriendTag> GetTags() {
+    public IReadOnlyList<CharacterTag> GetTags() {
         lock (this.lockObj) {
             this.EnsureLoaded();
             return this.tags.ToList();
@@ -57,12 +57,12 @@ public class FriendTagRepository : IFriendTagRepository {
                 return;
             }
 
-            this.tags.Add(new FriendTag { Name = sanitized });
+            this.tags.Add(new CharacterTag { Name = sanitized });
             this.Save();
         }
     }
 
-    public void UpdateTag(FriendTag tag) {
+    public void UpdateTag(CharacterTag tag) {
         var sanitized = this.SanitizeTagName(tag.Name);
         if (string.IsNullOrEmpty(sanitized)) {
             return;
@@ -72,7 +72,6 @@ public class FriendTagRepository : IFriendTagRepository {
             this.EnsureLoaded();
             var existing = this.tags.FirstOrDefault(t => t.Id == tag.Id);
             if (existing != null) {
-                // Check if another tag already uses this name
                 if (this.tags.Any(t => t.Id != tag.Id && t.Name.Equals(sanitized, StringComparison.OrdinalIgnoreCase))) {
                     return;
                 }
@@ -99,7 +98,7 @@ public class FriendTagRepository : IFriendTagRepository {
 
     public void ClearCache() {
         lock (this.lockObj) {
-            this.tags = new List<FriendTag>();
+            this.tags = new List<CharacterTag>();
             this.loadedCharacterId = string.Empty;
         }
         this.CacheCleared?.Invoke();

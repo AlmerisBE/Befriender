@@ -10,7 +10,7 @@ using Xunit;
 public class FriendTagRepositoryTests {
     [Fact]
     public void AddTag_TruncatesNameTo30CharactersAndSaves() {
-        var mockStorage = Substitute.For<IFriendTagStorage>();
+        var mockStorage = Substitute.For<ICharacterTagStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
@@ -30,7 +30,7 @@ public class FriendTagRepositoryTests {
 
     [Fact]
     public void AddTag_IgnoresEmptyOrWhitespaceStrings() {
-        var mockStorage = Substitute.For<IFriendTagStorage>();
+        var mockStorage = Substitute.For<ICharacterTagStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
@@ -48,7 +48,7 @@ public class FriendTagRepositoryTests {
 
     [Fact]
     public void AddTag_PreventsDuplicateTagNamesCaseInsensitive() {
-        var mockStorage = Substitute.For<IFriendTagStorage>();
+        var mockStorage = Substitute.For<ICharacterTagStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         var existingTags = new List<FriendTag> { new FriendTag { Name = "RaidStatic" } };

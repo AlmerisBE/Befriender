@@ -1,10 +1,10 @@
 ﻿namespace Befriender.Core.Friends;
 
 using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Storage;
 using Befriender.Core.Framework;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Friends.Services;
-using Befriender.Core.Friends.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 public class FriendsFeature : IFeatureModule {
@@ -12,7 +12,7 @@ public class FriendsFeature : IFeatureModule {
         services.AddSingleton<ICharacterIdentityService, CharacterIdentityService>();
 
         // Removed obsolete IFriendStorage and JsonFriendStorage registrations
-        services.AddSingleton<IFriendGroupStorage, JsonFriendGroupStorage>();
+        services.AddSingleton<Contracts.ICharacterGroupStorage, JsonCharacterGroupStorage>();
 
         services.AddSingleton<FriendRepository>();
         services.AddSingleton<IFriendRepository>(provider => provider.GetRequiredService<FriendRepository>());
@@ -20,7 +20,7 @@ public class FriendsFeature : IFeatureModule {
 
         services.AddSingleton<IFriendGroupRepository, FriendGroupRepository>();
         services.AddSingleton<IFriendTagRepository, FriendTagRepository>();
-        services.AddSingleton<IFriendTagStorage, JsonFriendTagStorage>();
+        services.AddSingleton<Contracts.ICharacterTagStorage, JsonCharacterTagStorage>();
 
         services.AddSingleton<FriendSyncService>();
         services.AddSingleton<IFriendSyncService>(provider => provider.GetRequiredService<FriendSyncService>());

@@ -1,16 +1,16 @@
-﻿namespace Befriender.Core.Friends.Storage;
+﻿namespace Befriender.Core.Characters.Storage;
 
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using Dalamud.Plugin;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-public class JsonFriendGroupStorage : IFriendGroupStorage {
+public class JsonCharacterGroupStorage : ICharacterGroupStorage {
     private IDalamudPluginInterface pluginInterface;
 
-    public JsonFriendGroupStorage(IDalamudPluginInterface pluginInterface) {
+    public JsonCharacterGroupStorage(IDalamudPluginInterface pluginInterface) {
         this.pluginInterface = pluginInterface;
     }
 
@@ -18,26 +18,26 @@ public class JsonFriendGroupStorage : IFriendGroupStorage {
         return Path.Combine(this.pluginInterface.ConfigDirectory.FullName, $"groups_{characterId}.json");
     }
 
-    public IReadOnlyList<FriendGroup> Load(string characterId) {
+    public IReadOnlyList<CharacterGroup> Load(string characterId) {
         if (string.IsNullOrEmpty(characterId)) {
-            return new List<FriendGroup>();
+            return new List<CharacterGroup>();
         }
 
         var filePath = this.GetFilePath(characterId);
         if (!File.Exists(filePath)) {
-            return new List<FriendGroup>();
+            return new List<CharacterGroup>();
         }
 
         try {
             var json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<List<FriendGroup>>(json) ?? new List<FriendGroup>();
+            return JsonSerializer.Deserialize<List<CharacterGroup>>(json) ?? new List<CharacterGroup>();
         }
         catch {
-            return new List<FriendGroup>();
+            return new List<CharacterGroup>();
         }
     }
 
-    public void Save(string characterId, IEnumerable<FriendGroup> groups) {
+    public void Save(string characterId, IEnumerable<CharacterGroup> groups) {
         if (string.IsNullOrEmpty(characterId)) {
             return;
         }

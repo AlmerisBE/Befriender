@@ -11,7 +11,7 @@ using Xunit;
 public class FriendGroupRepositoryTests {
     [Fact]
     public void AddGroup_CreatesNewGroupAndSaves() {
-        var mockStorage = Substitute.For<IFriendGroupStorage>();
+        var mockStorage = Substitute.For<ICharacterGroupStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         mockIdentity.GetCurrentCharacterId().Returns("Almeris_33");
@@ -29,7 +29,7 @@ public class FriendGroupRepositoryTests {
 
     [Fact]
     public void RemoveGroup_DeletesGroupAndSaves() {
-        var mockStorage = Substitute.For<IFriendGroupStorage>();
+        var mockStorage = Substitute.For<ICharacterGroupStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         var groupId = Guid.NewGuid();
@@ -49,7 +49,7 @@ public class FriendGroupRepositoryTests {
 
     [Fact]
     public void MoveGroupUp_SwapsWithPreviousElementAndSaves() {
-        var mockStorage = Substitute.For<IFriendGroupStorage>();
+        var mockStorage = Substitute.For<ICharacterGroupStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         var id1 = Guid.NewGuid();
@@ -74,7 +74,7 @@ public class FriendGroupRepositoryTests {
 
     [Fact]
     public void MoveGroupDown_SwapsWithNextElementAndSaves() {
-        var mockStorage = Substitute.For<IFriendGroupStorage>();
+        var mockStorage = Substitute.For<ICharacterGroupStorage>();
         var mockIdentity = Substitute.For<ICharacterIdentityService>();
 
         var id1 = Guid.NewGuid();

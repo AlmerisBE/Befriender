@@ -9,10 +9,20 @@ using Microsoft.Extensions.DependencyInjection;
 
 public class CharactersFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
+        // Identity
+        services.AddSingleton<ICharacterIdentityService, CharacterIdentityService>();
+
         // Core Registry & Storage
         services.AddSingleton<CharacterRegistry>();
         services.AddSingleton<ICharacterRegistry>(provider => provider.GetRequiredService<CharacterRegistry>());
         services.AddSingleton<ICharacterStorage, JsonCharacterStorage>();
+
+        // Groups & Tags
+        services.AddSingleton<ICharacterGroupStorage, JsonCharacterGroupStorage>();
+        services.AddSingleton<ICharacterGroupRepository, CharacterGroupRepository>();
+
+        services.AddSingleton<ICharacterTagStorage, JsonCharacterTagStorage>();
+        services.AddSingleton<ICharacterTagRepository, CharacterTagRepository>();
 
         // Actions Consolidation
         services.AddSingleton<ICharacterAction, CopyNameAction>();

@@ -1,7 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Components;
 
 using Befriender.Core.Characters.Contracts;
-using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -10,12 +9,12 @@ using System.Linq;
 using System.Numerics;
 
 public class TagManagementComponent {
-    private IFriendTagRepository tagRepository;
+    private ICharacterTagRepository tagRepository;
     private ICharacterRegistry registry;
     private ILocalizationService loc;
     private string newTagBuffer = string.Empty;
 
-    public TagManagementComponent(IFriendTagRepository tagRepository, ICharacterRegistry registry, ILocalizationService loc) {
+    public TagManagementComponent(ICharacterTagRepository tagRepository, ICharacterRegistry registry, ILocalizationService loc) {
         this.tagRepository = tagRepository;
         this.registry = registry;
         this.loc = loc;

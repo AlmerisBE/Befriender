@@ -1,13 +1,13 @@
-﻿namespace Befriender.Core.Friends.Services;
+﻿namespace Befriender.Core.Characters.Services;
 
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class FriendGroupRepository : IFriendGroupRepository {
-    private List<FriendGroup> groups = new();
+public class CharacterGroupRepository : ICharacterGroupRepository {
+    private List<CharacterGroup> groups = new();
     private readonly object lockObj = new();
     private ICharacterGroupStorage storage;
     private ICharacterIdentityService identityService;
@@ -15,7 +15,7 @@ public class FriendGroupRepository : IFriendGroupRepository {
 
     public event Action? CacheCleared;
 
-    public FriendGroupRepository(ICharacterGroupStorage storage, ICharacterIdentityService identityService) {
+    public CharacterGroupRepository(ICharacterGroupStorage storage, ICharacterIdentityService identityService) {
         this.storage = storage;
         this.identityService = identityService;
     }
@@ -28,7 +28,7 @@ public class FriendGroupRepository : IFriendGroupRepository {
         }
     }
 
-    public IReadOnlyList<FriendGroup> GetGroups() {
+    public IReadOnlyList<CharacterGroup> GetGroups() {
         lock (this.lockObj) {
             this.EnsureLoaded();
             return this.groups.ToList();
@@ -38,12 +38,12 @@ public class FriendGroupRepository : IFriendGroupRepository {
     public void AddGroup(string title) {
         lock (this.lockObj) {
             this.EnsureLoaded();
-            this.groups.Add(new FriendGroup { Title = title });
+            this.groups.Add(new CharacterGroup { Title = title });
             this.Save();
         }
     }
 
-    public void UpdateGroup(FriendGroup group) {
+    public void UpdateGroup(CharacterGroup group) {
         lock (this.lockObj) {
             this.EnsureLoaded();
             var existing = this.groups.FirstOrDefault(g => g.Id == group.Id);
@@ -97,7 +97,7 @@ public class FriendGroupRepository : IFriendGroupRepository {
 
     public void ClearCache() {
         lock (this.lockObj) {
-            this.groups = new List<FriendGroup>();
+            this.groups = new List<CharacterGroup>();
             this.loadedCharacterId = string.Empty;
         }
         this.CacheCleared?.Invoke();
