@@ -81,7 +81,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
         this.profilePanelComponent = profilePanelComponent;
         this.configurationService = configurationService;
 
-        // Initialize state from configuration
         var config = this.configurationService.GetConfig();
         if (config.TabStates.TryGetValue(this.InternalName, out var state)) {
             this.showOnlineOnly = state.ShowOnlineOnly;
@@ -150,7 +149,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         bool listNeedsRefresh = this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, ref this.isFiltersExpanded, this.ShowOnlineFilter);
 
-        // Disconnect I/O configuration saving from search query keystrokes
         if (oldOnline != this.showOnlineOnly || oldNearby != this.showNearbyOnly || oldGroup != this.groupByGroups || oldExpanded != this.isFiltersExpanded) {
             var config = this.configurationService.GetConfig();
             if (!config.TabStates.TryGetValue(this.InternalName, out var state)) {
@@ -218,17 +216,19 @@ public abstract class AbstractListTab : ITab, IDisposable {
     }
 
     private void DrawCharacterTable(string tableId, IEnumerable<Character> characters, ThemePalette palette, float textOffsetY, bool useScrollY) {
-        var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable;
+        // NOUVEAU : Ajout de ImGuiTableFlags.Sortable
+        var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable | ImGuiTableFlags.Sortable;
 
         if (useScrollY) {
             flags |= ImGuiTableFlags.ScrollY;
         }
 
         if (ImGui.BeginTable(tableId, 4, flags)) {
-            ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn(this.loc.Translate("Column_Name"));
-            ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn(this.loc.Translate("Column_Location"));
+            // NOUVEAU : Attribution d'un ID d'utilisateur pour chaque colonne via le 4ème paramètre pour le moteur de tri
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.DefaultSort, 0f, 0u);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Name"), ImGuiTableColumnFlags.None, 0f, 1u);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed, 0f, 2u);
+            ImGui.TableSetupColumn(this.loc.Translate("Column_Location"), ImGuiTableColumnFlags.None, 0f, 3u);
 
             if (useScrollY) {
                 ImGui.TableSetupScrollFreeze(0, 1);
@@ -236,7 +236,24 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
             ImGui.TableHeadersRow();
 
-            foreach (var character in characters) {
+            // NOUVEAU : Lecture des spécifications de tri fournies par l'utilisateur (via un clic sur l'en-tête)
+            var sortSpecs = ImGui.TableGetSortSpecs();
+            IEnumerable<Character> sortedCharacters = characters;
+
+            if (sortSpecs.SpecsCount > 0) {
+                var spec = sortSpecs.Specs;
+                bool isAscending = spec.SortDirection == ImGuiSortDirection.Ascending;
+
+                sortedCharacters = spec.ColumnUserID switch {
+                    0u => isAscending ? characters.OrderBy(c => c.IsOnline).ThenBy(c => c.Name) : characters.OrderByDescending(c => c.IsOnline).ThenBy(c => c.Name),
+                    1u => isAscending ? characters.OrderBy(c => c.Name) : characters.OrderByDescending(c => c.Name),
+                    2u => isAscending ? characters.OrderBy(c => c.JobId).ThenBy(c => c.Name) : characters.OrderByDescending(c => c.JobId).ThenBy(c => c.Name),
+                    3u => isAscending ? characters.OrderBy(c => c.LocationId).ThenBy(c => c.Name) : characters.OrderByDescending(c => c.LocationId).ThenBy(c => c.Name),
+                    _ => characters
+                };
+            }
+
+            foreach (var character in sortedCharacters) {
                 this.DrawCharacterRow(character, palette, textOffsetY);
             }
 
