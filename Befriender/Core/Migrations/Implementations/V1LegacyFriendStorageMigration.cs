@@ -68,7 +68,7 @@ public class V1LegacyFriendStorageMigration : IMigration {
                 // In the new DDD architecture, a character is considered "Archived" if they are not actively tracked.
                 // If the legacy profile was not archived or missing, we link them to the FriendList source.
                 if (!profile.IsArchived && !profile.IsMissing) {
-                    character.ActiveSourceIds.Add(Guid.Parse("S1000000-0000-0000-0000-000000000001"));
+                    character.ActiveSourceIds.Add(Guid.Parse("51000000-0000-0000-0000-000000000001"));
                 }
 
                 characters.Add(character);

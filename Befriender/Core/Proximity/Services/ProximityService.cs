@@ -17,7 +17,7 @@ public class ProximityService : IProximityService, IDisposable {
     private ILocalizationService loc;
 
     private HashSet<Guid> currentlyNearbyIds = new();
-    private readonly Guid proximitySourceId = Guid.Parse("S1000000-0000-0000-0000-000000000003");
+    private readonly Guid proximitySourceId = Guid.Parse("51000000-0000-0000-0000-000000000003");
 
     public ProximityService(ICharacterRegistry registry, IConfigurationService configService, INotificationManager notificationManager, ILocalizationService loc) {
         this.registry = registry;

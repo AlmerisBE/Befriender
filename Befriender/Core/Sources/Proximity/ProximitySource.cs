@@ -16,7 +16,7 @@ public class ProximitySource : ICharacterSource, IDisposable {
     private DateTime lastScanTime = DateTime.MinValue;
     private readonly TimeSpan scanInterval = TimeSpan.FromSeconds(2); // Scan every 2 seconds
 
-    public Guid SourceId { get; } = Guid.Parse("S1000000-0000-0000-0000-000000000003");
+    public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000003");
     public string Name => "Proximity";
     public int Priority => 1; // Lowest priority, just used for "nearby" flags and current location updates
 

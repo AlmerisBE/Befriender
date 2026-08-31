@@ -25,7 +25,7 @@ public class ProximityServiceTests {
 
         var service = new ProximityService(mockRegistry, mockConfig, mockNotif, mockLoc);
 
-        var proximitySourceId = Guid.Parse("S1000000-0000-0000-0000-000000000003");
+        var proximitySourceId = Guid.Parse("51000000-0000-0000-0000-000000000003");
         var activeFriend = new Character { Id = Guid.NewGuid(), Name = "Alice" };
         activeFriend.ActiveSourceIds.Add(proximitySourceId);
         activeFriend.ActiveSourceIds.Add(Guid.NewGuid()); // Makes IsActivelyTracked = true

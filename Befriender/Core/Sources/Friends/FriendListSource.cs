@@ -16,7 +16,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
     private List<Character> currentState = new();
 
     // Implementation of ICharacterSource
-    public Guid SourceId { get; } = Guid.Parse("S1000000-0000-0000-0000-000000000001");
+    public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000001");
     public string Name => "FriendList";
     public int Priority => 10; // High priority for manual relationships
 

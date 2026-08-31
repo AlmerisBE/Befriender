@@ -21,7 +21,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     private readonly TimeSpan syncInterval = TimeSpan.FromSeconds(60);
 
-    public Guid SourceId { get; } = Guid.Parse("S1000000-0000-0000-0000-000000000002");
+    public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000002");
     public string Name => "FreeCompany";
     public int Priority => 5;
 
