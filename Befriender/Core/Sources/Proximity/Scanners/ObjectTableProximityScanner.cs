@@ -17,14 +17,23 @@ public class ObjectTableProximityScanner : IProximityScanner {
 
     public IEnumerable<Character> ScanNearbyPlayers() {
         var nearbyPlayers = new List<Character>();
-        uint currentTerritory = this.clientState.TerritoryType;
+        var localPlayer = this.objectTable.LocalPlayer;
 
-        foreach (var obj in this.objectTable) {
-            if (obj is IPlayerCharacter player && player.HomeWorld.RowId > 0 && !string.IsNullOrEmpty(player.Name.TextValue)) {
+        if (localPlayer == null) {
+            return nearbyPlayers;
+        }
+
+        uint currentTerritory = this.clientState.TerritoryType;
+        uint localCurrentWorld = localPlayer.CurrentWorld.RowId;
+
+        for (int i = 0; i < this.objectTable.Length; i++) {
+            var obj = this.objectTable[i];
+
+            if (obj is IPlayerCharacter player && player.Address != localPlayer.Address && player.HomeWorld.RowId > 0 && !string.IsNullOrEmpty(player.Name.TextValue)) {
                 nearbyPlayers.Add(new Character {
                     Name = player.Name.TextValue,
                     HomeWorldId = player.HomeWorld.RowId,
-                    CurrentWorldId = player.CurrentWorld.RowId,
+                    CurrentWorldId = localCurrentWorld,
                     JobId = (byte)player.ClassJob.RowId,
                     Level = player.Level,
                     LocationId = currentTerritory,
