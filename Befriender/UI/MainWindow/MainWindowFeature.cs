@@ -12,7 +12,6 @@ using Befriender.UI.MainWindow.Lists.Friends;
 using Befriender.UI.MainWindow.Providers;
 using Befriender.UI.MainWindow.Services;
 using Befriender.UI.MainWindow.Tabs;
-using Befriender.UI.MainWindow.Windows;
 using Dalamud.Interface.Windowing;
 using Microsoft.Extensions.DependencyInjection;
 

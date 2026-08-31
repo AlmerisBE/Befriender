@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.MainWindow.Windows;
+﻿namespace Befriender.UI.MainWindow;
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
@@ -54,6 +54,10 @@ public class MainWindow : Window, IDisposable {
             MinimumSize = new Vector2(400, 300),
             MaximumSize = new Vector2(9999, 9999)
         };
+
+        // Initialize state based on the last saved configuration to counteract ImGui state persistence
+        var config = this.configurationService.GetConfig();
+        this.wasProfilePanelOpen = config.IsProfilePanelOpen;
 
         this.navService.OnTabRequested += this.SetTab;
         this.navService.OnWindowToggleRequested += this.Toggle;
@@ -128,12 +132,17 @@ public class MainWindow : Window, IDisposable {
                 ImGui.SetWindowSize(new Vector2(Math.Max(this.SizeConstraints?.MinimumSize.X ?? 400, size.X - PanelWidth - ImGui.GetStyle().ItemSpacing.X), size.Y));
             }
 
-            this.wasProfilePanelOpen = isPanelOpen;
+            // Sync state and save to config to prevent ImGui.ini inflation on reload
+            if (this.wasProfilePanelOpen != isPanelOpen) {
+                this.wasProfilePanelOpen = isPanelOpen;
+                var config = this.configurationService.GetConfig();
+                config.IsProfilePanelOpen = isPanelOpen;
+                this.configurationService.Save();
+            }
         }
     }
 
     public override void PostDraw() {
-        // Pop exact same amount of pushed style colors (22)
         ImGui.PopStyleColor(22);
     }
 
