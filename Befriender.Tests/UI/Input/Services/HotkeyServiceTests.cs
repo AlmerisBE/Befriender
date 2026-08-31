@@ -1,4 +1,4 @@
-﻿namespace Befriender.Tests.Core.Input.Services;
+﻿namespace Befriender.Tests.UI.Input.Services;
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;

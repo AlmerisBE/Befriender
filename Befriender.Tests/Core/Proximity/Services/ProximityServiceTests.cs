@@ -1,5 +1,6 @@
 ﻿namespace Befriender.Tests.Core.Proximity.Services;
 
+using Befriender.UI.Localization.Contracts;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -9,7 +10,6 @@ using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Characters.Models;
 using global::Befriender.Core.Configuration.Contracts;
 using global::Befriender.Core.Configuration.Models;
-using global::Befriender.Core.Localization.Contracts;
 using global::Befriender.Core.Proximity.Services;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;

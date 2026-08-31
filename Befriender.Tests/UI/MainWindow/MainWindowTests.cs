@@ -1,18 +1,18 @@
-﻿namespace Befriender.Tests.UI.FriendList.Windows;
+﻿namespace Befriender.Tests.UI.MainWindow;
 
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Configuration.Contracts;
 using Befriender.UI.Input.Contracts;
-using Befriender.UI.MainWindow;
+using Befriender.UI.Localization.Contracts;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
-using global::Befriender.Core.Characters.Contracts;
-using global::Befriender.Core.Configuration.Contracts;
-using global::Befriender.Core.Localization.Contracts;
-using global::Befriender.UI.Theme.Contracts;
+using Befriender.UI.MainWindow.Windows;
+using Befriender.UI.Theme.Contracts;
 using NSubstitute;
 using System.Collections.Generic;
 using Xunit;
 
-public class FriendListWindowTests {
+public class MainWindowTests {
     [Fact]
     public void Constructor_SetsFirstTabAsDefault() {
         // Arrange

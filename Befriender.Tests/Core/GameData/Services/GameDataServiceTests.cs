@@ -1,7 +1,7 @@
 ﻿namespace Befriender.Tests.Core.GameData.Services;
 
 using Befriender.Core.GameData.Services;
-using Befriender.Core.Localization.Contracts;
+using Befriender.UI.Localization.Contracts;
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using NSubstitute;

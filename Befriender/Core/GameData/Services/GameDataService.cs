@@ -1,7 +1,7 @@
 ﻿namespace Befriender.Core.GameData.Services;
 
 using Befriender.Core.GameData.Contracts;
-using Befriender.Core.Localization.Contracts;
+using Befriender.UI.Localization.Contracts;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;

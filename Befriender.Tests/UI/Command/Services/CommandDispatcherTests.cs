@@ -1,4 +1,4 @@
-﻿namespace Befriender.Tests.Core.Command.Services;
+﻿namespace Befriender.Tests.UI.Command.Services;
 
 using Befriender.UI.Command.Contracts;
 using Befriender.UI.Command.Services;

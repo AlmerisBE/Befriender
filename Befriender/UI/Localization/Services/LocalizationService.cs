@@ -1,9 +1,9 @@
-﻿using Befriender.Core.Localization.Contracts;
+﻿using Befriender.UI.Localization.Contracts;
 using Dalamud.Game;
 using Dalamud.Plugin.Services;
 using System.Collections.Generic;
 
-namespace Befriender.Core.Localization.Services;
+namespace Befriender.UI.Localization.Services;
 
 public class LocalizationService : ILocalizationService {
     private IClientState clientState;

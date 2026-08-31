@@ -1,10 +1,10 @@
-﻿namespace Befriender.Tests.Core.Notifications.Services;
+﻿namespace Befriender.Tests.UI.Notifications.Services;
 
 using Befriender.UI.Notifications.Services;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
-using global::Befriender.Core.Characters.Contracts;
-using global::Befriender.Core.Characters.Models;
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
 using NSubstitute;
 using System;
 using Xunit;

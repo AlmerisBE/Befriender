@@ -1,4 +1,4 @@
-﻿namespace Befriender.Core.Localization.Contracts;
+﻿namespace Befriender.UI.Localization.Contracts;
 
 public interface ILocalizationService {
     string Translate(string key);
