@@ -216,7 +216,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     }
 
     private void DrawCharacterTable(string tableId, IEnumerable<Character> characters, ThemePalette palette, float textOffsetY, bool useScrollY) {
-        var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable | ImGuiTableFlags.Sortable;
+        var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Sortable;
 
         if (useScrollY) {
             flags |= ImGuiTableFlags.ScrollY;
