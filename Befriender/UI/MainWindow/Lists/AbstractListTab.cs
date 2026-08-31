@@ -34,7 +34,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected CharacterProfilePanelComponent profilePanelComponent;
 
     protected string searchQuery = string.Empty;
-    protected bool showOnlineOnly = false;
+    protected int statusFilter = 0;
     protected bool showNearbyOnly = false;
     protected bool groupByGroups = false;
     protected bool isFiltersExpanded = false;
@@ -52,7 +52,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected abstract string EmptyListMessageKey { get; }
     protected abstract IEnumerable<Character> GetBaseCharacterList();
 
-    protected virtual bool ShowOnlineFilter => true;
+    protected virtual bool ShowStatusFilter => true;
 
     protected AbstractListTab(
         ICharacterRegistry registry,
@@ -83,7 +83,13 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         var config = this.configurationService.GetConfig();
         if (config.TabStates.TryGetValue(this.InternalName, out var state)) {
-            this.showOnlineOnly = state.ShowOnlineOnly;
+            this.statusFilter = state.StatusFilter;
+
+            if (state.ShowOnlineOnly && this.statusFilter == 0) {
+                this.statusFilter = 1;
+                state.ShowOnlineOnly = false;
+            }
+
             this.showNearbyOnly = state.ShowNearbyOnly;
             this.groupByGroups = state.GroupByGroups;
             this.isFiltersExpanded = state.IsFiltersExpanded;
@@ -107,8 +113,14 @@ public abstract class AbstractListTab : ITab, IDisposable {
             return;
         }
 
-        if (this.showOnlineOnly) {
-            baseList = baseList.Where(m => m.IsOnline);
+        if (this.statusFilter == 1) {
+            baseList = baseList.Where(m => m.IsOnline && m.IsActivelyTracked);
+        }
+        else if (this.statusFilter == 2) {
+            baseList = baseList.Where(m => !m.IsOnline && m.IsActivelyTracked);
+        }
+        else if (this.statusFilter == 3) {
+            baseList = baseList.Where(m => !m.IsActivelyTracked);
         }
 
         if (this.showNearbyOnly) {
@@ -142,21 +154,21 @@ public abstract class AbstractListTab : ITab, IDisposable {
     public void Draw() {
         var palette = this.themeService.CurrentPalette;
 
-        bool oldOnline = this.showOnlineOnly;
+        int oldStatus = this.statusFilter;
         bool oldNearby = this.showNearbyOnly;
         bool oldGroup = this.groupByGroups;
         bool oldExpanded = this.isFiltersExpanded;
 
-        bool listNeedsRefresh = this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, ref this.isFiltersExpanded, this.ShowOnlineFilter);
+        bool listNeedsRefresh = this.toolbarComponent.Draw(ref this.statusFilter, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, ref this.isFiltersExpanded, this.ShowStatusFilter);
 
-        if (oldOnline != this.showOnlineOnly || oldNearby != this.showNearbyOnly || oldGroup != this.groupByGroups || oldExpanded != this.isFiltersExpanded) {
+        if (oldStatus != this.statusFilter || oldNearby != this.showNearbyOnly || oldGroup != this.groupByGroups || oldExpanded != this.isFiltersExpanded) {
             var config = this.configurationService.GetConfig();
             if (!config.TabStates.TryGetValue(this.InternalName, out var state)) {
                 state = new TabState();
                 config.TabStates[this.InternalName] = state;
             }
 
-            state.ShowOnlineOnly = this.showOnlineOnly;
+            state.StatusFilter = this.statusFilter;
             state.ShowNearbyOnly = this.showNearbyOnly;
             state.GroupByGroups = this.groupByGroups;
             state.IsFiltersExpanded = this.isFiltersExpanded;
@@ -263,10 +275,10 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         bool isAvailable = this.gameDataService.IsFriendAvailable(character.OnlineStateMask);
         bool isDeleted = string.IsNullOrEmpty(character.Name);
-        Vector4 rowColor;
+        Vector4 rowColor = palette.TextOnline; // Initialisation par défaut pour satisfaire CS0165
 
         if (isDeleted || !character.IsActivelyTracked) {
-            rowColor = palette.TextArchived;
+            rowColor = palette.TextArchived; // Conserve la couleur d'archive visuellement pour les "Non synchronisés"
         }
         else if (!character.IsOnline) {
             rowColor = palette.TextOffline;
@@ -305,14 +317,15 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         if (isDeleted || !character.IsActivelyTracked) {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
-            var iconStr = isDeleted ? ((char)FontAwesomeIcon.Ghost).ToString() : ((char)FontAwesomeIcon.Archive).ToString();
+            // Utilisation de QuestionCircle pour les statuts non-synchronisés
+            var iconStr = isDeleted ? ((char)FontAwesomeIcon.Ghost).ToString() : ((char)FontAwesomeIcon.QuestionCircle).ToString();
             float textWidth = ImGui.CalcTextSize(iconStr).X;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
             ImGui.Text(iconStr);
             ImGui.PopFont();
             if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip(this.loc.Translate(isDeleted ? "Profile_StatusDeleted" : "Profile_StatusArchived"));
+                ImGui.SetTooltip(this.loc.Translate(isDeleted ? "Profile_StatusDeleted" : "Profile_StatusUnsynchronized"));
             }
         }
         else {

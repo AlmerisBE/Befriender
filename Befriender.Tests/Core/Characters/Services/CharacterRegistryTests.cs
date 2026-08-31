@@ -125,4 +125,38 @@ public class CharacterRegistryTests {
         Assert.Single(allChars);
         Assert.Equal(129u, allChars[0].LocationId);
     }
+
+    [Fact]
+    public void ProcessSourceUpdate_RetainsSourceId_WhenIncomingCharacterLacksContentId() {
+        // Arrange
+        var registry = this.CreateRegistry();
+
+        var mockPrimarySource = Substitute.For<ICharacterSource>();
+        mockPrimarySource.SourceId.Returns(Guid.NewGuid());
+
+        var mockProximitySource = Substitute.For<ICharacterSource>();
+        var proximityGuid = Guid.Parse("51000000-0000-0000-0000-000000000003");
+        mockProximitySource.SourceId.Returns(proximityGuid);
+
+        var primaryChar = new Character { ContentId = 12345, Name = "Alice", HomeWorldId = 33 };
+        mockPrimarySource.GetCurrentState().Returns(new List<Character> { primaryChar });
+        registry.RegisterSource(mockPrimarySource);
+        mockPrimarySource.DataUpdated += Raise.Event<Action>();
+
+        registry.RegisterSource(mockProximitySource);
+
+        // Act
+        var proxChar = new Character { ContentId = 0, Name = "Alice", HomeWorldId = 33 };
+        mockProximitySource.GetCurrentState().Returns(new List<Character> { proxChar });
+        mockProximitySource.DataUpdated += Raise.Event<Action>();
+
+        // Assert
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+
+        var resolvedChar = allChars[0];
+        Assert.Equal(12345ul, resolvedChar.ContentId);
+
+        Assert.Contains(proximityGuid, resolvedChar.ActiveSourceIds);
+    }
 }

@@ -12,7 +12,7 @@ public class ListToolbarComponent {
         this.loc = loc;
     }
 
-    public bool Draw(ref bool showOnlineOnly, ref bool showNearbyOnly, ref bool groupByGroups, ref string searchQuery, ref bool isFiltersExpanded, bool showOnlineCheckbox) {
+    public bool Draw(ref int statusFilter, ref bool showNearbyOnly, ref bool groupByGroups, ref string searchQuery, ref bool isFiltersExpanded, bool showStatusFilter) {
         bool forceRefresh = false;
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Filter)) {
@@ -24,6 +24,25 @@ public class ListToolbarComponent {
         }
 
         ImGui.SameLine();
+
+        if (showStatusFilter) {
+            ImGui.SetNextItemWidth(140f);
+            string[] statusOptions = {
+                this.loc.Translate("Filter_StatusAll"),
+                this.loc.Translate("Filter_StatusOnline"),
+                this.loc.Translate("Filter_StatusOffline"),
+                this.loc.Translate("Filter_StatusUnsynchronized")
+            };
+
+            if (statusFilter < 0 || statusFilter >= statusOptions.Length) {
+                statusFilter = 0;
+            }
+
+            if (ImGui.Combo("##statusFilter", ref statusFilter, statusOptions, statusOptions.Length)) {
+                forceRefresh = true;
+            }
+            ImGui.SameLine();
+        }
 
         ImGui.SetNextItemWidth(150f);
         if (ImGui.InputTextWithHint("##search", this.loc.Translate("List_SearchHint"), ref searchQuery, 50)) {
@@ -58,10 +77,6 @@ public class ListToolbarComponent {
                 }
 
                 isFirstItemOnLine = false;
-            }
-
-            if (showOnlineCheckbox) {
-                DrawWrappingCheckbox(this.loc.Translate("List_ShowOnlineOnly"), ref showOnlineOnly);
             }
 
             DrawWrappingCheckbox(this.loc.Translate("List_ShowNearbyOnly"), ref showNearbyOnly);

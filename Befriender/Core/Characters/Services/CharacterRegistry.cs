@@ -84,14 +84,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         }
     }
 
-    public void RequestManualRefresh() {
-        lock (this.lockObj) {
-            foreach (var source in this.sources) {
-                source.RequestManualRefresh();
-            }
-        }
-    }
-
     public void RegisterSource(ICharacterSource source) {
         lock (this.lockObj) {
             if (this.sources.Any(s => s.SourceId == source.SourceId)) {
@@ -117,7 +109,9 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     private void ProcessSourceUpdate(ICharacterSource source) {
         lock (this.lockObj) {
             var sourceState = source.GetCurrentState().ToList();
-            var sourceIdsInUpdate = sourceState.Select(c => c.ContentId).ToHashSet();
+
+            // NOUVEAU : On trace les Ids internes traités plutôt que le ContentId volatile
+            var processedIds = new HashSet<Guid>();
 
             foreach (var incoming in sourceState) {
                 var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(incoming.ContentId, incoming.Name, incoming.HomeWorldId));
@@ -199,10 +193,12 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 }
 
                 existing.ActiveSourceIds.Add(source.SourceId);
+                processedIds.Add(existing.Id); // On sauvegarde le Guid de l'entité confirmée
             }
 
+            // NOUVEAU : Nettoyage basé sur la certitude des Ids traités dans cette boucle
             foreach (var character in this.masterList) {
-                if (character.ActiveSourceIds.Contains(source.SourceId) && !sourceIdsInUpdate.Contains(character.ContentId)) {
+                if (character.ActiveSourceIds.Contains(source.SourceId) && !processedIds.Contains(character.Id)) {
                     character.ActiveSourceIds.Remove(source.SourceId);
                     if (!character.IsActivelyTracked) {
                         character.IsOnline = false;
@@ -239,6 +235,14 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         }
 
         this.RegistryUpdated?.Invoke();
+    }
+
+    public void RequestManualRefresh() {
+        lock (this.lockObj) {
+            foreach (var source in this.sources) {
+                source.RequestManualRefresh();
+            }
+        }
     }
 
     public void Dispose() {

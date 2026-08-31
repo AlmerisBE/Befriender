@@ -47,7 +47,7 @@ public class FriendStatusBarComponent : IDisposable {
 
         var allCharacters = this.registry.GetAllCharacters();
 
-        int onlineCount = 0, vanillaCount = 0, archivedCount = 0, deletedCount = 0;
+        int onlineCount = 0, vanillaCount = 0, unsynchronizedCount = 0, deletedCount = 0;
         foreach (var c in allCharacters) {
             bool isDeleted = string.IsNullOrEmpty(c.Name);
             bool isVanilla = this.friendSource != null && c.ActiveSourceIds.Contains(this.friendSource.SourceId);
@@ -59,7 +59,7 @@ public class FriendStatusBarComponent : IDisposable {
                 }
             }
             if (!c.IsActivelyTracked && !isDeleted) {
-                archivedCount++;
+                unsynchronizedCount++;
             }
 
             if (isDeleted) {
@@ -95,7 +95,7 @@ public class FriendStatusBarComponent : IDisposable {
         }
 
         var compactText = this.loc.Translate("Status_CompactCounts", syncText, onlineCount, allCharacters.Count);
-        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, archivedCount, deletedCount, allCharacters.Count);
+        var tooltipText = this.loc.Translate("Status_TooltipCounts", onlineCount, vanillaCount, unsynchronizedCount, deletedCount, allCharacters.Count);
 
         var textSize = ImGui.CalcTextSize(compactText);
         var rightAlignPos = ImGui.GetWindowWidth() - textSize.X - (ImGui.GetStyle().WindowPadding.X * 2);

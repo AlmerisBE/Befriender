@@ -285,7 +285,7 @@ public class CharacterProfilePanelComponent {
                         listStatus = this.loc.Translate("Profile_StatusDeleted");
                     }
                     else if (!character.IsActivelyTracked) {
-                        listStatus = this.loc.Translate("Profile_StatusArchived");
+                        listStatus = this.loc.Translate("Profile_StatusUnsynchronized");
                     }
                     else {
                         listStatus = this.loc.Translate("Profile_StatusActive");
