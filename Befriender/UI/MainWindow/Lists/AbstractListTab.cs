@@ -25,6 +25,8 @@ public abstract class AbstractListTab : ITab {
     protected ITextureProvider textureProvider;
     protected IProximityService proximityService;
     protected ICharacterActionService actionService;
+    protected ICharacterGroupRepository groupRepository;
+    protected ICharacterTagRepository tagRepository;
     protected ListToolbarComponent toolbarComponent;
     protected CharacterProfilePanelComponent profilePanelComponent;
 
@@ -53,6 +55,8 @@ public abstract class AbstractListTab : ITab {
         ITextureProvider textureProvider,
         IProximityService proximityService,
         ICharacterActionService actionService,
+        ICharacterGroupRepository groupRepository,
+        ICharacterTagRepository tagRepository,
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent) {
 
@@ -63,6 +67,8 @@ public abstract class AbstractListTab : ITab {
         this.textureProvider = textureProvider;
         this.proximityService = proximityService;
         this.actionService = actionService;
+        this.groupRepository = groupRepository;
+        this.tagRepository = tagRepository;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
     }
@@ -93,7 +99,24 @@ public abstract class AbstractListTab : ITab {
         }
 
         if (!string.IsNullOrWhiteSpace(this.searchQuery)) {
-            baseList = baseList.Where(m => m.Name.Contains(this.searchQuery, StringComparison.OrdinalIgnoreCase));
+            var allTags = this.tagRepository.GetTags();
+            var query = this.searchQuery.ToLowerInvariant();
+
+            baseList = baseList.Where(m => {
+                if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+                if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+
+                var characterTags = allTags.Where(t => m.Tags.Contains(t.Id));
+                if (characterTags.Any(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))) {
+                    return true;
+                }
+
+                return false;
+            });
         }
 
         var charactersList = this.SortCharacterList(baseList).ToList();
@@ -117,8 +140,41 @@ public abstract class AbstractListTab : ITab {
 
                 float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
 
-                foreach (var character in charactersList) {
-                    this.DrawCharacterRow(character, palette, textOffsetY);
+                if (this.groupByGroups) {
+                    var allGroups = this.groupRepository.GetGroups();
+
+                    var unassignedChars = charactersList.Where(c => c.CustomGroupId == null).ToList();
+                    if (unassignedChars.Count > 0) {
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
+                        if (ImGui.TreeNodeEx($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
+                            foreach (var character in unassignedChars) {
+                                this.DrawCharacterRow(character, palette, textOffsetY);
+                            }
+                            ImGui.TreePop();
+                        }
+                    }
+
+                    foreach (var group in allGroups) {
+                        var groupChars = charactersList.Where(c => c.CustomGroupId == group.Id).ToList();
+                        if (groupChars.Count == 0) {
+                            continue;
+                        }
+
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
+                        if (ImGui.TreeNodeEx($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen)) {
+                            foreach (var character in groupChars) {
+                                this.DrawCharacterRow(character, palette, textOffsetY);
+                            }
+                            ImGui.TreePop();
+                        }
+                    }
+                }
+                else {
+                    foreach (var character in charactersList) {
+                        this.DrawCharacterRow(character, palette, textOffsetY);
+                    }
                 }
 
                 ImGui.EndTable();
@@ -169,7 +225,6 @@ public abstract class AbstractListTab : ITab {
             if (actions.Count == 0) {
                 ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
             }
-
             foreach (var action in actions) {
                 if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
                     action.Execute(character);
@@ -226,7 +281,6 @@ public abstract class AbstractListTab : ITab {
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
             }
-
             ImGui.SameLine();
         }
 
@@ -260,7 +314,6 @@ public abstract class AbstractListTab : ITab {
                     if (ImGui.IsItemHovered()) {
                         ImGui.SetTooltip(jobAbbr);
                     }
-
                     iconDrawn = true;
                 }
             }

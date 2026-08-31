@@ -19,8 +19,20 @@ public class FreeCompanyTab : AbstractListTab {
     public override string Name => this.loc.Translate("Tab_FreeCompany");
     protected override string EmptyListMessageKey => "FreeCompany_Empty";
 
-    public FreeCompanyTab(ICharacterRegistry registry, IEnumerable<ICharacterSource> sources, ILocalizationService loc, IGameDataService gameDataService, IThemeService themeService, ITextureProvider textureProvider, IProximityService proximityService, ICharacterActionService actionService, ListToolbarComponent toolbarComponent, CharacterProfilePanelComponent profilePanelComponent)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, toolbarComponent, profilePanelComponent) {
+    public FreeCompanyTab(
+        ICharacterRegistry registry,
+        IEnumerable<ICharacterSource> sources,
+        ILocalizationService loc,
+        IGameDataService gameDataService,
+        IThemeService themeService,
+        ITextureProvider textureProvider,
+        IProximityService proximityService,
+        ICharacterActionService actionService,
+        ICharacterGroupRepository groupRepository,
+        ICharacterTagRepository tagRepository,
+        ListToolbarComponent toolbarComponent,
+        CharacterProfilePanelComponent profilePanelComponent)
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent) {
 
         var src = sources.FirstOrDefault(s => s.Name == "FreeCompany");
         if (src != null) {
@@ -32,7 +44,6 @@ public class FreeCompanyTab : AbstractListTab {
         if (this.sourceId == Guid.Empty) {
             return Enumerable.Empty<Character>();
         }
-
         return this.registry.GetCharactersBySource(this.sourceId);
     }
 }

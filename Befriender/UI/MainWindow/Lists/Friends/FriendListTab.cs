@@ -19,8 +19,20 @@ public class FriendListTab : AbstractListTab {
     public override string Name => this.loc.Translate("Tab_List");
     protected override string EmptyListMessageKey => "List_Empty";
 
-    public FriendListTab(ICharacterRegistry registry, IEnumerable<ICharacterSource> sources, ILocalizationService loc, IGameDataService gameDataService, IThemeService themeService, ITextureProvider textureProvider, IProximityService proximityService, ICharacterActionService actionService, ListToolbarComponent toolbarComponent, CharacterProfilePanelComponent profilePanelComponent)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, toolbarComponent, profilePanelComponent) {
+    public FriendListTab(
+        ICharacterRegistry registry,
+        IEnumerable<ICharacterSource> sources,
+        ILocalizationService loc,
+        IGameDataService gameDataService,
+        IThemeService themeService,
+        ITextureProvider textureProvider,
+        IProximityService proximityService,
+        ICharacterActionService actionService,
+        ICharacterGroupRepository groupRepository,
+        ICharacterTagRepository tagRepository,
+        ListToolbarComponent toolbarComponent,
+        CharacterProfilePanelComponent profilePanelComponent)
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent) {
 
         var src = sources.FirstOrDefault(s => s.Name == "FriendList");
         if (src != null) {
@@ -32,7 +44,6 @@ public class FriendListTab : AbstractListTab {
         if (this.sourceId == Guid.Empty) {
             return Enumerable.Empty<Character>();
         }
-
         return this.registry.GetCharactersBySource(this.sourceId);
     }
 }

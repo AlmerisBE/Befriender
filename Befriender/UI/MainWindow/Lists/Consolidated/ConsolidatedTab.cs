@@ -16,8 +16,19 @@ public class ConsolidatedTab : AbstractListTab {
     public override string Name => this.loc.Translate("Tab_Consolidated");
     protected override string EmptyListMessageKey => "Consolidated_Empty";
 
-    public ConsolidatedTab(ICharacterRegistry registry, ILocalizationService loc, IGameDataService gameDataService, IThemeService themeService, ITextureProvider textureProvider, IProximityService proximityService, ICharacterActionService actionService, ListToolbarComponent toolbarComponent, CharacterProfilePanelComponent profilePanelComponent)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, toolbarComponent, profilePanelComponent) {
+    public ConsolidatedTab(
+        ICharacterRegistry registry,
+        ILocalizationService loc,
+        IGameDataService gameDataService,
+        IThemeService themeService,
+        ITextureProvider textureProvider,
+        IProximityService proximityService,
+        ICharacterActionService actionService,
+        ICharacterGroupRepository groupRepository,
+        ICharacterTagRepository tagRepository,
+        ListToolbarComponent toolbarComponent,
+        CharacterProfilePanelComponent profilePanelComponent)
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent) {
     }
 
     protected override IEnumerable<Character> GetBaseCharacterList() {
@@ -25,7 +36,6 @@ public class ConsolidatedTab : AbstractListTab {
     }
 
     protected override IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {
-        // Surcharge pour placer les archivés/supprimés en bas de liste
         return characters.OrderByDescending(c => c.IsActivelyTracked)
                          .ThenByDescending(c => c.IsOnline)
                          .ThenBy(c => c.Name);
