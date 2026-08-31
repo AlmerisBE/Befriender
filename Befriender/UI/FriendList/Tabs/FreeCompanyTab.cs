@@ -2,9 +2,6 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
-using Befriender.Core.FreeCompany.Contracts;
-using Befriender.Core.Friends.Contracts;
-using Befriender.Core.Friends.Models;
 using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
@@ -14,13 +11,12 @@ using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Plugin.Services;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
 public class FreeCompanyTab : ITab {
     private ICharacterRegistry registry;
-    private IFreeCompanyRepository fcRepository;
-    private IFriendRepository friendRepository;
     private ILocalizationService loc;
     private IGameDataService gameDataService;
     private IThemeService themeService;
@@ -29,6 +25,7 @@ public class FreeCompanyTab : ITab {
     private ListToolbarComponent toolbarComponent;
     private CharacterProfilePanelComponent profilePanelComponent;
 
+    private Guid fcSourceId;
     private string searchQuery = string.Empty;
     private bool showOnlineOnly = false;
     private bool showNearbyOnly = false;
@@ -43,8 +40,7 @@ public class FreeCompanyTab : ITab {
 
     public FreeCompanyTab(
         ICharacterRegistry registry,
-        IFreeCompanyRepository fcRepository,
-        IFriendRepository friendRepository,
+        IEnumerable<ICharacterSource> sources,
         ILocalizationService loc,
         IGameDataService gameDataService,
         IThemeService themeService,
@@ -54,8 +50,6 @@ public class FreeCompanyTab : ITab {
         CharacterProfilePanelComponent profilePanelComponent) {
 
         this.registry = registry;
-        this.fcRepository = fcRepository;
-        this.friendRepository = friendRepository;
         this.loc = loc;
         this.gameDataService = gameDataService;
         this.themeService = themeService;
@@ -63,10 +57,15 @@ public class FreeCompanyTab : ITab {
         this.proximityService = proximityService;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
+
+        // Dynamically resolve the FreeCompany source ID to decouple UI from specific implementations
+        var fcSource = sources.FirstOrDefault(s => s.Name == "FreeCompany");
+        if (fcSource != null) {
+            this.fcSourceId = fcSource.SourceId;
+        }
     }
 
     public void Draw() {
-        var fcSourceId = this.fcRepository.SourceId;
         var palette = this.themeService.CurrentPalette;
 
         this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.dummyGroupByGroups, ref this.searchQuery, true);
@@ -74,19 +73,23 @@ public class FreeCompanyTab : ITab {
         ImGui.Separator();
         ImGui.Spacing();
 
-        var allMembers = this.registry.GetConsolidatedCharacters()
-            .Where(c => c.ActiveSourceIds.Contains(fcSourceId));
+        if (this.fcSourceId == Guid.Empty) {
+            ImGui.TextDisabled("FreeCompany source is not registered.");
+            return;
+        }
+
+        var allMembers = this.registry.GetCharactersBySource(this.fcSourceId);
 
         if (this.showOnlineOnly) {
-            allMembers = allMembers.Where(m => m.IsOnline);
+            allMembers = allMembers.Where(m => m.IsOnline).ToList();
         }
 
         if (this.showNearbyOnly) {
-            allMembers = allMembers.Where(m => this.proximityService.IsFriendNearby(m.ContentId));
+            allMembers = allMembers.Where(m => this.proximityService.IsFriendNearby(m.ContentId)).ToList();
         }
 
         if (!string.IsNullOrWhiteSpace(this.searchQuery)) {
-            allMembers = allMembers.Where(m => m.Name.Contains(this.searchQuery, StringComparison.OrdinalIgnoreCase));
+            allMembers = allMembers.Where(m => m.Name.Contains(this.searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         var membersList = allMembers.OrderByDescending(m => m.IsOnline).ThenBy(m => m.Name).ToList();
@@ -248,49 +251,7 @@ public class FreeCompanyTab : ITab {
         // --- PROFILE PANEL DRAWING ---
         if (this.selectedCharacter != null) {
             ImGui.SameLine();
-
-            // Bridge: If the FC member is also a friend, use their real profile. Otherwise, project a dummy profile.
-            var profileToDisplay = this.friendRepository.GetFriends().FirstOrDefault(f => f.ContentId == this.selectedCharacter.ContentId)
-                                   ?? this.MapToFriendProfile(this.selectedCharacter);
-
-            this.profilePanelComponent.Draw(PanelWidth, profileToDisplay, () => this.selectedCharacter = null);
+            this.profilePanelComponent.Draw(PanelWidth, this.selectedCharacter, () => this.selectedCharacter = null);
         }
-    }
-
-    private FriendProfile MapToFriendProfile(Character c) {
-        return new FriendProfile {
-            Id = c.Id,
-            ContentId = c.ContentId,
-            Name = c.Name,
-            HomeWorldId = c.HomeWorldId,
-            CurrentWorldId = c.CurrentWorldId,
-            JobId = c.JobId,
-            Level = c.Level,
-            LocationId = c.LocationId,
-            IsOnline = c.IsOnline,
-            FcTag = c.FcTag,
-            OnlineStateMask = c.OnlineStateMask,
-            OnlineStatusId = c.OnlineStatusId,
-            ClientLanguages = c.ClientLanguages,
-            TitleId = c.TitleId,
-            Race = c.Race,
-            Tribe = c.Tribe,
-            Gender = c.Gender,
-            IsFantasiaDetected = c.IsFantasiaDetected,
-            AddedAt = c.AddedAt,
-            AddedLocationId = c.AddedLocationId,
-            LastSeenAt = c.LastSeenAt,
-            ArchivedAt = c.ArchivedAt,
-            CustomGroupId = c.CustomGroupId,
-            Tags = c.Tags.ToList(),
-            PreviousNames = c.PreviousNames.ToList(),
-            Notes = c.Notes,
-            IsArchived = c.IsArchived,
-            IsCharacterDeleted = c.IsCharacterDeleted,
-            IsMarkedForRemoval = c.IsMarkedForRemoval,
-            IsMissing = c.IsMissing,
-            GrandCompany = c.GrandCompany,
-            IsTrackedForNotifications = c.IsTrackedForNotifications
-        };
     }
 }
