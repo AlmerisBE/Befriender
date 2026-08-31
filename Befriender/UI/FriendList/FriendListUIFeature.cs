@@ -33,7 +33,7 @@ public class FriendListUIFeature : IFeatureModule {
 
         // Register the tabs
         services.AddSingleton<ITab, ListTab>();
-        services.AddSingleton<ITab, ArchiveTab>();
+        services.AddSingleton<ITab, ConsolidatedTab>();
         services.AddSingleton<ITab, FreeCompanyTab>();
         services.AddSingleton<ITab, AboutTab>();
 
