@@ -6,5 +6,5 @@ using System.Collections.Generic;
 
 public interface IFreeCompanyRepository {
     Guid SourceId { get; }
-    void UpdateMembers(IEnumerable<FreeCompanyMemberProfile> scannedMembers);
+    void UpdateMembers(IEnumerable<FreeCompanyMemberProfile> scannedMembers, bool isFinalSync = true);
 }

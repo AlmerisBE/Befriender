@@ -10,23 +10,20 @@ using Xunit;
 
 public class FreeCompanySyncServiceTests {
     [Fact]
-    public void StartSync_TriggersImmediateSyncWhenPreviouslyInactive() {
+    public void StartSync_TriggersRequestServerRefreshWhenPreviouslyInactive() {
         var mockScanner = Substitute.For<IFreeCompanyScanner>();
         var mockRepo = Substitute.For<IFreeCompanyRepository>();
         var mockFramework = Substitute.For<IFramework>();
-
-        mockScanner.ScanMembers().Returns(new List<FreeCompanyMemberProfile>());
 
         using var service = new FreeCompanySyncService(mockScanner, mockRepo, mockFramework);
 
         service.StartSync();
 
-        mockScanner.Received(1).ScanMembers();
-        mockRepo.Received(1).UpdateMembers(Arg.Any<IEnumerable<FreeCompanyMemberProfile>>());
+        mockScanner.Received(1).RequestServerUpdate();
     }
 
     [Fact]
-    public void ForceSync_DelegatesScannedMembersToRepository() {
+    public void OnFrameworkUpdate_StreamsPartialDataInstantlyAndDelaysFinalization() {
         var mockScanner = Substitute.For<IFreeCompanyScanner>();
         var mockRepo = Substitute.For<IFreeCompanyRepository>();
         var mockFramework = Substitute.For<IFramework>();
@@ -34,12 +31,21 @@ public class FreeCompanySyncServiceTests {
         var fakeMembers = new List<FreeCompanyMemberProfile> {
             new FreeCompanyMemberProfile { ContentId = 1, Name = "Test Member" }
         };
+
+        mockScanner.GetEntryCount().Returns(5);
         mockScanner.ScanMembers().Returns(fakeMembers);
 
         using var service = new FreeCompanySyncService(mockScanner, mockRepo, mockFramework);
 
-        service.ForceSync();
+        service.StartSync(); // Triggers the request
 
-        mockRepo.Received(1).UpdateMembers(fakeMembers);
+        // Trigger framework update - it detects 5 members (chunk arrived)
+        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
+
+        // Assert it streamed the partial sync immediately (isFinalSync = false)
+        mockRepo.Received(1).UpdateMembers(Arg.Any<IEnumerable<FreeCompanyMemberProfile>>(), false);
+
+        // Assert it did NOT finalize yet (isFinalSync = true)
+        mockRepo.DidNotReceive().UpdateMembers(Arg.Any<IEnumerable<FreeCompanyMemberProfile>>(), true);
     }
 }

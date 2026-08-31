@@ -9,4 +9,7 @@ public class FreeCompanyMemberProfile {
     public uint LocationId { get; set; }
     public bool IsOnline { get; set; }
     public string FcTag { get; set; } = string.Empty;
+
+    // Ajout du masque pour les icônes de statut
+    public ulong OnlineStateMask { get; set; }
 }

@@ -46,7 +46,7 @@ public class FreeCompanyRepositoryTests {
     }
 
     [Fact]
-    public void UpdateMembers_RemovesMembersNoLongerInFreeCompany() {
+    public void UpdateMembers_RemovesMembersNoLongerInFreeCompany_OnlyOnFinalSync() {
         var mockStorage = Substitute.For<ICharacterStorage>();
         var mockIdentityService = Substitute.For<ICharacterIdentityService>();
 
@@ -62,10 +62,15 @@ public class FreeCompanyRepositoryTests {
             new FreeCompanyMemberProfile { ContentId = 1, Name = "Keep Me", IsOnline = true }
         };
 
-        repository.UpdateMembers(scannedMembers);
-        var result = repository.GetCharacters().ToList();
+        // Act - Partial Sync (Should NOT remove members)
+        repository.UpdateMembers(scannedMembers, false);
+        var resultPartial = repository.GetCharacters().ToList();
+        Assert.Equal(2, resultPartial.Count); // Member 2 is still safe!
 
-        Assert.Single(result);
-        Assert.Equal(1ul, result[0].ContentId);
+        // Act - Final Sync (Should clean up)
+        repository.UpdateMembers(scannedMembers, true);
+        var resultFinal = repository.GetCharacters().ToList();
+        Assert.Single(resultFinal);
+        Assert.Equal(1ul, resultFinal[0].ContentId);
     }
 }

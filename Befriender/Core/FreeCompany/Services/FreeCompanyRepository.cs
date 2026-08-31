@@ -42,10 +42,16 @@ public class FreeCompanyRepository : IFreeCompanyRepository, ICharacterSource {
         }
     }
 
-    public void UpdateMembers(IEnumerable<FreeCompanyMemberProfile> scannedMembers) {
+    public void UpdateMembers(IEnumerable<FreeCompanyMemberProfile> scannedMembers, bool isFinalSync = true) {
         lock (this.lockObj) {
             var currentId = this.identityService.GetCurrentCharacterId();
             if (string.IsNullOrEmpty(currentId)) {
+                return;
+            }
+
+            var scannedList = scannedMembers.ToList();
+
+            if (scannedList.Count == 0) {
                 return;
             }
 
@@ -54,7 +60,7 @@ public class FreeCompanyRepository : IFreeCompanyRepository, ICharacterSource {
             var repositoryDict = this.cachedMembers.ToDictionary(c => c.ContentId);
             var now = DateTime.Now;
 
-            foreach (var scanned in scannedMembers) {
+            foreach (var scanned in scannedList) {
                 if (repositoryDict.TryGetValue(scanned.ContentId, out var existing)) {
                     existing.Name = scanned.Name;
                     existing.HomeWorldId = scanned.HomeWorldId;
@@ -64,6 +70,7 @@ public class FreeCompanyRepository : IFreeCompanyRepository, ICharacterSource {
                     if (scanned.IsOnline) {
                         existing.LocationId = scanned.LocationId;
                         existing.LastSeenAt = now;
+                        existing.OnlineStateMask = scanned.OnlineStateMask; // Mise à jour
                     }
 
                     if (scanned.JobId > 0) {
@@ -84,6 +91,7 @@ public class FreeCompanyRepository : IFreeCompanyRepository, ICharacterSource {
                         JobId = scanned.JobId,
                         LocationId = scanned.LocationId,
                         IsOnline = scanned.IsOnline,
+                        OnlineStateMask = scanned.OnlineStateMask, // Initialisation
                         FcTag = scanned.FcTag,
                         AddedAt = now,
                         LastSeenAt = scanned.IsOnline ? now : DateTime.MinValue
@@ -94,13 +102,14 @@ public class FreeCompanyRepository : IFreeCompanyRepository, ICharacterSource {
                 }
             }
 
-            // Mark missing members as no longer in FC by removing them from the cache
-            // A genuine FC member sync replaces the entire list
-            var scannedIds = scannedMembers.Select(m => m.ContentId).ToHashSet();
-            var idsToRemove = repositoryDict.Keys.Where(id => !scannedIds.Contains(id)).ToList();
+            // Only remove members that are absent if we are certain the server has finished sending chunks
+            if (isFinalSync) {
+                var scannedIds = scannedList.Select(m => m.ContentId).ToHashSet();
+                var idsToRemove = repositoryDict.Keys.Where(id => !scannedIds.Contains(id)).ToList();
 
-            foreach (var id in idsToRemove) {
-                repositoryDict.Remove(id);
+                foreach (var id in idsToRemove) {
+                    repositoryDict.Remove(id);
+                }
             }
 
             this.cachedMembers = repositoryDict.Values.ToList();

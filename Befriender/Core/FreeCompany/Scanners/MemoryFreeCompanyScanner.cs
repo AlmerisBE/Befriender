@@ -21,12 +21,19 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
             return members;
         }
 
-        var fcProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FreeCompany);
+        // FIX: Use FreeCompanyMember instead of FreeCompany to get the actual roster list
+        var fcProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FreeCompanyMember);
         if (fcProxy == null) {
             return members;
         }
 
         var count = fcProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+
+        // Defensive safeguard: An FC can have at most 512 members. 
+        // If it's higher, memory is likely uninitialized or corrupted.
+        if (count > 1000) {
+            return members;
+        }
 
         for (uint i = 0; i < count; i++) {
             var entry = fcProxy->GetEntry(i);
@@ -66,10 +73,57 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
                 JobId = entry->Job,
                 LocationId = entry->Location,
                 IsOnline = entry->State != 0,
+                OnlineStateMask = (ulong)entry->State,
                 FcTag = fcTag
             });
         }
 
         return members;
+    }
+
+    public int GetEntryCount() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return 0;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return 0;
+        }
+
+        // FIX: Use FreeCompanyMember here as well
+        var fcProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FreeCompanyMember);
+        if (fcProxy == null) {
+            return 0;
+        }
+
+        var count = fcProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+
+        if (count > 1000) {
+            return 0;
+        }
+
+        return (int)count;
+    }
+
+    public void RequestServerUpdate() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return;
+        }
+
+        // FIX: Use FreeCompanyMember to request the roster data
+        var fcProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FreeCompanyMember);
+        if (fcProxy == null) {
+            return;
+        }
+
+        fcProxy->RequestData();
     }
 }

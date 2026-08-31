@@ -55,7 +55,7 @@ public class FriendListWindow : Window, IDisposable {
             IconOffset = new Vector2(1, 1),
             Click = (mouseButton) => {
                 this.syncService.RequestServerRefresh();
-                this.fcSyncService.ForceSync();
+                this.fcSyncService.RequestServerRefresh();
             }
         });
     }

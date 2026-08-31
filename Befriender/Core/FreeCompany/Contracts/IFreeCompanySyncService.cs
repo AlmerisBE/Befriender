@@ -3,5 +3,6 @@
 public interface IFreeCompanySyncService {
     void StartSync();
     void StopSync();
-    void ForceSync();
+    void ForceSync(bool isFinalSync = true);
+    void RequestServerRefresh();
 }
