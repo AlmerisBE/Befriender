@@ -135,5 +135,7 @@
   "Section_Status": "ステータスと場所",
   "Section_System": "システムデータ",
   "Status_Offline": "オフライン",
-  "About_Discord": "Discord サーバー"
+  "About_Discord": "Discord サーバー",
+  "Tab_FreeCompany": "フリーカンパニー",
+  "FreeCompany_Empty": "表示するフリーカンパニーのメンバーがいません。"
 }

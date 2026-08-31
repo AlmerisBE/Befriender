@@ -29,6 +29,12 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
 
         var count = friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
 
+        // Defensive safeguard against uninitialized memory causing infinite loops
+        // The absolute maximum capacity of a friend list in FFXIV is 200.
+        if (count > 200) {
+            return friends;
+        }
+
         for (uint i = 0; i < count; i++) {
             var entry = friendProxy->GetEntry(i);
             if (entry == null) {
@@ -98,7 +104,12 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
             return 0;
         }
 
-        return (int)friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+        var count = friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+        if (count > 200) {
+            return 0;
+        }
+
+        return (int)count;
     }
 
     public ulong GetStateHash() {
@@ -118,6 +129,10 @@ public unsafe class MemoryFriendScanner : IFriendScanner {
         }
 
         var count = friendProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+        if (count > 200) {
+            return 0;
+        }
+
         ulong hash = count;
 
         for (uint i = 0; i < count; i++) {

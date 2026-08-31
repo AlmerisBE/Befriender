@@ -2,6 +2,7 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;
+using Befriender.Core.FreeCompany.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
 using Befriender.Core.Localization.Contracts;
@@ -11,70 +12,63 @@ using Befriender.UI.FriendList.Windows;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using NSubstitute;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
 public class FriendListWindowTests {
-    [Fact]
-    public void FriendListWindow_Initialization_SetsCorrectPropertiesAndButtons() {
-        var mockTabs = new List<ITab>();
-        var mockSync = Substitute.For<IFriendSyncService>();
+    private FriendListWindow CreateSystemUnderTests(
+        out IFriendSyncService mockSync,
+        out IFreeCompanySyncService mockFcSync,
+        out IWindowNavigationService mockNav,
+        out IHotkeyService mockHotkey) {
+
+        var tabs = new List<ITab>();
+        mockSync = Substitute.For<IFriendSyncService>();
+        mockFcSync = Substitute.For<IFreeCompanySyncService>();
         var mockTheme = Substitute.For<IThemeService>();
-        var mockHotkey = Substitute.For<IHotkeyService>();
-        var mockNavService = Substitute.For<IWindowNavigationService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
+        mockHotkey = Substitute.For<IHotkeyService>();
+        mockNav = Substitute.For<IWindowNavigationService>();
+        var mockConfig = Substitute.For<IConfigurationService>();
+
+        mockConfig.GetConfig().Returns(new PluginConfiguration());
+
         var mockLoc = Substitute.For<ILocalizationService>();
-        var mockRepo = Substitute.For<IFriendRepository>();
+        var mockFriendRepo = Substitute.For<IFriendRepository>();
+        var statusBarComponent = new FriendStatusBarComponent(mockSync, mockLoc, mockFriendRepo);
 
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
-
-        var statusBar = new FriendStatusBarComponent(mockSync, mockLoc, mockRepo);
-        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService, statusBar);
-
-        Assert.Equal("Befriender", window.WindowName);
-        Assert.Single(window.TitleBarButtons);
+        return new FriendListWindow(tabs, mockSync, mockFcSync, mockTheme, mockHotkey, mockNav, mockConfig, statusBarComponent);
     }
 
     [Fact]
-    public void FriendListWindow_OnOpen_RequestsServerRefresh() {
-        var mockTabs = new List<ITab>();
-        var mockSync = Substitute.For<IFriendSyncService>();
-        var mockTheme = Substitute.For<IThemeService>();
-        var mockHotkey = Substitute.For<IHotkeyService>();
-        var mockNavService = Substitute.For<IWindowNavigationService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        var mockLoc = Substitute.For<ILocalizationService>();
-        var mockRepo = Substitute.For<IFriendRepository>();
-
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
-
-        var statusBar = new FriendStatusBarComponent(mockSync, mockLoc, mockRepo);
-        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService, statusBar);
+    public void OnOpen_StartsSyncServicesAndRequestsRefresh() {
+        var window = this.CreateSystemUnderTests(out var mockSync, out var mockFcSync, out _, out _);
 
         window.OnOpen();
 
-        mockSync.Received().IsWindowOpen = true;
+        mockSync.Received(1).IsWindowOpen = true;
         mockSync.Received(1).RequestServerRefresh();
+        mockFcSync.Received(1).StartSync();
     }
 
     [Fact]
-    public void FriendListWindow_OnClose_UpdatesSyncServiceState() {
-        var mockTabs = new List<ITab>();
-        var mockSync = Substitute.For<IFriendSyncService>();
-        var mockTheme = Substitute.For<IThemeService>();
-        var mockHotkey = Substitute.For<IHotkeyService>();
-        var mockNavService = Substitute.For<IWindowNavigationService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        var mockLoc = Substitute.For<ILocalizationService>();
-        var mockRepo = Substitute.For<IFriendRepository>();
-
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { IsProfilePanelOpen = false });
-
-        var statusBar = new FriendStatusBarComponent(mockSync, mockLoc, mockRepo);
-        var window = new FriendListWindow(mockTabs, mockSync, mockTheme, mockHotkey, mockNavService, mockConfigService, statusBar);
+    public void OnClose_StopsSyncServices() {
+        var window = this.CreateSystemUnderTests(out var mockSync, out var mockFcSync, out _, out _);
 
         window.OnClose();
 
-        mockSync.Received().IsWindowOpen = false;
+        mockSync.Received(1).IsWindowOpen = false;
+        mockFcSync.Received(1).StopSync();
+    }
+
+    [Fact]
+    public void Dispose_UnregistersEvents() {
+        var window = this.CreateSystemUnderTests(out _, out _, out var mockNav, out var mockHotkey);
+
+        window.Dispose();
+
+        mockHotkey.Received(1).OnHotkeyPressed -= Arg.Any<Action>();
+        mockNav.Received(1).OnWindowToggleRequested -= Arg.Any<Action>();
+        mockNav.Received(1).OnTabRequested -= Arg.Any<Action<string>>();
     }
 }

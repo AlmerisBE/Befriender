@@ -22,8 +22,15 @@ public class FriendRepositoryTests {
 
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
-        var char1 = new Character { ContentId = 1, Name = "Persisted Friend", IsOnline = true, JobId = 24 };
-        char1.CustomProperties["Befriender_OnlineStateMask"] = "61510";
+        // The properties are now strongly typed on the Character model
+        var char1 = new Character {
+            ContentId = 1,
+            Name = "Persisted Friend",
+            IsOnline = true,
+            JobId = 24,
+            OnlineStateMask = 61510u
+        };
+
         mockStorage.Load("FriendList", "Almeris_33").Returns(new List<Character> { char1 });
 
         var repository = new FriendRepository(mockStorage, mockMigration, mockIdentityService, mockClientState, mockObjectTable);
@@ -49,9 +56,16 @@ public class FriendRepositoryTests {
 
         mockIdentityService.GetCurrentCharacterId().Returns("Almeris_33");
 
-        var char1 = new Character { ContentId = 1, Name = "Existing Friend", IsOnline = true, JobId = 24, FcTag = "TEST" };
-        char1.CustomProperties["Befriender_ClientLanguages"] = "2";
-        char1.CustomProperties["Befriender_GrandCompany"] = "0";
+        var char1 = new Character {
+            ContentId = 1,
+            Name = "Existing Friend",
+            IsOnline = true,
+            JobId = 24,
+            FcTag = "TEST",
+            ClientLanguages = 2,
+            GrandCompany = 0
+        };
+
         mockStorage.Load("FriendList", "Almeris_33").Returns(new List<Character> { char1 });
 
         var repository = new FriendRepository(mockStorage, mockMigration, mockIdentityService, mockClientState, mockObjectTable);

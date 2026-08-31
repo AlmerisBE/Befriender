@@ -1,6 +1,7 @@
 ﻿namespace Befriender.UI.FriendList.Windows;
 
 using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.FreeCompany.Contracts;
 using Befriender.Core.Friends.Contracts;
 using Befriender.Core.Input.Contracts;
 using Befriender.UI.FriendList.Components;
@@ -17,6 +18,7 @@ using System.Numerics;
 public class FriendListWindow : Window, IDisposable {
     private IEnumerable<ITab> tabs;
     private IFriendSyncService syncService;
+    private IFreeCompanySyncService fcSyncService;
     private IThemeService themeService;
     private IHotkeyService hotkeyService;
     private IWindowNavigationService navService;
@@ -27,9 +29,10 @@ public class FriendListWindow : Window, IDisposable {
     private bool isProfilePanelOpen;
     private const float ProfilePanelWidth = 300f;
 
-    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService, FriendStatusBarComponent statusBarComponent) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+    public FriendListWindow(IEnumerable<ITab> tabs, IFriendSyncService syncService, IFreeCompanySyncService fcSyncService, IThemeService themeService, IHotkeyService hotkeyService, IWindowNavigationService navService, IConfigurationService configService, FriendStatusBarComponent statusBarComponent) : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
         this.tabs = tabs;
         this.syncService = syncService;
+        this.fcSyncService = fcSyncService;
         this.themeService = themeService;
         this.hotkeyService = hotkeyService;
         this.navService = navService;
@@ -50,7 +53,10 @@ public class FriendListWindow : Window, IDisposable {
         this.TitleBarButtons.Add(new TitleBarButton {
             Icon = FontAwesomeIcon.Sync,
             IconOffset = new Vector2(1, 1),
-            Click = (mouseButton) => this.syncService.RequestServerRefresh()
+            Click = (mouseButton) => {
+                this.syncService.RequestServerRefresh();
+                this.fcSyncService.RequestServerRefresh();
+            }
         });
     }
 
@@ -93,17 +99,18 @@ public class FriendListWindow : Window, IDisposable {
     public override void OnOpen() {
         this.syncService.IsWindowOpen = true;
         this.syncService.RequestServerRefresh();
+        this.fcSyncService.StartSync();
     }
 
     public override void OnClose() {
         this.syncService.IsWindowOpen = false;
+        this.fcSyncService.StopSync();
     }
 
     public override void Draw() {
         bool activeTabWantsPanel = false;
         float footerHeight = ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
 
-        // Container ensuring space is saved for the status bar
         if (ImGui.BeginChild("MainContent", new Vector2(0, -footerHeight))) {
             if (ImGui.BeginTabBar("MainTabBar")) {
                 foreach (var tab in this.tabs) {

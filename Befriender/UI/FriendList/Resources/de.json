@@ -135,5 +135,7 @@
   "Section_Status": "Status & Ort",
   "Section_System": "Systemdaten",
   "Status_Offline": "Offline",
-  "About_Discord": "Discord-Server"
+  "About_Discord": "Discord-Server",
+  "Tab_FreeCompany": "Freie Gesellschaft",
+  "FreeCompany_Empty": "Keine Mitglieder der Freien Gesellschaft anzuzeigen."
 }

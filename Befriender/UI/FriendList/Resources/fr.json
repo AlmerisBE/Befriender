@@ -135,5 +135,7 @@
   "Section_Status": "Statut & Localisation",
   "Section_System": "Données système",
   "Status_Offline": "Hors ligne",
-  "About_Discord": "Serveur Discord"
+  "About_Discord": "Serveur Discord",
+  "Tab_FreeCompany": "Compagnie Libre",
+  "FreeCompany_Empty": "Aucun membre de compagnie libre à afficher."
 }
