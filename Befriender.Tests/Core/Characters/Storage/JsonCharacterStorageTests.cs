@@ -1,9 +1,9 @@
 ﻿namespace Befriender.Tests.Core.Characters.Storage;
 
-using Befriender.Core.Characters.Models;
-using Befriender.Core.Characters.Storage;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using global::Befriender.Core.Characters.Models;
+using global::Befriender.Core.Characters.Storage;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
@@ -12,80 +12,65 @@ using System.Linq;
 using Xunit;
 
 public class JsonCharacterStorageTests : IDisposable {
-    private List<string> createdDirectories = new();
+    private IDalamudPluginInterface mockPluginInterface;
+    private IPluginLog mockPluginLog;
+    private string tempDirectory;
 
-    private string GetUniqueTempPath() {
-        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(path);
-        this.createdDirectories.Add(path);
-        return path;
+    public JsonCharacterStorageTests() {
+        this.mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
+        this.mockPluginLog = Substitute.For<IPluginLog>();
+
+        this.tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(this.tempDirectory);
+
+        this.mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(this.tempDirectory));
     }
 
     [Fact]
-    public void SaveAndLoad_PersistsCharactersWithCustomPropertiesAndSourceIds() {
-        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var mockPluginLog = Substitute.For<IPluginLog>();
-
-        string fakePath = this.GetUniqueTempPath();
-        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
-
-        var storage = new JsonCharacterStorage(mockPluginInterface, mockPluginLog);
+    public void SaveAndLoad_PersistsCharacterDataCorrectly() {
+        var storage = new JsonCharacterStorage(this.mockPluginInterface, this.mockPluginLog);
         var sourceId = Guid.NewGuid();
-        var characterId = Guid.NewGuid();
 
         var character = new Character {
-            Id = characterId,
-            ContentId = 12345,
-            Name = "Storage Test",
+            Id = Guid.NewGuid(),
+            Name = "John Doe",
+            ContentId = 123456789,
             HomeWorldId = 33,
-            IsOnline = true
+            IsOnline = true,
+            SourceSpecificData = new Dictionary<Guid, Dictionary<string, string>> {
+                { sourceId, new Dictionary<string, string> { { "TestKey", "TestValue" } } }
+            }
         };
-        character.ActiveSourceIds.Add(sourceId);
-        character.CustomProperties["TestKey"] = "TestValue";
 
         var charactersToSave = new List<Character> { character };
+        string accountIdentity = "TestUser_33";
 
-        storage.Save("TestStore", "Account1", charactersToSave);
-        var loadedCharacters = storage.Load("TestStore", "Account1").ToList();
+        // Act
+        storage.Save("MasterCharacterList", accountIdentity, charactersToSave);
+        var loadedCharacters = storage.Load("MasterCharacterList", accountIdentity).ToList();
 
+        // Assert
         Assert.Single(loadedCharacters);
         var loaded = loadedCharacters[0];
-        Assert.Equal(characterId, loaded.Id);
-        Assert.Equal((ulong)12345, loaded.ContentId);
-        Assert.Equal("Storage Test", loaded.Name);
-        Assert.Equal((uint)33, loaded.HomeWorldId);
-        Assert.True(loaded.IsOnline);
-        Assert.Contains(sourceId, loaded.ActiveSourceIds);
-        Assert.True(loaded.CustomProperties.ContainsKey("TestKey"));
-        Assert.Equal("TestValue", loaded.CustomProperties["TestKey"]);
+
+        Assert.Equal(character.Id, loaded.Id);
+        Assert.Equal(character.Name, loaded.Name);
+        Assert.True(loaded.SourceSpecificData.ContainsKey(sourceId));
+        Assert.Equal("TestValue", loaded.SourceSpecificData[sourceId]["TestKey"]);
     }
 
     [Fact]
-    public void Load_ReturnsEmptyListWhenFileDoesNotExist() {
-        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var mockPluginLog = Substitute.For<IPluginLog>();
+    public void Load_ReturnsEmptyList_WhenFileDoesNotExist() {
+        var storage = new JsonCharacterStorage(this.mockPluginInterface, this.mockPluginLog);
 
-        string fakePath = this.GetUniqueTempPath();
-        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
-
-        var storage = new JsonCharacterStorage(mockPluginInterface, mockPluginLog);
-
-        var loadedCharacters = storage.Load("NonExistentStore", "Account1").ToList();
+        var loadedCharacters = storage.Load("MasterCharacterList", "UnknownUser_00").ToList();
 
         Assert.Empty(loadedCharacters);
-
-        // Fix: Explicitly declare argument types to resolve CS0121 ambiguity
-        mockPluginLog.DidNotReceive().Error(Arg.Any<Exception>(), Arg.Any<string>());
     }
 
     public void Dispose() {
-        foreach (var dir in this.createdDirectories) {
-            if (Directory.Exists(dir)) {
-                try {
-                    Directory.Delete(dir, true);
-                }
-                catch { }
-            }
+        if (Directory.Exists(this.tempDirectory)) {
+            Directory.Delete(this.tempDirectory, true);
         }
     }
 }

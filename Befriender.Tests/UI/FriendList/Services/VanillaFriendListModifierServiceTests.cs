@@ -16,6 +16,7 @@ public class VanillaFriendListModifierServiceTests {
 
         using var service = new VanillaFriendListModifierService(mockLifecycle, mockRegistry, mockLog);
 
-        mockLifecycle.Received(1).RegisterListener(AddonEvent.PreDraw, "FriendList", Arg.Any<AddonLifecycle.OnEvent>());
+        // CORRECTION : On utilise le véritable nom du délégué (AddonEventDelegate)
+        mockLifecycle.Received(1).RegisterListener(AddonEvent.PreDraw, "FriendList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
     }
 }
