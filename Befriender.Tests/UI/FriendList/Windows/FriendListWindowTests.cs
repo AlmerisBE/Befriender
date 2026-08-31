@@ -1,9 +1,9 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Windows;
 
 using Befriender.UI.Input.Contracts;
+using Befriender.UI.MainWindow;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
-using Befriender.UI.MainWindow.Windows;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Configuration.Contracts;
 using global::Befriender.Core.Localization.Contracts;
