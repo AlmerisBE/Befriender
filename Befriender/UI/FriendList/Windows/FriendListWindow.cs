@@ -5,6 +5,7 @@ using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Components;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Input.Contracts;
+using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
@@ -21,6 +22,7 @@ public class FriendListWindow : Window, IDisposable {
     private FriendStatusBarComponent statusBar;
     private RemoveConfirmationModalComponent removeModal;
     private IHotkeyService hotkeyService;
+    private IThemeService themeService;
 
     private ITab currentTab;
     private ITab? tabToFocus;
@@ -34,7 +36,8 @@ public class FriendListWindow : Window, IDisposable {
         IWindowNavigationService navService,
         FriendStatusBarComponent statusBar,
         RemoveConfirmationModalComponent removeModal,
-        IHotkeyService hotkeyService)
+        IHotkeyService hotkeyService,
+        IThemeService themeService)
         : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs;
@@ -44,6 +47,7 @@ public class FriendListWindow : Window, IDisposable {
         this.statusBar = statusBar;
         this.removeModal = removeModal;
         this.hotkeyService = hotkeyService;
+        this.themeService = themeService;
 
         this.currentTab = this.tabs.First();
 
@@ -63,6 +67,33 @@ public class FriendListWindow : Window, IDisposable {
             this.tabToFocus = tab;
             this.IsOpen = true;
         }
+    }
+
+    public override void PreDraw() {
+        var palette = this.themeService.CurrentPalette;
+
+        ImGui.PushStyleColor(ImGuiCol.WindowBg, palette.WindowBg);
+        ImGui.PushStyleColor(ImGuiCol.Text, palette.Text);
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, palette.ChildBg);
+        ImGui.PushStyleColor(ImGuiCol.PopupBg, palette.PopupBg);
+        ImGui.PushStyleColor(ImGuiCol.FrameBg, palette.FrameBg);
+        ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, palette.FrameBgHovered);
+        ImGui.PushStyleColor(ImGuiCol.FrameBgActive, palette.FrameBgActive);
+        ImGui.PushStyleColor(ImGuiCol.TitleBg, palette.TitleBg);
+        ImGui.PushStyleColor(ImGuiCol.TitleBgActive, palette.TitleBgActive);
+        ImGui.PushStyleColor(ImGuiCol.TitleBgCollapsed, palette.TitleBgCollapsed);
+        ImGui.PushStyleColor(ImGuiCol.TableHeaderBg, palette.TableHeaderBg);
+        ImGui.PushStyleColor(ImGuiCol.TableRowBg, palette.TableRowBg);
+        ImGui.PushStyleColor(ImGuiCol.TableRowBgAlt, palette.TableRowBgAlt);
+        ImGui.PushStyleColor(ImGuiCol.Border, palette.Border);
+        ImGui.PushStyleColor(ImGuiCol.Tab, palette.Tab);
+        ImGui.PushStyleColor(ImGuiCol.TabHovered, palette.TabHovered);
+        ImGui.PushStyleColor(ImGuiCol.TabActive, palette.TabActive);
+        ImGui.PushStyleColor(ImGuiCol.TabUnfocused, palette.TabUnfocused);
+        ImGui.PushStyleColor(ImGuiCol.TabUnfocusedActive, palette.TabUnfocusedActive);
+        ImGui.PushStyleColor(ImGuiCol.Button, palette.Button);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, palette.ButtonHovered);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, palette.ButtonActive);
     }
 
     public override void Draw() {
@@ -100,6 +131,11 @@ public class FriendListWindow : Window, IDisposable {
 
             this.wasProfilePanelOpen = isPanelOpen;
         }
+    }
+
+    public override void PostDraw() {
+        // Pop exact same amount of pushed style colors (22)
+        ImGui.PopStyleColor(22);
     }
 
     public void Dispose() {

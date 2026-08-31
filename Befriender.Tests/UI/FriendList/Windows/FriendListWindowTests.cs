@@ -7,6 +7,7 @@ using global::Befriender.Core.Localization.Contracts;
 using global::Befriender.UI.FriendList.Components;
 using global::Befriender.UI.FriendList.Contracts;
 using global::Befriender.UI.FriendList.Windows;
+using global::Befriender.UI.Theme.Contracts;
 using global::Befriender.UI.Windows.Contracts;
 using NSubstitute;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ public class FriendListWindowTests {
         var mockSources = new List<ICharacterSource>();
         var mockRequestService = Substitute.For<IRemoveCharacterRequestService>();
         var mockHotkeys = Substitute.For<IHotkeyService>();
+        var mockThemeService = Substitute.For<IThemeService>();
 
         // Instantiate the required UI components with mocked dependencies
         var statusBar = new FriendStatusBarComponent(mockRegistry, mockSources, mockLoc);
@@ -36,7 +38,7 @@ public class FriendListWindowTests {
         var tabs = new List<ITab> { mockTab1, mockTab2 };
 
         // Act
-        using var window = new FriendListWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys);
+        using var window = new FriendListWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
 
         // Assert
         Assert.NotNull(window);
