@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.FriendList.Components;
+﻿namespace Befriender.UI.MainWindow.Components;
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;

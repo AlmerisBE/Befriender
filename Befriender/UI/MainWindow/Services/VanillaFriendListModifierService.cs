@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.FriendList.Services;
+﻿namespace Befriender.UI.MainWindow.Services;
 
 using Befriender.Core.Characters.Contracts;
 using Dalamud.Game.Addon.Lifecycle;

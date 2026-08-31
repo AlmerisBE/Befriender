@@ -1,0 +1,287 @@
+﻿namespace Befriender.UI.MainWindow.Lists;
+
+using Befriender.Core.Characters.Contracts;
+using Befriender.Core.Characters.Models;
+using Befriender.Core.GameData.Contracts;
+using Befriender.Core.Localization.Contracts;
+using Befriender.Core.Proximity.Contracts;
+using Befriender.UI.MainWindow.Components;
+using Befriender.UI.Theme.Contracts;
+using Befriender.UI.Theme.Models;
+using Befriender.UI.Windows.Contracts;
+using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Plugin.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+
+public abstract class AbstractListTab : ITab {
+    protected ICharacterRegistry registry;
+    protected ILocalizationService loc;
+    protected IGameDataService gameDataService;
+    protected IThemeService themeService;
+    protected ITextureProvider textureProvider;
+    protected IProximityService proximityService;
+    protected ICharacterActionService actionService;
+    protected ListToolbarComponent toolbarComponent;
+    protected CharacterProfilePanelComponent profilePanelComponent;
+
+    protected string searchQuery = string.Empty;
+    protected bool showOnlineOnly = false;
+    protected bool showNearbyOnly = false;
+    protected bool groupByGroups = false;
+
+    protected Character? selectedCharacter = null;
+    protected const float PanelWidth = 300f;
+
+    public abstract string InternalName { get; }
+    public abstract string Name { get; }
+    public bool IsProfilePanelOpen => this.selectedCharacter != null;
+
+    protected abstract string EmptyListMessageKey { get; }
+    protected abstract IEnumerable<Character> GetBaseCharacterList();
+
+    protected virtual bool ShowOnlineFilter => true;
+
+    protected AbstractListTab(
+        ICharacterRegistry registry,
+        ILocalizationService loc,
+        IGameDataService gameDataService,
+        IThemeService themeService,
+        ITextureProvider textureProvider,
+        IProximityService proximityService,
+        ICharacterActionService actionService,
+        ListToolbarComponent toolbarComponent,
+        CharacterProfilePanelComponent profilePanelComponent) {
+
+        this.registry = registry;
+        this.loc = loc;
+        this.gameDataService = gameDataService;
+        this.themeService = themeService;
+        this.textureProvider = textureProvider;
+        this.proximityService = proximityService;
+        this.actionService = actionService;
+        this.toolbarComponent = toolbarComponent;
+        this.profilePanelComponent = profilePanelComponent;
+    }
+
+    protected virtual IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {
+        return characters.OrderByDescending(c => c.IsOnline).ThenBy(c => c.Name);
+    }
+
+    public void Draw() {
+        var palette = this.themeService.CurrentPalette;
+
+        this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, this.ShowOnlineFilter);
+
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        var baseList = this.GetBaseCharacterList();
+        if (baseList == null) {
+            return;
+        }
+
+        if (this.showOnlineOnly) {
+            baseList = baseList.Where(m => m.IsOnline);
+        }
+
+        if (this.showNearbyOnly) {
+            baseList = baseList.Where(m => this.proximityService.IsFriendNearby(m.ContentId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(this.searchQuery)) {
+            baseList = baseList.Where(m => m.Name.Contains(this.searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var charactersList = this.SortCharacterList(baseList).ToList();
+
+        if (charactersList.Count == 0) {
+            ImGui.TextDisabled(this.loc.Translate(this.EmptyListMessageKey));
+            return;
+        }
+
+        float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
+        float tableWidth = this.selectedCharacter != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
+
+        if (ImGui.BeginChild($"{this.InternalName}_Container", new Vector2(tableWidth, -footerHeight))) {
+            if (ImGui.BeginTable($"{this.InternalName}_Table", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY)) {
+                ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn(this.loc.Translate("Column_Name"));
+                ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn(this.loc.Translate("Column_Location"));
+                ImGui.TableSetupScrollFreeze(0, 1);
+                ImGui.TableHeadersRow();
+
+                float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
+
+                foreach (var character in charactersList) {
+                    this.DrawCharacterRow(character, palette, textOffsetY);
+                }
+
+                ImGui.EndTable();
+            }
+        }
+        ImGui.EndChild();
+
+        if (this.selectedCharacter != null) {
+            ImGui.SameLine();
+            this.profilePanelComponent.Draw(PanelWidth, -footerHeight, this.selectedCharacter, () => this.selectedCharacter = null);
+        }
+    }
+
+    private void DrawCharacterRow(Character character, ThemePalette palette, float textOffsetY) {
+        ImGui.TableNextRow();
+
+        bool isAvailable = this.gameDataService.IsFriendAvailable(character.OnlineStateMask);
+        bool isDeleted = string.IsNullOrEmpty(character.Name);
+        Vector4 rowColor;
+
+        if (isDeleted || !character.IsActivelyTracked) {
+            rowColor = palette.TextArchived;
+        }
+        else if (!character.IsOnline) {
+            rowColor = palette.TextOffline;
+        }
+        else if (!isAvailable) {
+            rowColor = palette.TextBusy;
+        }
+        else {
+            rowColor = palette.TextOnline;
+        }
+
+        ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
+
+        ImGui.TableNextColumn();
+        float statusColWidth = ImGui.GetColumnWidth();
+        var cursorStart = ImGui.GetCursorPos();
+        bool isSelected = this.selectedCharacter == character;
+
+        if (ImGui.Selectable($"##row_{character.ContentId}", isSelected, ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowItemOverlap, new Vector2(0, 24))) {
+            this.selectedCharacter = isSelected ? null : character;
+        }
+        ImGui.SetCursorPos(cursorStart);
+
+        if (ImGui.BeginPopupContextItem($"ContextMenu_{character.ContentId}")) {
+            var actions = this.actionService.GetAvailableActions(character);
+            if (actions.Count == 0) {
+                ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
+            }
+
+            foreach (var action in actions) {
+                if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
+                    action.Execute(character);
+                }
+            }
+            ImGui.EndPopup();
+        }
+
+        if (isDeleted || !character.IsActivelyTracked) {
+            ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+            var iconStr = isDeleted ? ((char)FontAwesomeIcon.Ghost).ToString() : ((char)FontAwesomeIcon.Archive).ToString();
+            float textWidth = ImGui.CalcTextSize(iconStr).X;
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+            ImGui.Text(iconStr);
+            ImGui.PopFont();
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.loc.Translate(isDeleted ? "Profile_StatusDeleted" : "Profile_StatusArchived"));
+            }
+        }
+        else {
+            ulong effectiveMask = character.IsOnline ? character.OnlineStateMask : 0;
+            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, character.CurrentWorldId, character.HomeWorldId, character.LocationId);
+            var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
+            var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
+
+            if (iconWrap != null) {
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
+                ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, palette.IconDefaultTint);
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(statusInfo.Name);
+                }
+            }
+            else {
+                float textWidth = ImGui.CalcTextSize("●").X;
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+                ImGui.PushStyleColor(ImGuiCol.Text, character.IsOnline ? palette.StatusFallbackOnline : palette.StatusFallbackOffline);
+                ImGui.Text("●");
+                ImGui.PopStyleColor();
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(statusInfo.Name);
+                }
+            }
+        }
+
+        ImGui.TableNextColumn();
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+
+        if (this.proximityService.IsFriendNearby(character.ContentId)) {
+            ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+            ImGui.TextColored(palette.StatusFallbackOnline, ((char)FontAwesomeIcon.StreetView).ToString());
+            ImGui.PopFont();
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
+            }
+
+            ImGui.SameLine();
+        }
+
+        ImGui.Text(isDeleted ? this.loc.Translate("Profile_DeletedCharacter") : character.Name);
+
+        if (!string.IsNullOrWhiteSpace(character.Notes)) {
+            ImGui.SameLine();
+            ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+            ImGui.TextDisabled(((char)FontAwesomeIcon.StickyNote).ToString());
+            ImGui.PopFont();
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(character.Notes);
+            }
+        }
+
+        ImGui.TableNextColumn();
+        float jobColWidth = ImGui.GetColumnWidth();
+
+        if (character.JobId > 0) {
+            var jobIconId = this.gameDataService.GetJobIconId(character.JobId);
+            var jobAbbr = this.gameDataService.GetJobAbbreviation(character.JobId);
+            bool iconDrawn = false;
+
+            if (jobIconId > 0) {
+                var jIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = jobIconId };
+                var jIconWrap = this.textureProvider.GetFromGameIcon(jIconLookup).GetWrapOrDefault();
+
+                if (jIconWrap != null) {
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));
+                    ImGui.Image(jIconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, character.IsOnline ? palette.IconDefaultTint : palette.IconDimmedTint);
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(jobAbbr);
+                    }
+
+                    iconDrawn = true;
+                }
+            }
+
+            if (!iconDrawn) {
+                float textWidth = ImGui.CalcTextSize(jobAbbr).X;
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - textWidth) * 0.5f));
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+                ImGui.Text(jobAbbr);
+            }
+        }
+        else {
+            ImGui.Text(string.Empty);
+        }
+
+        ImGui.TableNextColumn();
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
+
+        string locationName = this.gameDataService.GetDisplayLocation(character.LocationId, character.CurrentWorldId, character.HomeWorldId, character.OnlineStateMask);
+        ImGui.Text(string.IsNullOrEmpty(locationName) || locationName == "0" ? this.loc.Translate("Profile_Unknown") : locationName);
+
+        ImGui.PopStyleColor();
+    }
+}

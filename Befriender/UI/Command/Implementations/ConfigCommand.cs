@@ -1,7 +1,7 @@
 ﻿namespace Befriender.UI.Command.Implementations;
 
 using Befriender.UI.Command.Contracts;
-using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.MainWindow.Contracts;
 
 public class ConfigCommand : ICommand {
     private IWindowNavigationService navService;

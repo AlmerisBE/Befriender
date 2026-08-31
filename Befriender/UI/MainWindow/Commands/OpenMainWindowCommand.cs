@@ -1,16 +1,16 @@
-﻿namespace Befriender.UI.FriendList.Commands;
+﻿namespace Befriender.UI.MainWindow.Commands;
 
 using Befriender.UI.Command.Contracts;
-using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.MainWindow.Contracts;
 using System;
 
-public class OpenFriendListCommand : ICommand {
+public class OpenMainWindowCommand : ICommand {
     private IWindowNavigationService navService;
 
     public string CommandTrigger => string.Empty;
-    public string Description => "Opens the Befriender Friend List UI.";
+    public string Description => "Opens the Befriender Main Window.";
 
-    public OpenFriendListCommand(IWindowNavigationService navService) {
+    public OpenMainWindowCommand(IWindowNavigationService navService) {
         this.navService = navService;
     }
 

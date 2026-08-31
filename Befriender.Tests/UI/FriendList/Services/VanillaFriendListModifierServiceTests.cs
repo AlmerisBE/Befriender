@@ -1,9 +1,9 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Services;
 
+using Befriender.UI.MainWindow.Services;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Plugin.Services;
 using global::Befriender.Core.Characters.Contracts;
-using global::Befriender.UI.FriendList.Services;
 using NSubstitute;
 using Xunit;
 

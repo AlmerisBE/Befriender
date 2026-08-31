@@ -2,7 +2,7 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
-using Befriender.UI.FriendList.Components;
+using Befriender.UI.MainWindow.Components;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;

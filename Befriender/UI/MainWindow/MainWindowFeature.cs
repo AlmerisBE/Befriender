@@ -1,25 +1,28 @@
-﻿namespace Befriender.UI.FriendList;
+﻿namespace Befriender.UI.MainWindow;
 
 using Befriender.Core.Framework;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Command.Contracts;
-using Befriender.UI.FriendList.Commands;
-using Befriender.UI.FriendList.Components;
-using Befriender.UI.FriendList.Contracts;
-using Befriender.UI.FriendList.Providers;
-using Befriender.UI.FriendList.Services;
-using Befriender.UI.FriendList.Tabs;
-using Befriender.UI.FriendList.Windows;
+using Befriender.UI.MainWindow.Commands;
+using Befriender.UI.MainWindow.Components;
+using Befriender.UI.MainWindow.Contracts;
+using Befriender.UI.MainWindow.Lists.Consolidated;
+using Befriender.UI.MainWindow.Lists.FreeCompany;
+using Befriender.UI.MainWindow.Lists.Friends;
+using Befriender.UI.MainWindow.Providers;
+using Befriender.UI.MainWindow.Services;
+using Befriender.UI.MainWindow.Tabs;
+using Befriender.UI.MainWindow.Windows;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Interface.Windowing;
 using Microsoft.Extensions.DependencyInjection;
 
-public class FriendListUIFeature : IFeatureModule {
+public class MainWindowFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IWindowNavigationService, WindowNavigationService>();
         services.AddSingleton<VanillaFriendListModifierService>();
 
-        services.AddSingleton<ILocalizationProvider, FriendListLocalizationProvider>();
+        services.AddSingleton<ILocalizationProvider, MainWindowLocalizationProvider>();
 
         // Components
         services.AddSingleton<ListToolbarComponent>();
@@ -30,14 +33,14 @@ public class FriendListUIFeature : IFeatureModule {
         services.AddSingleton<RemoveConfirmationModalComponent>();
 
         // Register the tabs
-        services.AddSingleton<ITab, ListTab>();
+        services.AddSingleton<ITab, FriendListTab>();
         services.AddSingleton<ITab, ConsolidatedTab>();
         services.AddSingleton<ITab, FreeCompanyTab>();
         services.AddSingleton<ITab, AboutTab>();
 
         // Window & Command
-        services.AddSingleton<FriendListWindow>();
-        services.AddSingleton<Window>(provider => provider.GetRequiredService<FriendListWindow>());
-        services.AddSingleton<ICommand, OpenFriendListCommand>();
+        services.AddSingleton<MainWindow>();
+        services.AddSingleton<Window>(provider => provider.GetRequiredService<MainWindow>());
+        services.AddSingleton<ICommand, OpenMainWindowCommand>();
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Services;
 
-using Befriender.UI.FriendList.Services;
+using Befriender.UI.MainWindow.Services;
 using Xunit;
 
 public class WindowNavigationServiceTests {

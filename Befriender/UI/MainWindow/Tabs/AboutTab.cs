@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.FriendList.Tabs;
+﻿namespace Befriender.UI.MainWindow.Tabs;
 
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Windows.Contracts;

@@ -1,6 +1,6 @@
-﻿namespace Befriender.UI.FriendList.Services;
+﻿namespace Befriender.UI.MainWindow.Services;
 
-using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.MainWindow.Contracts;
 using System;
 
 public class WindowNavigationService : IWindowNavigationService {

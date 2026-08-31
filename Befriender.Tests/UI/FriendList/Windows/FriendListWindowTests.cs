@@ -1,12 +1,12 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Windows;
 
 using Befriender.UI.Input.Contracts;
+using Befriender.UI.MainWindow.Components;
+using Befriender.UI.MainWindow.Contracts;
+using Befriender.UI.MainWindow.Windows;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Configuration.Contracts;
 using global::Befriender.Core.Localization.Contracts;
-using global::Befriender.UI.FriendList.Components;
-using global::Befriender.UI.FriendList.Contracts;
-using global::Befriender.UI.FriendList.Windows;
 using global::Befriender.UI.Theme.Contracts;
 using global::Befriender.UI.Windows.Contracts;
 using NSubstitute;
@@ -38,7 +38,7 @@ public class FriendListWindowTests {
         var tabs = new List<ITab> { mockTab1, mockTab2 };
 
         // Act
-        using var window = new FriendListWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
+        using var window = new MainWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys, mockThemeService);
 
         // Assert
         Assert.NotNull(window);

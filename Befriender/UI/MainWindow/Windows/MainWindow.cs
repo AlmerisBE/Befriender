@@ -1,10 +1,10 @@
-﻿namespace Befriender.UI.FriendList.Windows;
+﻿namespace Befriender.UI.MainWindow.Windows;
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
-using Befriender.UI.FriendList.Components;
-using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.Input.Contracts;
+using Befriender.UI.MainWindow.Components;
+using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-public class FriendListWindow : Window, IDisposable {
+public class MainWindow : Window, IDisposable {
     private IEnumerable<ITab> tabs;
     private IConfigurationService configurationService;
     private ILocalizationService loc;
@@ -29,7 +29,7 @@ public class FriendListWindow : Window, IDisposable {
     private bool wasProfilePanelOpen = false;
     private const float PanelWidth = 300f;
 
-    public FriendListWindow(
+    public MainWindow(
         IEnumerable<ITab> tabs,
         IConfigurationService configurationService,
         ILocalizationService loc,

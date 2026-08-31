@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.FriendList.Contracts;
+﻿namespace Befriender.UI.MainWindow.Contracts;
 
 using System;
 
