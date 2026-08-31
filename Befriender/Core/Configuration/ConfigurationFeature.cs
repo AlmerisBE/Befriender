@@ -6,7 +6,7 @@ using Befriender.Core.Framework;
 using Befriender.UI.Command.Contracts;
 using Befriender.UI.Command.Implementations;
 using Befriender.UI.Configuration.Tabs;
-using Befriender.UI.Windows.Contracts;
+using Befriender.UI.MainWindow.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 public class ConfigurationFeature : IFeatureModule {

@@ -13,7 +13,6 @@ using Befriender.UI.MainWindow.Providers;
 using Befriender.UI.MainWindow.Services;
 using Befriender.UI.MainWindow.Tabs;
 using Befriender.UI.MainWindow.Windows;
-using Befriender.UI.Windows.Contracts;
 using Dalamud.Interface.Windowing;
 using Microsoft.Extensions.DependencyInjection;
 

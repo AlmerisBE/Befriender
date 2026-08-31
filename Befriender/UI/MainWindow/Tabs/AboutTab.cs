@@ -1,7 +1,7 @@
 ﻿namespace Befriender.UI.MainWindow.Tabs;
 
 using Befriender.Core.Localization.Contracts;
-using Befriender.UI.Windows.Contracts;
+using Befriender.UI.MainWindow.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;

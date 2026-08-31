@@ -6,7 +6,6 @@ using Befriender.UI.Input.Contracts;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.Theme.Contracts;
-using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using System;

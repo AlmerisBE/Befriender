@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.Windows.Contracts;
+﻿namespace Befriender.UI.MainWindow.Contracts;
 
 public interface ITab {
     string InternalName { get; }

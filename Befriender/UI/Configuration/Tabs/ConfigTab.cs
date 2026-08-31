@@ -3,8 +3,8 @@
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.MainWindow.Components;
+using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.Theme.Contracts;
-using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 using System;
