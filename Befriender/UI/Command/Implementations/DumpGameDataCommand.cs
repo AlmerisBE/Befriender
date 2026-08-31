@@ -1,6 +1,6 @@
-﻿namespace Befriender.Core.Command.Implementations;
+﻿namespace Befriender.UI.Command.Implementations;
 
-using Befriender.Core.Command.Contracts;
+using Befriender.UI.Command.Contracts;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using System.Collections.Generic;

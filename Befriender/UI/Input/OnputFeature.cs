@@ -1,8 +1,8 @@
-﻿namespace Befriender.Core.Input;
+﻿namespace Befriender.UI.Input;
 
 using Befriender.Core.Framework;
-using Befriender.Core.Input.Contracts;
-using Befriender.Core.Input.Services;
+using Befriender.UI.Input.Contracts;
+using Befriender.UI.Input.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 public class InputFeature : IFeatureModule {

@@ -21,6 +21,7 @@ public class ConsolidatedTab : ITab {
     private IThemeService themeService;
     private ITextureProvider textureProvider;
     private IProximityService proximityService;
+    private ICharacterActionService actionService;
     private ListToolbarComponent toolbarComponent;
     private CharacterProfilePanelComponent profilePanelComponent;
 
@@ -43,6 +44,7 @@ public class ConsolidatedTab : ITab {
         IThemeService themeService,
         ITextureProvider textureProvider,
         IProximityService proximityService,
+        ICharacterActionService actionService,
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent) {
 
@@ -52,6 +54,7 @@ public class ConsolidatedTab : ITab {
         this.themeService = themeService;
         this.textureProvider = textureProvider;
         this.proximityService = proximityService;
+        this.actionService = actionService;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
     }
@@ -64,7 +67,6 @@ public class ConsolidatedTab : ITab {
         ImGui.Separator();
         ImGui.Spacing();
 
-        // Retrieve absolutely all characters from the Master List
         var allCharacters = this.registry.GetAllCharacters();
 
         if (this.showOnlineOnly) {
@@ -80,7 +82,7 @@ public class ConsolidatedTab : ITab {
         }
 
         var charactersList = allCharacters
-            .OrderByDescending(c => c.IsActivelyTracked) // Untracked (archived) at the bottom
+            .OrderByDescending(c => c.IsActivelyTracked)
             .ThenByDescending(c => c.IsOnline)
             .ThenBy(c => c.Name)
             .ToList();
@@ -111,7 +113,6 @@ public class ConsolidatedTab : ITab {
                     bool isDeleted = string.IsNullOrEmpty(character.Name);
                     Vector4 rowColor;
 
-                    // Specific styling for deleted or untracked (archived) characters
                     if (isDeleted || !character.IsActivelyTracked) {
                         rowColor = palette.TextArchived;
                     }
@@ -127,10 +128,8 @@ public class ConsolidatedTab : ITab {
 
                     ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
 
-                    // --- COLUMN: STATUS (Contains the invisible Selectable button) ---
                     ImGui.TableNextColumn();
                     float statusColWidth = ImGui.GetColumnWidth();
-
                     var cursorStart = ImGui.GetCursorPos();
                     bool isSelected = this.selectedCharacter == character;
 
@@ -139,8 +138,22 @@ public class ConsolidatedTab : ITab {
                     }
                     ImGui.SetCursorPos(cursorStart);
 
+                    // MENU CONTEXTUEL CLIC DROIT
+                    if (ImGui.BeginPopupContextItem($"ContextMenu_{character.ContentId}")) {
+                        var actions = this.actionService.GetAvailableActions(character);
+                        if (actions.Count == 0) {
+                            ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
+                        }
+
+                        foreach (var action in actions) {
+                            if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
+                                action.Execute(character);
+                            }
+                        }
+                        ImGui.EndPopup();
+                    }
+
                     if (isDeleted || !character.IsActivelyTracked) {
-                        // Visual cue for archived/deleted status
                         ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
                         var iconStr = isDeleted ? ((char)Dalamud.Interface.FontAwesomeIcon.Ghost).ToString() : ((char)Dalamud.Interface.FontAwesomeIcon.Archive).ToString();
                         float textWidth = ImGui.CalcTextSize(iconStr).X;
@@ -181,7 +194,6 @@ public class ConsolidatedTab : ITab {
                         }
                     }
 
-                    // --- COLUMN: NAME ---
                     ImGui.TableNextColumn();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
@@ -208,7 +220,6 @@ public class ConsolidatedTab : ITab {
                         }
                     }
 
-                    // --- COLUMN: JOB ---
                     ImGui.TableNextColumn();
                     float jobColWidth = ImGui.GetColumnWidth();
 
@@ -244,7 +255,6 @@ public class ConsolidatedTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
-                    // --- COLUMN: LOCATION ---
                     ImGui.TableNextColumn();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
@@ -259,7 +269,6 @@ public class ConsolidatedTab : ITab {
         }
         ImGui.EndChild();
 
-        // --- PROFILE PANEL DRAWING ---
         if (this.selectedCharacter != null) {
             ImGui.SameLine();
             this.profilePanelComponent.Draw(PanelWidth, -footerHeight, this.selectedCharacter, () => this.selectedCharacter = null);

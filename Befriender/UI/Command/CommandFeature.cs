@@ -1,9 +1,9 @@
-﻿namespace Befriender.Core.Command;
+﻿namespace Befriender.UI.Command;
 
-using Befriender.Core.Command.Contracts;
-using Befriender.Core.Command.Implementations;
-using Befriender.Core.Command.Services;
 using Befriender.Core.Framework;
+using Befriender.UI.Command.Contracts;
+using Befriender.UI.Command.Implementations;
+using Befriender.UI.Command.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 public class CommandFeature : IFeatureModule {

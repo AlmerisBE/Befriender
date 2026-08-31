@@ -8,9 +8,6 @@ using Befriender.Core.Sources.FreeCompany.Scanners;
 using Befriender.Core.Sources.Friends;
 using Befriender.Core.Sources.Friends.Contracts;
 using Befriender.Core.Sources.Friends.Scanners;
-using Befriender.Core.Sources.Proximity;
-using Befriender.Core.Sources.Proximity.Contracts;
-using Befriender.Core.Sources.Proximity.Scanners;
 using Microsoft.Extensions.DependencyInjection;
 
 public class SourcesFeature : IFeatureModule {
@@ -24,10 +21,5 @@ public class SourcesFeature : IFeatureModule {
         services.AddSingleton<IFreeCompanyScanner, MemoryFreeCompanyScanner>();
         services.AddSingleton<FreeCompanySource>();
         services.AddSingleton<ICharacterSource>(provider => provider.GetRequiredService<FreeCompanySource>());
-
-        // Proximity Source
-        services.AddSingleton<IProximityScanner, ObjectTableProximityScanner>();
-        services.AddSingleton<ProximitySource>();
-        services.AddSingleton<ICharacterSource>(provider => provider.GetRequiredService<ProximitySource>());
     }
 }

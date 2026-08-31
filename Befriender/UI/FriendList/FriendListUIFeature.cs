@@ -1,8 +1,8 @@
 ﻿namespace Befriender.UI.FriendList;
 
-using Befriender.Core.Command.Contracts;
 using Befriender.Core.Framework;
 using Befriender.Core.Localization.Contracts;
+using Befriender.UI.Command.Contracts;
 using Befriender.UI.FriendList.Commands;
 using Befriender.UI.FriendList.Components;
 using Befriender.UI.FriendList.Contracts;

@@ -1,4 +1,4 @@
-﻿namespace Befriender.Core.Notifications.Services;
+﻿namespace Befriender.UI.Notifications.Services;
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;

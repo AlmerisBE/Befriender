@@ -1,6 +1,6 @@
-﻿namespace Befriender.UI.Configuration.Commands;
+﻿namespace Befriender.UI.Command.Implementations;
 
-using Befriender.Core.Command.Contracts;
+using Befriender.UI.Command.Contracts;
 using Befriender.UI.FriendList.Contracts;
 
 public class ConfigCommand : ICommand {

@@ -22,6 +22,7 @@ public class FreeCompanyTab : ITab {
     private IThemeService themeService;
     private ITextureProvider textureProvider;
     private IProximityService proximityService;
+    private ICharacterActionService actionService;
     private ListToolbarComponent toolbarComponent;
     private CharacterProfilePanelComponent profilePanelComponent;
 
@@ -46,6 +47,7 @@ public class FreeCompanyTab : ITab {
         IThemeService themeService,
         ITextureProvider textureProvider,
         IProximityService proximityService,
+        ICharacterActionService actionService,
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent) {
 
@@ -55,10 +57,10 @@ public class FreeCompanyTab : ITab {
         this.themeService = themeService;
         this.textureProvider = textureProvider;
         this.proximityService = proximityService;
+        this.actionService = actionService;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
 
-        // Dynamically resolve the FreeCompany source ID to decouple UI from specific implementations
         var fcSource = sources.FirstOrDefault(s => s.Name == "FreeCompany");
         if (fcSource != null) {
             this.fcSourceId = fcSource.SourceId;
@@ -131,10 +133,8 @@ public class FreeCompanyTab : ITab {
 
                     ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
 
-                    // --- COLUMN: STATUS (Contains the invisible Selectable button) ---
                     ImGui.TableNextColumn();
                     float statusColWidth = ImGui.GetColumnWidth();
-
                     var cursorStart = ImGui.GetCursorPos();
                     bool isSelected = this.selectedCharacter == member;
 
@@ -142,6 +142,21 @@ public class FreeCompanyTab : ITab {
                         this.selectedCharacter = isSelected ? null : member;
                     }
                     ImGui.SetCursorPos(cursorStart);
+
+                    // MENU CONTEXTUEL CLIC DROIT
+                    if (ImGui.BeginPopupContextItem($"ContextMenu_{member.ContentId}")) {
+                        var actions = this.actionService.GetAvailableActions(member);
+                        if (actions.Count == 0) {
+                            ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
+                        }
+
+                        foreach (var action in actions) {
+                            if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
+                                action.Execute(member);
+                            }
+                        }
+                        ImGui.EndPopup();
+                    }
 
                     ulong effectiveMask = member.IsOnline ? member.OnlineStateMask : 0;
                     var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, member.CurrentWorldId, member.HomeWorldId, member.LocationId);
@@ -169,7 +184,6 @@ public class FreeCompanyTab : ITab {
                         }
                     }
 
-                    // --- COLUMN: NAME ---
                     ImGui.TableNextColumn();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
@@ -196,7 +210,6 @@ public class FreeCompanyTab : ITab {
                         }
                     }
 
-                    // --- COLUMN: JOB ---
                     ImGui.TableNextColumn();
                     float jobColWidth = ImGui.GetColumnWidth();
 
@@ -232,7 +245,6 @@ public class FreeCompanyTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
-                    // --- COLUMN: LOCATION ---
                     ImGui.TableNextColumn();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
@@ -247,7 +259,6 @@ public class FreeCompanyTab : ITab {
         }
         ImGui.EndChild();
 
-        // --- PROFILE PANEL DRAWING ---
         if (this.selectedCharacter != null) {
             ImGui.SameLine();
             this.profilePanelComponent.Draw(PanelWidth, -footerHeight, this.selectedCharacter, () => this.selectedCharacter = null);

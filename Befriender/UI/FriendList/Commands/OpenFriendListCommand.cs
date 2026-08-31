@@ -1,6 +1,6 @@
 ﻿namespace Befriender.UI.FriendList.Commands;
 
-using Befriender.Core.Command.Contracts;
+using Befriender.UI.Command.Contracts;
 using Befriender.UI.FriendList.Contracts;
 using System;
 

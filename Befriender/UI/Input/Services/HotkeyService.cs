@@ -1,7 +1,7 @@
-﻿namespace Befriender.Core.Input.Services;
+﻿namespace Befriender.UI.Input.Services;
 
 using Befriender.Core.Configuration.Contracts;
-using Befriender.Core.Input.Contracts;
+using Befriender.UI.Input.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;

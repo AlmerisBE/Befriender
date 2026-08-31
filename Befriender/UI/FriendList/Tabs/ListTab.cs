@@ -22,6 +22,7 @@ public class ListTab : ITab {
     private IThemeService themeService;
     private ITextureProvider textureProvider;
     private IProximityService proximityService;
+    private ICharacterActionService actionService;
     private ListToolbarComponent toolbarComponent;
     private CharacterProfilePanelComponent profilePanelComponent;
 
@@ -46,6 +47,7 @@ public class ListTab : ITab {
         IThemeService themeService,
         ITextureProvider textureProvider,
         IProximityService proximityService,
+        ICharacterActionService actionService,
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent) {
 
@@ -55,10 +57,10 @@ public class ListTab : ITab {
         this.themeService = themeService;
         this.textureProvider = textureProvider;
         this.proximityService = proximityService;
+        this.actionService = actionService;
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
 
-        // Dynamically resolve the FriendList source ID to decouple UI from specific implementations
         var friendSource = sources.FirstOrDefault(s => s.Name == "FriendList");
         if (friendSource != null) {
             this.friendSourceId = friendSource.SourceId;
@@ -68,7 +70,8 @@ public class ListTab : ITab {
     public void Draw() {
         var palette = this.themeService.CurrentPalette;
 
-        this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, false);
+        // ACTIVATION DU FILTRE EN LIGNE (dernier argument = true)
+        this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, true);
 
         ImGui.Separator();
         ImGui.Spacing();
@@ -131,10 +134,8 @@ public class ListTab : ITab {
 
                     ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
 
-                    // --- COLUMN: STATUS (Contains the invisible Selectable button) ---
                     ImGui.TableNextColumn();
                     float statusColWidth = ImGui.GetColumnWidth();
-
                     var cursorStart = ImGui.GetCursorPos();
                     bool isSelected = this.selectedCharacter == friend;
 
@@ -142,6 +143,21 @@ public class ListTab : ITab {
                         this.selectedCharacter = isSelected ? null : friend;
                     }
                     ImGui.SetCursorPos(cursorStart);
+
+                    // MENU CONTEXTUEL CLIC DROIT
+                    if (ImGui.BeginPopupContextItem($"ContextMenu_{friend.ContentId}")) {
+                        var actions = this.actionService.GetAvailableActions(friend);
+                        if (actions.Count == 0) {
+                            ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
+                        }
+
+                        foreach (var action in actions) {
+                            if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
+                                action.Execute(friend);
+                            }
+                        }
+                        ImGui.EndPopup();
+                    }
 
                     ulong effectiveMask = friend.IsOnline ? friend.OnlineStateMask : 0;
                     var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, friend.CurrentWorldId, friend.HomeWorldId, friend.LocationId);
@@ -169,7 +185,6 @@ public class ListTab : ITab {
                         }
                     }
 
-                    // --- COLUMN: NAME ---
                     ImGui.TableNextColumn();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
@@ -196,7 +211,6 @@ public class ListTab : ITab {
                         }
                     }
 
-                    // --- COLUMN: JOB ---
                     ImGui.TableNextColumn();
                     float jobColWidth = ImGui.GetColumnWidth();
 
@@ -232,7 +246,6 @@ public class ListTab : ITab {
                         ImGui.Text(string.Empty);
                     }
 
-                    // --- COLUMN: LOCATION ---
                     ImGui.TableNextColumn();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
@@ -247,7 +260,6 @@ public class ListTab : ITab {
         }
         ImGui.EndChild();
 
-        // --- PROFILE PANEL DRAWING ---
         if (this.selectedCharacter != null) {
             ImGui.SameLine();
             this.profilePanelComponent.Draw(PanelWidth, -footerHeight, this.selectedCharacter, () => this.selectedCharacter = null);

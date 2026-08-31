@@ -4,6 +4,7 @@ using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.UI.FriendList.Components;
 using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.Input.Contracts;
 using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
@@ -19,6 +20,7 @@ public class FriendListWindow : Window, IDisposable {
     private IWindowNavigationService navService;
     private FriendStatusBarComponent statusBar;
     private RemoveConfirmationModalComponent removeModal;
+    private IHotkeyService hotkeyService;
 
     private ITab currentTab;
     private ITab? tabToFocus;
@@ -31,7 +33,8 @@ public class FriendListWindow : Window, IDisposable {
         ILocalizationService loc,
         IWindowNavigationService navService,
         FriendStatusBarComponent statusBar,
-        RemoveConfirmationModalComponent removeModal)
+        RemoveConfirmationModalComponent removeModal,
+        IHotkeyService hotkeyService)
         : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs;
@@ -40,6 +43,7 @@ public class FriendListWindow : Window, IDisposable {
         this.navService = navService;
         this.statusBar = statusBar;
         this.removeModal = removeModal;
+        this.hotkeyService = hotkeyService;
 
         this.currentTab = this.tabs.First();
 
@@ -50,6 +54,7 @@ public class FriendListWindow : Window, IDisposable {
 
         this.navService.OnTabRequested += this.SetTab;
         this.navService.OnWindowToggleRequested += this.Toggle;
+        this.hotkeyService.OnHotkeyPressed += this.Toggle;
     }
 
     private void SetTab(string tabInternalName) {
@@ -61,10 +66,8 @@ public class FriendListWindow : Window, IDisposable {
     }
 
     public override void Draw() {
-        // --- TABS RENDERING ---
         if (ImGui.BeginTabBar("BefrienderMainTabBar")) {
             foreach (var tab in this.tabs) {
-                // Apply SetSelected ONLY if an external command requested focus on this specific tab
                 var flags = this.tabToFocus == tab ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None;
 
                 if (ImGui.BeginTabItem(tab.Name, flags)) {
@@ -73,30 +76,24 @@ public class FriendListWindow : Window, IDisposable {
                     ImGui.EndTabItem();
                 }
             }
-            // Reset focus request to allow natural ImGui navigation afterward
             this.tabToFocus = null;
             ImGui.EndTabBar();
         }
 
-        // --- FOOTER RENDERING ---
         ImGui.Spacing();
         ImGui.Separator();
         this.statusBar.Draw();
 
-        // --- GLOBAL MODALS ---
         this.removeModal.Draw();
 
-        // --- DYNAMIC RESIZING ---
         if (this.currentTab != null) {
             bool isPanelOpen = this.currentTab.IsProfilePanelOpen;
 
             if (isPanelOpen && !this.wasProfilePanelOpen) {
-                // Expand window to accommodate the side panel
                 var size = ImGui.GetWindowSize();
                 ImGui.SetWindowSize(new Vector2(size.X + PanelWidth + ImGui.GetStyle().ItemSpacing.X, size.Y));
             }
             else if (!isPanelOpen && this.wasProfilePanelOpen) {
-                // Shrink window back to normal size
                 var size = ImGui.GetWindowSize();
                 ImGui.SetWindowSize(new Vector2(Math.Max(this.SizeConstraints?.MinimumSize.X ?? 400, size.X - PanelWidth - ImGui.GetStyle().ItemSpacing.X), size.Y));
             }
@@ -108,5 +105,6 @@ public class FriendListWindow : Window, IDisposable {
     public void Dispose() {
         this.navService.OnTabRequested -= this.SetTab;
         this.navService.OnWindowToggleRequested -= this.Toggle;
+        this.hotkeyService.OnHotkeyPressed -= this.Toggle;
     }
 }

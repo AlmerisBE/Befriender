@@ -1,4 +1,4 @@
-﻿namespace Befriender.Core.Input.Contracts;
+﻿namespace Befriender.UI.Input.Contracts;
 
 using System;
 

@@ -1,6 +1,6 @@
-﻿namespace Befriender.Core.Command.Services;
+﻿namespace Befriender.UI.Command.Services;
 
-using Befriender.Core.Command.Contracts;
+using Befriender.UI.Command.Contracts;
 using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
 using System;

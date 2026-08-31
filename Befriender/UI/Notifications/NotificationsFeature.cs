@@ -1,7 +1,7 @@
-﻿namespace Befriender.Core.Notifications;
+﻿namespace Befriender.UI.Notifications;
 
 using Befriender.Core.Framework;
-using Befriender.Core.Notifications.Services;
+using Befriender.UI.Notifications.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 public class NotificationsFeature : IFeatureModule {

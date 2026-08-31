@@ -1,13 +1,13 @@
 ﻿namespace Befriender;
 
 using Befriender.Core.Characters.Services;
-using Befriender.Core.Command.Services;
 using Befriender.Core.Framework;
-using Befriender.Core.Input.Services;
-using Befriender.Core.Notifications.Services;
 using Befriender.Core.Proximity.Contracts;
+using Befriender.UI.Command.Services;
 using Befriender.UI.FriendList.Contracts;
 using Befriender.UI.FriendList.Services;
+using Befriender.UI.Input.Services;
+using Befriender.UI.Notifications.Services;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;

@@ -1,4 +1,4 @@
-﻿namespace Befriender.Core.Command.Contracts;
+﻿namespace Befriender.UI.Command.Contracts;
 
 public interface ICommand {
     string CommandTrigger { get; }
