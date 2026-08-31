@@ -34,23 +34,40 @@ public class ListToolbarComponent {
         if (this.isFiltersExpanded) {
             ImGui.Spacing();
 
-            if (showOnlineCheckbox) {
-                if (ImGui.Checkbox(this.loc.Translate("List_ShowOnlineOnly"), ref showOnlineOnly)) {
+            // Calculate the absolute right edge of the visible window content
+            float windowVisibleX2 = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+            float checkboxSquareSize = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X;
+
+            bool isFirstItemOnLine = true;
+
+            // Local helper function to draw checkboxes with auto-wrapping capabilities
+            void DrawWrappingCheckbox(string label, ref bool value) {
+                float itemWidth = checkboxSquareSize + ImGui.CalcTextSize(label).X;
+
+                if (!isFirstItemOnLine) {
+                    float nextItemX2 = ImGui.GetCursorScreenPos().X + itemWidth;
+
+                    if (nextItemX2 < windowVisibleX2) {
+                        ImGui.SameLine();
+                    }
+                    else {
+                        isFirstItemOnLine = true;
+                    }
+                }
+
+                if (ImGui.Checkbox(label, ref value)) {
                     forceRefresh = true;
                 }
 
-                ImGui.SameLine();
+                isFirstItemOnLine = false;
             }
 
-            if (ImGui.Checkbox(this.loc.Translate("List_ShowNearbyOnly"), ref showNearbyOnly)) {
-                forceRefresh = true;
+            if (showOnlineCheckbox) {
+                DrawWrappingCheckbox(this.loc.Translate("List_ShowOnlineOnly"), ref showOnlineOnly);
             }
 
-            ImGui.SameLine();
-
-            if (ImGui.Checkbox(this.loc.Translate("List_GroupByGroups"), ref groupByGroups)) {
-                forceRefresh = true;
-            }
+            DrawWrappingCheckbox(this.loc.Translate("List_ShowNearbyOnly"), ref showNearbyOnly);
+            DrawWrappingCheckbox(this.loc.Translate("List_GroupByGroups"), ref groupByGroups);
 
             ImGui.Spacing();
         }
