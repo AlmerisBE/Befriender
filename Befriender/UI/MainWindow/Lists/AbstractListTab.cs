@@ -38,7 +38,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected Character? selectedCharacter = null;
     protected const float PanelWidth = 300f;
 
-    // Cache properties
     protected List<Character> cachedCharacterList = new();
     protected bool requiresListRebuild = true;
 
@@ -110,7 +109,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
                 if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
-
                 if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) {
                     return true;
                 }
@@ -130,7 +128,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
     public void Draw() {
         var palette = this.themeService.CurrentPalette;
 
-        // Draw returns true if any filter was modified by the user
         bool filtersChanged = this.toolbarComponent.Draw(ref this.showOnlineOnly, ref this.showNearbyOnly, ref this.groupByGroups, ref this.searchQuery, this.ShowOnlineFilter);
 
         if (filtersChanged || this.requiresListRebuild) {
@@ -309,6 +306,17 @@ public abstract class AbstractListTab : ITab, IDisposable {
         }
 
         ImGui.Text(isDeleted ? this.loc.Translate("Profile_DeletedCharacter") : character.Name);
+
+        // NOUVEAU: Affichage de l'icône de cloche pour les alertes actives
+        if (character.IsTrackedForNotifications) {
+            ImGui.SameLine();
+            ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
+            ImGui.TextColored(palette.IconDefaultTint, ((char)FontAwesomeIcon.Bell).ToString());
+            ImGui.PopFont();
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.loc.Translate("Tooltip_Tracked"));
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(character.Notes)) {
             ImGui.SameLine();

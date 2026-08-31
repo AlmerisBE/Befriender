@@ -36,21 +36,24 @@ public class ListToolbarComponent {
 
             // Calculate the absolute right edge of the visible window content
             float windowVisibleX2 = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+            float styleSpacingX = ImGui.GetStyle().ItemSpacing.X;
             float checkboxSquareSize = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X;
 
             bool isFirstItemOnLine = true;
 
-            // Local helper function to draw checkboxes with auto-wrapping capabilities
+            // Local helper function to draw checkboxes with robust auto-wrapping capabilities
             void DrawWrappingCheckbox(string label, ref bool value) {
                 float itemWidth = checkboxSquareSize + ImGui.CalcTextSize(label).X;
 
                 if (!isFirstItemOnLine) {
-                    float nextItemX2 = ImGui.GetCursorScreenPos().X + itemWidth;
+                    // Evaluate if the PREVIOUS item's end + spacing + this item's width exceeds the window
+                    float nextItemX2 = ImGui.GetItemRectMax().X + styleSpacingX + itemWidth;
 
                     if (nextItemX2 < windowVisibleX2) {
                         ImGui.SameLine();
                     }
                     else {
+                        // Let ImGui naturally move to the next line
                         isFirstItemOnLine = true;
                     }
                 }
