@@ -2,7 +2,7 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;
-using Befriender.Core.Input.Services;
+using Befriender.UI.Input.Services;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
 using NSubstitute;

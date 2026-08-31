@@ -1,7 +1,7 @@
 ﻿namespace Befriender.Tests.Core.Command.Services;
 
-using Befriender.Core.Command.Services;
 using Befriender.UI.Command.Contracts;
+using Befriender.UI.Command.Services;
 using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
 using NSubstitute;

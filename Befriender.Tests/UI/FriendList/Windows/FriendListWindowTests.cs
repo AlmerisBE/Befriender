@@ -1,5 +1,6 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Windows;
 
+using Befriender.UI.Input.Contracts;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Configuration.Contracts;
 using global::Befriender.Core.Localization.Contracts;
@@ -26,6 +27,7 @@ public class FriendListWindowTests {
         var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockSources = new List<ICharacterSource>();
         var mockRequestService = Substitute.For<IRemoveCharacterRequestService>();
+        var mockHotkeys = Substitute.For<IHotkeyService>();
 
         // Instantiate the required UI components with mocked dependencies
         var statusBar = new FriendStatusBarComponent(mockRegistry, mockSources, mockLoc);
@@ -34,7 +36,7 @@ public class FriendListWindowTests {
         var tabs = new List<ITab> { mockTab1, mockTab2 };
 
         // Act
-        using var window = new FriendListWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal);
+        using var window = new FriendListWindow(tabs, mockConfig, mockLoc, mockNav, statusBar, removeModal, mockHotkeys);
 
         // Assert
         Assert.NotNull(window);

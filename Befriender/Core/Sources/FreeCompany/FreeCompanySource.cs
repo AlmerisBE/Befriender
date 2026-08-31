@@ -14,6 +14,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     private List<Character> currentState = new();
     private bool isSyncActive = false;
+    private bool isInitialized = false;
     private DateTime lastSyncTime = DateTime.MinValue;
     private DateTime pendingSyncTime = DateTime.MaxValue;
     private DateTime dataStabilizedTime = DateTime.MaxValue;
@@ -31,8 +32,6 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         this.scanner = scanner;
         this.framework = framework;
         this.framework.Update += this.OnFrameworkUpdate;
-
-        this.StartSync();
     }
 
     public IEnumerable<Character> GetCurrentState() {
@@ -64,6 +63,11 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
+        if (!this.isInitialized) {
+            this.isInitialized = true;
+            this.StartSync();
+        }
+
         if (!this.isSyncActive) {
             return;
         }
