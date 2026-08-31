@@ -9,9 +9,15 @@ using System.Text.Json;
 
 public class JsonCharacterGroupStorage : ICharacterGroupStorage {
     private IDalamudPluginInterface pluginInterface;
+    private JsonSerializerOptions jsonOptions;
 
     public JsonCharacterGroupStorage(IDalamudPluginInterface pluginInterface) {
         this.pluginInterface = pluginInterface;
+        this.jsonOptions = new JsonSerializerOptions {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            IncludeFields = true
+        };
     }
 
     private string GetFilePath(string characterId) {
@@ -30,7 +36,7 @@ public class JsonCharacterGroupStorage : ICharacterGroupStorage {
 
         try {
             var json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<List<CharacterGroup>>(json) ?? new List<CharacterGroup>();
+            return JsonSerializer.Deserialize<List<CharacterGroup>>(json, this.jsonOptions) ?? new List<CharacterGroup>();
         }
         catch {
             return new List<CharacterGroup>();
@@ -43,8 +49,7 @@ public class JsonCharacterGroupStorage : ICharacterGroupStorage {
         }
 
         var filePath = this.GetFilePath(characterId);
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        var json = JsonSerializer.Serialize(groups, options);
+        var json = JsonSerializer.Serialize(groups, this.jsonOptions);
         File.WriteAllText(filePath, json);
     }
 }

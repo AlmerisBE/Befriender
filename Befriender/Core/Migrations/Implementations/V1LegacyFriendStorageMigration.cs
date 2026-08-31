@@ -23,14 +23,20 @@ public class V1LegacyFriendStorageMigration : IMigration {
     public void Execute(string accountIdentity) {
         string legacyPath = Path.Combine(this.pluginInterface.ConfigDirectory.FullName, $"friends_{accountIdentity}.json");
 
-        // Si le fichier n'existe pas (ou a déjà été migré), on s'arrête ici.
         if (!File.Exists(legacyPath)) {
             return;
         }
 
         try {
             string json = File.ReadAllText(legacyPath);
-            var legacyProfiles = JsonSerializer.Deserialize<List<LegacyFriendProfile>>(json);
+
+            // Permissive deserialization to capture legacy camelCase properties
+            var options = new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                IncludeFields = true
+            };
+
+            var legacyProfiles = JsonSerializer.Deserialize<List<LegacyFriendProfile>>(json, options);
 
             if (legacyProfiles != null && legacyProfiles.Count > 0) {
                 var characters = new List<Character>();
@@ -76,11 +82,10 @@ public class V1LegacyFriendStorageMigration : IMigration {
                 this.characterStorage.Save("MasterCharacterList", accountIdentity, characters);
             }
 
-            // Renommage définitif pour empêcher une boucle infinie de migration
             File.Move(legacyPath, $"{legacyPath}.migrated");
         }
         catch {
-            // En cas d'erreur fatale, on ne renomme pas le fichier pour permettre une nouvelle tentative
+            // Failsafe
         }
     }
 

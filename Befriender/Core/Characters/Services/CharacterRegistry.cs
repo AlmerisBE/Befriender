@@ -17,6 +17,8 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     private IMigrationService migrationService;
     private ICharacterIdentityService identityService;
     private IClientState clientState;
+    private IFramework framework;
+    private IPluginLog pluginLog;
 
     private string currentAccountIdentity = string.Empty;
     private readonly object lockObj = new();
@@ -28,29 +30,33 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         IEnumerable<ICharacterSource> initialSources,
         IMigrationService migrationService,
         ICharacterIdentityService identityService,
-        IClientState clientState) {
+        IClientState clientState,
+        IFramework framework,
+        IPluginLog pluginLog) {
 
         this.storage = storage;
         this.migrationService = migrationService;
         this.identityService = identityService;
         this.clientState = clientState;
+        this.framework = framework;
+        this.pluginLog = pluginLog;
 
         foreach (var source in initialSources) {
             this.RegisterSource(source);
         }
 
-        this.clientState.Login += this.OnLogin;
         this.clientState.Logout += this.OnLogout;
-
-        // Trigger load immediately if the plugin is loaded while already logged into the game
-        this.OnLogin();
+        this.framework.Update += this.OnFrameworkUpdate;
     }
 
-    private void OnLogin() {
-        var accountId = this.identityService.GetCurrentCharacterId();
-        if (!string.IsNullOrEmpty(accountId)) {
-            this.migrationService.RunMigrations(accountId);
-            this.LoadMasterList(accountId);
+    private void OnFrameworkUpdate(IFramework fw) {
+        if (this.clientState.IsLoggedIn && string.IsNullOrEmpty(this.currentAccountIdentity)) {
+            var accountId = this.identityService.GetCurrentCharacterId();
+            if (!string.IsNullOrEmpty(accountId)) {
+                this.pluginLog.Debug($"[CharacterRegistry] LocalPlayer detected: {accountId}. Initializing registry...");
+                this.migrationService.RunMigrations(accountId);
+                this.LoadMasterList(accountId);
+            }
         }
     }
 
@@ -220,7 +226,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     }
 
     public void Dispose() {
-        this.clientState.Login -= this.OnLogin;
         this.clientState.Logout -= this.OnLogout;
+        this.framework.Update -= this.OnFrameworkUpdate;
     }
 }

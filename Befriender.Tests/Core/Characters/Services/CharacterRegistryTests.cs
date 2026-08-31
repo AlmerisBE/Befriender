@@ -15,16 +15,27 @@ public class CharacterRegistryTests {
     private IMigrationService mockMigration;
     private ICharacterIdentityService mockIdentity;
     private IClientState mockClientState;
+    private IFramework mockFramework;
+    private IPluginLog mockPluginLog;
 
     public CharacterRegistryTests() {
         this.mockStorage = Substitute.For<ICharacterStorage>();
         this.mockMigration = Substitute.For<IMigrationService>();
         this.mockIdentity = Substitute.For<ICharacterIdentityService>();
         this.mockClientState = Substitute.For<IClientState>();
+        this.mockFramework = Substitute.For<IFramework>();
+        this.mockPluginLog = Substitute.For<IPluginLog>();
     }
 
     private CharacterRegistry CreateRegistry() {
-        return new CharacterRegistry(this.mockStorage, Array.Empty<ICharacterSource>(), this.mockMigration, this.mockIdentity, this.mockClientState);
+        return new CharacterRegistry(
+            this.mockStorage,
+            Array.Empty<ICharacterSource>(),
+            this.mockMigration,
+            this.mockIdentity,
+            this.mockClientState,
+            this.mockFramework,
+            this.mockPluginLog);
     }
 
     [Fact]
@@ -68,5 +79,18 @@ public class CharacterRegistryTests {
         Assert.Single(allChars);
         Assert.Empty(allChars[0].ActiveSourceIds);
         Assert.False(allChars[0].IsActivelyTracked);
+    }
+
+    [Fact]
+    public void OnFrameworkUpdate_InitializesRegistryWhenPlayerIsAvailable() {
+        var registry = this.CreateRegistry();
+
+        this.mockClientState.IsLoggedIn.Returns(true);
+        this.mockIdentity.GetCurrentCharacterId().Returns("TestAccount_33");
+
+        this.mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(this.mockFramework);
+
+        this.mockMigration.Received(1).RunMigrations("TestAccount_33");
+        this.mockStorage.Received(1).Load("MasterCharacterList", "TestAccount_33");
     }
 }

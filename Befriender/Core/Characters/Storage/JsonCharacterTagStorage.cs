@@ -12,10 +12,16 @@ using System.Text.Json;
 public class JsonCharacterTagStorage : ICharacterTagStorage {
     private IDalamudPluginInterface pluginInterface;
     private IPluginLog pluginLog;
+    private JsonSerializerOptions jsonOptions;
 
     public JsonCharacterTagStorage(IDalamudPluginInterface pluginInterface, IPluginLog pluginLog) {
         this.pluginInterface = pluginInterface;
         this.pluginLog = pluginLog;
+        this.jsonOptions = new JsonSerializerOptions {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            IncludeFields = true
+        };
     }
 
     private string GetFilePath(string characterId) {
@@ -34,7 +40,7 @@ public class JsonCharacterTagStorage : ICharacterTagStorage {
 
         try {
             string json = File.ReadAllText(path);
-            var tags = JsonSerializer.Deserialize<List<CharacterTag>>(json);
+            var tags = JsonSerializer.Deserialize<List<CharacterTag>>(json, this.jsonOptions);
 
             if (tags != null) {
                 return tags;
@@ -55,7 +61,7 @@ public class JsonCharacterTagStorage : ICharacterTagStorage {
         string path = this.GetFilePath(characterId);
 
         try {
-            string json = JsonSerializer.Serialize(tags, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(tags, this.jsonOptions);
             File.WriteAllText(path, json);
         }
         catch (Exception ex) {
