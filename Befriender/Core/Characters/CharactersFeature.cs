@@ -24,6 +24,9 @@ public class CharactersFeature : IFeatureModule {
         services.AddSingleton<ICharacterTagStorage, JsonCharacterTagStorage>();
         services.AddSingleton<ICharacterTagRepository, CharacterTagRepository>();
 
+        // Services transversaux des personnages
+        services.AddSingleton<IRemoveCharacterRequestService, RemoveCharacterRequestService>();
+
         // Actions Consolidation
         services.AddSingleton<ICharacterAction, CopyNameAction>();
         services.AddSingleton<ICharacterAction, DeleteCharacterDataAction>();
