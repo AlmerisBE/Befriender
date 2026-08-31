@@ -1,11 +1,11 @@
-﻿using Befriender.UI.Localization.Contracts;
-using Befriender.UI.Localization.Services;
+﻿using Befriender.Core.Localization.Contracts;
+using Befriender.Core.Localization.Services;
 using Dalamud.Game;
 using Dalamud.Plugin.Services;
 using NSubstitute;
 using Xunit;
 
-namespace Befriender.Tests.UI.Localization.Services;
+namespace Befriender.Tests.Core.Localization.Services;
 
 public class LocalizationServiceTests {
     [Fact]

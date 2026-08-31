@@ -3,7 +3,7 @@
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
 using Befriender.Core.GameData.Contracts;
-using Befriender.UI.Localization.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Theme.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;

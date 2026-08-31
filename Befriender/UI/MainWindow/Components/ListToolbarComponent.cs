@@ -1,6 +1,6 @@
 ﻿namespace Befriender.UI.MainWindow.Components;
 
-using Befriender.UI.Localization.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;

@@ -1,9 +1,9 @@
 ﻿using Befriender.Core.Framework;
-using Befriender.UI.Localization.Contracts;
-using Befriender.UI.Localization.Services;
+using Befriender.Core.Localization.Contracts;
+using Befriender.Core.Localization.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Befriender.UI.Localization;
+namespace Befriender.Core.Localization;
 
 public class LocalizationFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {

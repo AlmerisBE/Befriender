@@ -1,7 +1,7 @@
 ﻿namespace Befriender.UI.Configuration.Tabs;
 
 using Befriender.Core.Configuration.Contracts;
-using Befriender.UI.Localization.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.Theme.Contracts;

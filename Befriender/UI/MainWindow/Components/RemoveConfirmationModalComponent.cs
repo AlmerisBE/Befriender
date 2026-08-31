@@ -2,7 +2,7 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
-using Befriender.UI.Localization.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Numerics;

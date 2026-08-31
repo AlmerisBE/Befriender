@@ -1,11 +1,11 @@
-﻿using Befriender.UI.Localization.Contracts;
+﻿using Befriender.Core.Localization.Contracts;
 using Dalamud.Game;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
 
-namespace Befriender.UI.Localization.Providers;
+namespace Befriender.Core.Localization.Providers;
 
 public abstract class JsonLocalizationProvider : ILocalizationProvider {
     // Defines the root namespace path for the feature's resources

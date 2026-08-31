@@ -2,8 +2,8 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
-using Befriender.UI.Localization.Contracts;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;

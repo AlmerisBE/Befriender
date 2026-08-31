@@ -1,8 +1,8 @@
 ﻿namespace Befriender.UI.MainWindow;
 
 using Befriender.Core.Framework;
+using Befriender.Core.Localization.Contracts;
 using Befriender.UI.Command.Contracts;
-using Befriender.UI.Localization.Contracts;
 using Befriender.UI.MainWindow.Commands;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
@@ -12,7 +12,6 @@ using Befriender.UI.MainWindow.Lists.Friends;
 using Befriender.UI.MainWindow.Providers;
 using Befriender.UI.MainWindow.Services;
 using Befriender.UI.MainWindow.Tabs;
-using Befriender.UI.MainWindow.Windows;
 using Dalamud.Interface.Windowing;
 using Microsoft.Extensions.DependencyInjection;
 
