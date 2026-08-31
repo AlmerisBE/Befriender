@@ -46,9 +46,8 @@ public class CharacterProfilePanelComponent {
         this.themeService = themeService;
     }
 
-    public void Draw(float panelWidth, Character character, Action onClose) {
-        // Outer child: defines the borders and the overall panel space
-        if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, 0), true)) {
+    public void Draw(float panelWidth, float panelHeight, Character character, Action onClose) {
+        if (ImGui.BeginChild("ProfilePanel", new Vector2(panelWidth, panelHeight), true)) {
             if (this.currentCharacterId != character.ContentId) {
                 this.currentCharacterId = character.ContentId;
                 this.notesBuffer = character.Notes ?? string.Empty;

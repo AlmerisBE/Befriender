@@ -90,9 +90,10 @@ public class ConsolidatedTab : ITab {
             return;
         }
 
+        float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
         float tableWidth = this.selectedCharacter != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
-        if (ImGui.BeginChild("ConsolidatedListContainer", new Vector2(tableWidth, 0))) {
+        if (ImGui.BeginChild("ConsolidatedListContainer", new Vector2(tableWidth, -footerHeight))) {
             if (ImGui.BeginTable("ConsolidatedMembersTable", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY)) {
                 ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn(this.loc.Translate("Column_Name"));
@@ -261,7 +262,7 @@ public class ConsolidatedTab : ITab {
         // --- PROFILE PANEL DRAWING ---
         if (this.selectedCharacter != null) {
             ImGui.SameLine();
-            this.profilePanelComponent.Draw(PanelWidth, this.selectedCharacter, () => this.selectedCharacter = null);
+            this.profilePanelComponent.Draw(PanelWidth, -footerHeight, this.selectedCharacter, () => this.selectedCharacter = null);
         }
     }
 }

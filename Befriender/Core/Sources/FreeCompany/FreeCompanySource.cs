@@ -31,6 +31,8 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         this.scanner = scanner;
         this.framework = framework;
         this.framework.Update += this.OnFrameworkUpdate;
+
+        this.StartSync();
     }
 
     public IEnumerable<Character> GetCurrentState() {
