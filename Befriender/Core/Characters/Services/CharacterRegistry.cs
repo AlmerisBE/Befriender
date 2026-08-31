@@ -159,18 +159,26 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                         existing.Name = incoming.Name;
                     }
 
-                    // Détection de la connexion
                     if (!existing.IsOnline && incoming.IsOnline) {
                         this.CharacterLoggedOn?.Invoke(existing);
                     }
 
                     existing.IsOnline = incoming.IsOnline;
-                    existing.CurrentWorldId = incoming.CurrentWorldId;
-                    existing.LocationId = incoming.LocationId;
+
+                    if (incoming.CurrentWorldId > 0) {
+                        existing.CurrentWorldId = incoming.CurrentWorldId;
+                    }
+
+                    if (incoming.LocationId > 0) {
+                        existing.LocationId = incoming.LocationId;
+                    }
 
                     if (incoming.IsOnline) {
                         existing.LastSeenAt = DateTime.Now;
-                        existing.OnlineStateMask = incoming.OnlineStateMask;
+
+                        if (source.SourceId != Guid.Parse("51000000-0000-0000-0000-000000000003")) {
+                            existing.OnlineStateMask = incoming.OnlineStateMask;
+                        }
                     }
 
                     if (incoming.JobId > 0) {

@@ -105,4 +105,24 @@ public class CharacterRegistryTests {
 
         mockSource.Received(1).RequestManualRefresh();
     }
+
+    [Fact]
+    public void ProcessSourceUpdate_DoesNotOverwriteValidLocationWithZero() {
+        var registry = this.CreateRegistry();
+        var mockSource = Substitute.For<ICharacterSource>();
+        mockSource.SourceId.Returns(Guid.NewGuid());
+
+        var initialChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, LocationId = 129 };
+        mockSource.GetCurrentState().Returns(new List<Character> { initialChar });
+        registry.RegisterSource(mockSource);
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, LocationId = 0 };
+        mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+        Assert.Equal(129u, allChars[0].LocationId);
+    }
 }
