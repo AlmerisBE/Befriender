@@ -10,45 +10,52 @@ using Xunit;
 
 public class CharacterRegistryTests {
     [Fact]
-    public void RegisterSource_ConsolidatesCharactersAndCustomProperties() {
-        // Fix: Inject empty array to satisfy constructor parameters
-        var registry = new CharacterRegistry(Array.Empty<ICharacterSource>());
+    public void ProcessSourceUpdate_AddsNewCharacterAndLinksSourceId() {
+        var mockStorage = Substitute.For<ICharacterStorage>();
+        var registry = new CharacterRegistry(mockStorage, Array.Empty<ICharacterSource>());
 
-        var sourceId1 = Guid.NewGuid();
-        var source1 = Substitute.For<ICharacterSource>();
-        source1.SourceId.Returns(sourceId1);
-        source1.Priority.Returns(10);
-        source1.IsEnabled.Returns(true);
+        var mockSource = Substitute.For<ICharacterSource>();
+        var sourceId = Guid.NewGuid();
+        mockSource.SourceId.Returns(sourceId);
 
-        var char1 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = false };
-        char1.CustomProperties["ExtPlugin_Rank"] = "Gold";
-        source1.GetCharacters().Returns(new List<Character> { char1 });
+        var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33 };
+        mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
 
-        var sourceId2 = Guid.NewGuid();
-        var source2 = Substitute.For<ICharacterSource>();
-        source2.SourceId.Returns(sourceId2);
-        source2.Priority.Returns(20);
-        source2.IsEnabled.Returns(true);
+        registry.RegisterSource(mockSource);
 
-        var char2 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = true, Level = 90 };
-        char2.CustomProperties["Another_Data"] = "Test";
-        char2.CustomProperties["ExtPlugin_Rank"] = "Platinum";
-        source2.GetCharacters().Returns(new List<Character> { char2 });
+        // Simulate DataUpdated event
+        mockSource.DataUpdated += Raise.Event<Action>();
 
-        registry.RegisterSource(source1);
-        registry.RegisterSource(source2);
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+        Assert.Contains(sourceId, allChars[0].ActiveSourceIds);
+        Assert.True(allChars[0].IsActivelyTracked);
+    }
 
-        var result = registry.GetConsolidatedCharacters();
+    [Fact]
+    public void ProcessSourceUpdate_RemovesSourceIdFromMissingCharacters() {
+        var mockStorage = Substitute.For<ICharacterStorage>();
+        var registry = new CharacterRegistry(mockStorage, Array.Empty<ICharacterSource>());
+        registry.LoadMasterList("TestAccount");
 
-        Assert.Single(result);
-        var alice = result[0];
-        Assert.Equal("Alice", alice.Name);
-        Assert.True(alice.IsOnline);
-        Assert.Equal(90, alice.Level);
-        Assert.Contains(sourceId1, alice.ActiveSourceIds);
-        Assert.Contains(sourceId2, alice.ActiveSourceIds);
+        var mockSource = Substitute.For<ICharacterSource>();
+        var sourceId = Guid.NewGuid();
+        mockSource.SourceId.Returns(sourceId);
 
-        Assert.Equal("Test", alice.CustomProperties["Another_Data"]);
-        Assert.Equal("Platinum", alice.CustomProperties["ExtPlugin_Rank"]);
+        // First pass: Alice is in the source
+        var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33 };
+        mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
+
+        registry.RegisterSource(mockSource);
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        // Second pass: Alice is no longer in the source (e.g. removed from friends)
+        mockSource.GetCurrentState().Returns(new List<Character>());
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars); // Alice remains in the Master List (Archived state)
+        Assert.Empty(allChars[0].ActiveSourceIds); // But she is no longer tracked by any source
+        Assert.False(allChars[0].IsActivelyTracked);
     }
 }

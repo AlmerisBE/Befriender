@@ -10,6 +10,10 @@ public interface ICharacterRegistry {
     void RegisterSource(ICharacterSource source);
     void UnregisterSource(Guid sourceId);
 
-    IReadOnlyList<Character> GetConsolidatedCharacters();
+    void LoadMasterList(string accountIdentity);
+    void SaveMasterList();
+
+    IReadOnlyList<Character> GetAllCharacters();
+    IReadOnlyList<Character> GetCharactersBySource(Guid sourceId);
     Character? GetCharacterById(Guid id);
 }

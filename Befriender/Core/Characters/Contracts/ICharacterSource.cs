@@ -8,9 +8,8 @@ public interface ICharacterSource {
     Guid SourceId { get; }
     string Name { get; }
     int Priority { get; }
-    bool IsEnabled { get; set; }
 
     event Action? DataUpdated;
 
-    IEnumerable<Character> GetCharacters();
+    IEnumerable<Character> GetCurrentState();
 }
