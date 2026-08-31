@@ -14,7 +14,6 @@ public class FriendListSource : ICharacterSource, IDisposable {
 
     private ulong lastStateHash = 0;
     private List<Character> currentState = new();
-    private bool isPolling = false;
 
     // Implementation of ICharacterSource
     public Guid SourceId { get; } = Guid.Parse("S1000000-0000-0000-0000-000000000001");

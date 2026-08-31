@@ -112,7 +112,7 @@ public class ConsolidatedTab : ITab {
 
                     // Specific styling for deleted or untracked (archived) characters
                     if (isDeleted || !character.IsActivelyTracked) {
-                        rowColor = palette.TextDimmed;
+                        rowColor = palette.TextArchived;
                     }
                     else if (!character.IsOnline) {
                         rowColor = palette.TextOffline;
