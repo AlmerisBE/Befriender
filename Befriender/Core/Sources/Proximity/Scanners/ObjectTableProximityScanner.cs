@@ -22,11 +22,9 @@ public class ObjectTableProximityScanner : IProximityScanner {
                     Name = player.Name.TextValue,
                     HomeWorldId = player.HomeWorld.RowId,
                     CurrentWorldId = player.CurrentWorld.RowId,
-                    JobId = player.ClassJob.RowId,
+                    JobId = (byte)player.ClassJob.RowId,
                     Level = player.Level,
-                    IsOnline = true,
-                    // Note: ContentId is usually not available directly from the object table.
-                    // The CharacterRegistry handles merging via Name + HomeWorldId if ContentId is missing.
+                    IsOnline = true
                 });
             }
         }
