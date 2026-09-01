@@ -240,6 +240,15 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         }
     }
 
+    public void RequestManualRefresh(IEnumerable<Guid> sourceIds) {
+        lock (this.lockObj) {
+            var targetSources = this.sources.Where(s => sourceIds.Contains(s.SourceId));
+            foreach (var source in targetSources) {
+                source.RequestManualRefresh();
+            }
+        }
+    }
+
     public void NotifyDataChanged() {
         this.RegistryUpdated?.Invoke();
     }

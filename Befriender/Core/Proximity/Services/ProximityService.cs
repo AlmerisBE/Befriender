@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class ProximityService : IProximityService, IDisposable {
+    public event Action<IEnumerable<Character>>? CharactersDeparted;
     private ICharacterRegistry registry;
     private IObjectTable objectTable;
     private IClientState clientState;
@@ -82,8 +83,6 @@ public class ProximityService : IProximityService, IDisposable {
         uint effectiveLocationId = currentTerritory;
         bool hasServerLocation = isStandardTerritory;
 
-        // Stratégie Ysaline : Le joueur local est l'ancre de vérité absolue.
-        // Si nous sommes dans une instance, on récupère le vrai LocationId du serveur depuis le propre profil du joueur local.
         if (!isStandardTerritory) {
             var localPlayerChar = allCharacters.FirstOrDefault(c =>
                 c.Name.Equals(localPlayer.Name.TextValue, StringComparison.Ordinal) &&
@@ -172,6 +171,19 @@ public class ProximityService : IProximityService, IDisposable {
                         }
                     }
                 }
+            }
+        }
+
+        var departedIds = this.currentlyNearbyIds.Except(newNearbyIds).ToList();
+        if (departedIds.Count > 0) {
+            var departedCharacters = departedIds
+                .Select(id => this.registry.GetCharacterById(id))
+                .Where(c => c != null)
+                .Cast<Character>()
+                .ToList();
+
+            if (departedCharacters.Count > 0) {
+                this.CharactersDeparted?.Invoke(departedCharacters);
             }
         }
 
