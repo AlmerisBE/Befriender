@@ -12,9 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 public class ConfigurationFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IConfigurationService, ConfigurationService>();
+        services.AddSingleton<AutomationService>();
 
         services.AddSingleton<ITab, ConfigTab>();
-
         services.AddSingleton<ICommand, ConfigCommand>();
     }
 }

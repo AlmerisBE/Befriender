@@ -14,12 +14,11 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool SyncOnLogin { get; set; } = true;
     public bool SyncOnTerritoryChange { get; set; } = true;
-    public bool SyncOnFriendListChange { get; set; } = true;
 
     public string SelectedThemeName { get; set; } = "Dark";
 
     public bool IsProfilePanelOpen { get; set; } = false;
-    public bool GroupByCustomGroups { get; set; } = false; // Legacy fallback
+    public bool GroupByCustomGroups { get; set; } = false;
 
     public VirtualKey Hotkey { get; set; } = 0;
     public bool HotkeyCtrl { get; set; } = false;

@@ -111,12 +111,6 @@ public class ConfigTab : ITab {
             configChanged = true;
         }
 
-        bool syncOnFriendList = config.SyncOnFriendListChange;
-        if (ImGui.Checkbox(this.loc.Translate("Config_SyncOnFriendListChange"), ref syncOnFriendList)) {
-            config.SyncOnFriendListChange = syncOnFriendList;
-            configChanged = true;
-        }
-
         ImGui.Spacing();
         ImGui.Text(this.loc.Translate("Config_BackgroundSync"));
         ImGui.Separator();

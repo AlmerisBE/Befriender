@@ -1,6 +1,7 @@
 ﻿namespace Befriender;
 
 using Befriender.Core.Characters.Services;
+using Befriender.Core.Configuration.Services;
 using Befriender.Core.Framework;
 using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.Command.Services;
@@ -60,11 +61,12 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
 
         // Bootstrapping core active services
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
-        this.serviceProvider.GetRequiredService<CharacterRegistry>(); // Initializes the Master List and registers all ICharacterSource providers
+        this.serviceProvider.GetRequiredService<CharacterRegistry>();
         this.serviceProvider.GetRequiredService<VanillaFriendListModifierService>();
         this.serviceProvider.GetRequiredService<HotkeyService>();
         this.serviceProvider.GetRequiredService<OnlineNotificationService>();
         this.serviceProvider.GetRequiredService<IProximityService>();
+        this.serviceProvider.GetRequiredService<AutomationService>();
 
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {
