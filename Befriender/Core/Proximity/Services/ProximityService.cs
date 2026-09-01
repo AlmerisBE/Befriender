@@ -100,7 +100,14 @@ public class ProximityService : IProximityService, IDisposable {
         for (int i = 0; i < this.objectTable.Length; i++) {
             var obj = this.objectTable[i];
 
-            if (obj is IPlayerCharacter pc && pc.Address != localPlayer.Address && pc.HomeWorld.RowId > 0) {
+            if (obj is not IPlayerCharacter pc || pc.Address == localPlayer.Address || pc.HomeWorld.RowId == 0) {
+                continue;
+            }
+
+            // We isolate each entity parsing in a try/catch block.
+            // In highly populated areas (e.g., Limsa Lominsa), the client handles partially loaded entities.
+            // Accessing their native pointers or strings can throw exceptions, which must not abort the entire scan loop.
+            try {
                 var key = (pc.Name.TextValue, pc.HomeWorld.RowId);
 
                 if (lookup.TryGetValue(key, out var friend)) {
@@ -111,8 +118,11 @@ public class ProximityService : IProximityService, IDisposable {
                     if (friend.Level != pc.Level) { friend.Level = pc.Level; changed = true; }
                     if (friend.JobId != pc.ClassJob.RowId) { friend.JobId = (byte)pc.ClassJob.RowId; changed = true; }
 
-                    var tag = pc.CompanyTag.TextValue;
-                    if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
+                    // Safety check: CompanyTag can be null on partially loaded characters
+                    if (pc.CompanyTag != null) {
+                        var tag = pc.CompanyTag.TextValue;
+                        if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
+                    }
 
                     if (friend.CurrentWorldId != localCurrentWorld) {
                         friend.CurrentWorldId = localCurrentWorld;
@@ -171,6 +181,9 @@ public class ProximityService : IProximityService, IDisposable {
                         }
                     }
                 }
+            }
+            catch (Exception) {
+
             }
         }
 
