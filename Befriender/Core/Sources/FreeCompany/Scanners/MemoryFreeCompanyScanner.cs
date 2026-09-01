@@ -119,4 +119,37 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
 
         fcProxy->RequestData();
     }
+
+    public ulong GetStateHash() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) {
+            return 0;
+        }
+
+        var infoModule = uiModule->GetInfoModule();
+        if (infoModule == null) {
+            return 0;
+        }
+
+        var fcProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FreeCompanyMember);
+        if (fcProxy == null) {
+            return 0;
+        }
+
+        var count = fcProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
+        if (count > 1000) {
+            return 0;
+        }
+
+        ulong hash = count;
+
+        for (uint i = 0; i < count; i++) {
+            var entry = fcProxy->GetEntry(i);
+            if (entry != null) {
+                hash = unchecked(hash * 314159 + (ulong)entry->State);
+            }
+        }
+
+        return hash;
+    }
 }

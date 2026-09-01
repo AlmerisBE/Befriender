@@ -6,5 +6,6 @@ using System.Collections.Generic;
 public interface IFreeCompanyScanner {
     IEnumerable<Character> ScanMembers();
     int GetEntryCount();
+    ulong GetStateHash();
     void RequestServerUpdate();
 }

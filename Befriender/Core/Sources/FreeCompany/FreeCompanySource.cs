@@ -12,20 +12,19 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private IFreeCompanyScanner scanner;
     private IFramework framework;
 
-    private List<Character> currentState = new();
-    private bool isSyncActive = false;
-    private bool isInitialized = false;
-    private DateTime lastSyncTime = DateTime.MinValue;
-    private DateTime pendingSyncTime = DateTime.MaxValue;
-    public bool IsSyncing => this.isSyncActive && this.pendingSyncTime != DateTime.MaxValue;
+    private ulong lastStateHash = 0;
+    private ulong pendingHash = 0;
     private DateTime dataStabilizedTime = DateTime.MaxValue;
-    private int lastPolledCount = 0;
-
+    private List<Character> currentState = new();
+    private bool isManualRefreshPending = false;
+    private DateTime lastSyncTime = DateTime.MinValue;
     private readonly TimeSpan syncInterval = TimeSpan.FromSeconds(60);
 
     public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000002");
     public string Name => "FreeCompany";
     public int Priority => 5;
+
+    public bool IsSyncing => this.isManualRefreshPending || this.dataStabilizedTime != DateTime.MaxValue;
 
     public event Action? DataUpdated;
 
@@ -39,70 +38,56 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         return this.currentState.ToList();
     }
 
-    public void StartSync() {
-        if (!this.isSyncActive) {
-            this.isSyncActive = true;
-            this.RequestServerRefresh();
-        }
-    }
-
-    public void StopSync() {
-        this.isSyncActive = false;
-    }
-
-    public void RequestServerRefresh() {
-        this.scanner.RequestServerUpdate();
-        this.pendingSyncTime = DateTime.Now.AddSeconds(45);
-        this.dataStabilizedTime = DateTime.MaxValue;
-        this.lastPolledCount = 0;
-    }
-
     public void RequestManualRefresh() {
-        this.RequestServerRefresh();
+        this.TriggerManualRefresh();
     }
 
-    private void ForceSync() {
-        this.currentState = this.scanner.ScanMembers().ToList();
+    public void TriggerManualRefresh() {
+        this.isManualRefreshPending = true;
         this.lastSyncTime = DateTime.Now;
-        this.DataUpdated?.Invoke();
+        this.scanner.RequestServerUpdate();
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
-        if (!this.isInitialized) {
-            this.isInitialized = true;
-            this.StartSync();
-        }
-
-        if (!this.isSyncActive) {
-            return;
-        }
-
         var now = DateTime.Now;
 
-        if (this.pendingSyncTime != DateTime.MaxValue) {
-            int currentCount = this.scanner.GetEntryCount();
+        // Periodic server request since Free Company data isn't actively pushed
+        if (now - this.lastSyncTime >= this.syncInterval) {
+            this.TriggerManualRefresh();
+        }
 
-            if (currentCount > this.lastPolledCount) {
-                this.lastPolledCount = currentCount;
-                this.dataStabilizedTime = now.AddSeconds(5);
-                // Removed partial streaming to ensure visual update happens all at once
-            }
+        ulong currentHash = this.scanner.GetStateHash();
 
-            bool isStabilized = currentCount > 0 && now >= this.dataStabilizedTime;
-            bool isTimedOut = now >= this.pendingSyncTime;
-
-            if (isStabilized || isTimedOut) {
-                if (currentCount > 0) {
-                    this.ForceSync();
-                }
-
-                this.pendingSyncTime = DateTime.MaxValue;
-                this.dataStabilizedTime = DateTime.MaxValue;
+        if (currentHash != this.lastStateHash) {
+            if (currentHash != this.pendingHash) {
+                this.pendingHash = currentHash;
+                this.dataStabilizedTime = now.AddSeconds(1); // Drastically reduced from 5s to 1s
             }
         }
-        else if (now - this.lastSyncTime >= this.syncInterval) {
-            this.RequestServerRefresh();
+        else if (this.pendingHash != this.lastStateHash) {
+            this.pendingHash = this.lastStateHash;
+            this.dataStabilizedTime = DateTime.MaxValue;
         }
+
+        if (this.dataStabilizedTime != DateTime.MaxValue && now >= this.dataStabilizedTime) {
+            this.lastStateHash = this.pendingHash;
+            this.dataStabilizedTime = DateTime.MaxValue;
+            this.RefreshState();
+        }
+    }
+
+    private void RefreshState() {
+        var scannedCharacters = this.scanner.ScanMembers().ToList();
+
+        if (scannedCharacters.Count == 0 && this.currentState.Count > 0) {
+            if (this.scanner.GetEntryCount() > 0) {
+                return;
+            }
+        }
+
+        this.currentState = scannedCharacters;
+        this.isManualRefreshPending = false;
+        this.DataUpdated?.Invoke();
     }
 
     public void Dispose() {
