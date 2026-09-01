@@ -435,7 +435,14 @@ public class GameDataService : IGameDataService {
             return false;
         }
 
-        // 0 = Open World, 1 = City, 2 = Housing Exterior
+        // If Lumina can resolve a specific PlaceName or PlaceNameZone, it is a fully qualified zone (Gold Saucer, Inn, Dungeon, etc.).
+        // We must trust the local client memory as the absolute truth for these zones.
+        // Generic instanced housing interiors lack these IDs, which will return false and correctly trigger the server anchor fallback.
+        if (row.Value.PlaceName.RowId > 0 || row.Value.PlaceNameZone.RowId > 0) {
+            return true;
+        }
+
+        // Fallback for ultimate safety based on intended use (Open World = 0, City = 1, Housing Exterior = 2)
         return row.Value.TerritoryIntendedUse.RowId switch {
             0 or 1 or 2 => true,
             _ => false
