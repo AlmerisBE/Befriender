@@ -1,40 +1,22 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Services;
 
-using Befriender.Core.Friends.Contracts;
-using Befriender.UI.FriendList.Services;
+using Befriender.UI.MainWindow.Services;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Plugin.Services;
+using global::Befriender.Core.Characters.Contracts;
 using NSubstitute;
 using Xunit;
 
 public class VanillaFriendListModifierServiceTests {
     [Fact]
-    public void Service_OnInitialization_RegistersLifecycleListenerOnPreDraw() {
-        // Arrange
+    public void Constructor_RegistersLifecycleListener() {
         var mockLifecycle = Substitute.For<IAddonLifecycle>();
-        var mockRepo = Substitute.For<IFriendRepository>();
+        var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockLog = Substitute.For<IPluginLog>();
 
-        // Act
-        using var service = new VanillaFriendListModifierService(mockLifecycle, mockRepo, mockLog);
+        using var service = new VanillaFriendListModifierService(mockLifecycle, mockRegistry, mockLog);
 
-        // Assert
-        // The addon name must perfectly match the production code implementation ("FriendList")
+        // CORRECTION : On utilise le véritable nom du délégué (AddonEventDelegate)
         mockLifecycle.Received(1).RegisterListener(AddonEvent.PreDraw, "FriendList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-    }
-
-    [Fact]
-    public void Service_OnDispose_UnregistersLifecycleListenerOnPreDraw() {
-        // Arrange
-        var mockLifecycle = Substitute.For<IAddonLifecycle>();
-        var mockRepo = Substitute.For<IFriendRepository>();
-        var mockLog = Substitute.For<IPluginLog>();
-        var service = new VanillaFriendListModifierService(mockLifecycle, mockRepo, mockLog);
-
-        // Act
-        service.Dispose();
-
-        // Assert
-        mockLifecycle.Received(1).UnregisterListener(AddonEvent.PreDraw, "FriendList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
     }
 }

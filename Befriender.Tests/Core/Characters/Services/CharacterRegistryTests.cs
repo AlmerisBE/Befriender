@@ -1,54 +1,162 @@
 ﻿namespace Befriender.Tests.Core.Characters.Services;
 
-using Befriender.Core.Characters.Contracts;
-using Befriender.Core.Characters.Models;
-using Befriender.Core.Characters.Services;
+using Dalamud.Plugin.Services;
+using global::Befriender.Core.Characters.Contracts;
+using global::Befriender.Core.Characters.Models;
+using global::Befriender.Core.Characters.Services;
+using global::Befriender.Core.Migrations.Contracts;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
 using Xunit;
 
 public class CharacterRegistryTests {
+    private ICharacterStorage mockStorage;
+    private IMigrationService mockMigration;
+    private ICharacterIdentityService mockIdentity;
+    private IClientState mockClientState;
+    private IFramework mockFramework;
+    private IPluginLog mockPluginLog;
+
+    public CharacterRegistryTests() {
+        this.mockStorage = Substitute.For<ICharacterStorage>();
+        this.mockMigration = Substitute.For<IMigrationService>();
+        this.mockIdentity = Substitute.For<ICharacterIdentityService>();
+        this.mockClientState = Substitute.For<IClientState>();
+        this.mockFramework = Substitute.For<IFramework>();
+        this.mockPluginLog = Substitute.For<IPluginLog>();
+    }
+
+    private CharacterRegistry CreateRegistry() {
+        return new CharacterRegistry(
+            this.mockStorage,
+            Array.Empty<ICharacterSource>(),
+            this.mockMigration,
+            this.mockIdentity,
+            this.mockClientState,
+            this.mockFramework,
+            this.mockPluginLog);
+    }
+
     [Fact]
-    public void RegisterSource_ConsolidatesCharactersAndCustomProperties() {
-        // Fix: Inject empty array to satisfy constructor parameters
-        var registry = new CharacterRegistry(Array.Empty<ICharacterSource>());
+    public void ProcessSourceUpdate_AddsNewCharacterAndLinksSourceId() {
+        var registry = this.CreateRegistry();
+        var mockSource = Substitute.For<ICharacterSource>();
+        var sourceId = Guid.NewGuid();
+        mockSource.SourceId.Returns(sourceId);
 
-        var sourceId1 = Guid.NewGuid();
-        var source1 = Substitute.For<ICharacterSource>();
-        source1.SourceId.Returns(sourceId1);
-        source1.Priority.Returns(10);
-        source1.IsEnabled.Returns(true);
+        var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33 };
+        mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
 
-        var char1 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = false };
-        char1.CustomProperties["ExtPlugin_Rank"] = "Gold";
-        source1.GetCharacters().Returns(new List<Character> { char1 });
+        registry.RegisterSource(mockSource);
+        mockSource.DataUpdated += Raise.Event<Action>();
 
-        var sourceId2 = Guid.NewGuid();
-        var source2 = Substitute.For<ICharacterSource>();
-        source2.SourceId.Returns(sourceId2);
-        source2.Priority.Returns(20);
-        source2.IsEnabled.Returns(true);
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+        Assert.Contains(sourceId, allChars[0].ActiveSourceIds);
+        Assert.True(allChars[0].IsActivelyTracked);
+    }
 
-        var char2 = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, IsOnline = true, Level = 90 };
-        char2.CustomProperties["Another_Data"] = "Test";
-        char2.CustomProperties["ExtPlugin_Rank"] = "Platinum";
-        source2.GetCharacters().Returns(new List<Character> { char2 });
+    [Fact]
+    public void ProcessSourceUpdate_RemovesSourceIdFromMissingCharacters() {
+        var registry = this.CreateRegistry();
+        registry.LoadMasterList("TestAccount");
 
-        registry.RegisterSource(source1);
-        registry.RegisterSource(source2);
+        var mockSource = Substitute.For<ICharacterSource>();
+        var sourceId = Guid.NewGuid();
+        mockSource.SourceId.Returns(sourceId);
 
-        var result = registry.GetConsolidatedCharacters();
+        var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33 };
+        mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
 
-        Assert.Single(result);
-        var alice = result[0];
-        Assert.Equal("Alice", alice.Name);
-        Assert.True(alice.IsOnline);
-        Assert.Equal(90, alice.Level);
-        Assert.Contains(sourceId1, alice.ActiveSourceIds);
-        Assert.Contains(sourceId2, alice.ActiveSourceIds);
+        registry.RegisterSource(mockSource);
+        mockSource.DataUpdated += Raise.Event<Action>();
 
-        Assert.Equal("Test", alice.CustomProperties["Another_Data"]);
-        Assert.Equal("Platinum", alice.CustomProperties["ExtPlugin_Rank"]);
+        mockSource.GetCurrentState().Returns(new List<Character>());
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+        Assert.Empty(allChars[0].ActiveSourceIds);
+        Assert.False(allChars[0].IsActivelyTracked);
+    }
+
+    [Fact]
+    public void OnFrameworkUpdate_InitializesRegistryWhenPlayerIsAvailable() {
+        var registry = this.CreateRegistry();
+
+        this.mockClientState.IsLoggedIn.Returns(true);
+        this.mockIdentity.GetCurrentCharacterId().Returns("TestAccount_33");
+
+        this.mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(this.mockFramework);
+
+        this.mockMigration.Received(1).RunMigrations("TestAccount_33");
+        this.mockStorage.Received(1).Load("MasterCharacterList", "TestAccount_33");
+    }
+
+    [Fact]
+    public void RequestManualRefresh_InvokesRefreshOnAllRegisteredSources() {
+        var registry = this.CreateRegistry();
+        var mockSource = Substitute.For<ICharacterSource>();
+        mockSource.SourceId.Returns(Guid.NewGuid());
+
+        registry.RegisterSource(mockSource);
+        registry.RequestManualRefresh();
+
+        mockSource.Received(1).RequestManualRefresh();
+    }
+
+    [Fact]
+    public void ProcessSourceUpdate_DoesNotOverwriteValidLocationWithZero() {
+        var registry = this.CreateRegistry();
+        var mockSource = Substitute.For<ICharacterSource>();
+        mockSource.SourceId.Returns(Guid.NewGuid());
+
+        var initialChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, LocationId = 129 };
+        mockSource.GetCurrentState().Returns(new List<Character> { initialChar });
+        registry.RegisterSource(mockSource);
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        var incomingChar = new Character { ContentId = 1, Name = "Alice", HomeWorldId = 33, LocationId = 0 };
+        mockSource.GetCurrentState().Returns(new List<Character> { incomingChar });
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+        Assert.Equal(129u, allChars[0].LocationId);
+    }
+
+    [Fact]
+    public void ProcessSourceUpdate_RetainsSourceId_WhenIncomingCharacterLacksContentId() {
+        // Arrange
+        var registry = this.CreateRegistry();
+
+        var mockPrimarySource = Substitute.For<ICharacterSource>();
+        mockPrimarySource.SourceId.Returns(Guid.NewGuid());
+
+        var mockProximitySource = Substitute.For<ICharacterSource>();
+        var proximityGuid = Guid.Parse("51000000-0000-0000-0000-000000000003");
+        mockProximitySource.SourceId.Returns(proximityGuid);
+
+        var primaryChar = new Character { ContentId = 12345, Name = "Alice", HomeWorldId = 33 };
+        mockPrimarySource.GetCurrentState().Returns(new List<Character> { primaryChar });
+        registry.RegisterSource(mockPrimarySource);
+        mockPrimarySource.DataUpdated += Raise.Event<Action>();
+
+        registry.RegisterSource(mockProximitySource);
+
+        // Act
+        var proxChar = new Character { ContentId = 0, Name = "Alice", HomeWorldId = 33 };
+        mockProximitySource.GetCurrentState().Returns(new List<Character> { proxChar });
+        mockProximitySource.DataUpdated += Raise.Event<Action>();
+
+        // Assert
+        var allChars = registry.GetAllCharacters();
+        Assert.Single(allChars);
+
+        var resolvedChar = allChars[0];
+        Assert.Equal(12345ul, resolvedChar.ContentId);
+
+        Assert.Contains(proximityGuid, resolvedChar.ActiveSourceIds);
     }
 }

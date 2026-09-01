@@ -2,20 +2,85 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.Migrations.Contracts;
+using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class CharacterRegistry : ICharacterRegistry {
+public class CharacterRegistry : ICharacterRegistry, IDisposable {
+    public event Action<Character>? CharacterLoggedOn;
     private List<ICharacterSource> sources = new();
-    private List<Character> consolidatedCache = new();
+    private List<Character> masterList = new();
+
+    private ICharacterStorage storage;
+    private IMigrationService migrationService;
+    private ICharacterIdentityService identityService;
+    private IClientState clientState;
+    private IFramework framework;
+    private IPluginLog pluginLog;
+
+    private string currentAccountIdentity = string.Empty;
     private readonly object lockObj = new();
 
     public event Action? RegistryUpdated;
 
-    public CharacterRegistry(IEnumerable<ICharacterSource> initialSources) {
+    public CharacterRegistry(
+        ICharacterStorage storage,
+        IEnumerable<ICharacterSource> initialSources,
+        IMigrationService migrationService,
+        ICharacterIdentityService identityService,
+        IClientState clientState,
+        IFramework framework,
+        IPluginLog pluginLog) {
+
+        this.storage = storage;
+        this.migrationService = migrationService;
+        this.identityService = identityService;
+        this.clientState = clientState;
+        this.framework = framework;
+        this.pluginLog = pluginLog;
+
         foreach (var source in initialSources) {
             this.RegisterSource(source);
+        }
+
+        this.clientState.Logout += this.OnLogout;
+        this.framework.Update += this.OnFrameworkUpdate;
+    }
+
+    private void OnFrameworkUpdate(IFramework fw) {
+        if (this.clientState.IsLoggedIn && string.IsNullOrEmpty(this.currentAccountIdentity)) {
+            var accountId = this.identityService.GetCurrentCharacterId();
+            if (!string.IsNullOrEmpty(accountId)) {
+                this.pluginLog.Debug($"[CharacterRegistry] LocalPlayer detected: {accountId}. Initializing registry...");
+                this.migrationService.RunMigrations(accountId);
+                this.LoadMasterList(accountId);
+            }
+        }
+    }
+
+    private void OnLogout(int type, int code) {
+        lock (this.lockObj) {
+            this.masterList.Clear();
+            this.currentAccountIdentity = string.Empty;
+        }
+        this.RegistryUpdated?.Invoke();
+    }
+
+    public void LoadMasterList(string accountIdentity) {
+        lock (this.lockObj) {
+            this.currentAccountIdentity = accountIdentity;
+            this.masterList = this.storage.Load("MasterCharacterList", accountIdentity).ToList();
+        }
+        this.RegistryUpdated?.Invoke();
+    }
+
+    public void SaveMasterList() {
+        lock (this.lockObj) {
+            if (!string.IsNullOrEmpty(this.currentAccountIdentity)) {
+                this.storage.Save("MasterCharacterList", this.currentAccountIdentity, this.masterList);
+            }
         }
     }
 
@@ -26,9 +91,8 @@ public class CharacterRegistry : ICharacterRegistry {
             }
 
             this.sources.Add(source);
-            source.DataUpdated += this.ConsolidateData;
+            source.DataUpdated += () => this.ProcessSourceUpdate(source);
         }
-        this.ConsolidateData();
     }
 
     public void UnregisterSource(Guid sourceId) {
@@ -38,164 +102,150 @@ public class CharacterRegistry : ICharacterRegistry {
                 return;
             }
 
-            source.DataUpdated -= this.ConsolidateData;
             this.sources.Remove(source);
         }
-        this.ConsolidateData();
     }
 
-    public IReadOnlyList<Character> GetConsolidatedCharacters() {
+    private void ProcessSourceUpdate(ICharacterSource source) {
         lock (this.lockObj) {
-            return this.consolidatedCache.ToList();
+            var sourceState = source.GetCurrentState().ToList();
+
+            var processedIds = new HashSet<Guid>();
+
+            foreach (var incoming in sourceState) {
+                var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(incoming.ContentId, incoming.Name, incoming.HomeWorldId));
+
+                if (existing == null) {
+                    existing = incoming;
+                    if (existing.Id == Guid.Empty) {
+                        existing.Id = Guid.NewGuid();
+                    }
+
+                    if (existing.AddedAt == DateTime.MinValue) {
+                        existing.AddedAt = DateTime.Now;
+                    }
+
+                    this.masterList.Add(existing);
+                }
+                else {
+                    if (incoming.ContentId > 0) {
+                        existing.ContentId = incoming.ContentId;
+                    }
+
+                    if (incoming.Race > 0) {
+                        existing.Race = incoming.Race;
+                    }
+
+                    if (incoming.Tribe > 0) {
+                        existing.Tribe = incoming.Tribe;
+                    }
+
+                    if (incoming.Gender > 0) {
+                        existing.Gender = incoming.Gender;
+                    }
+
+                    if (!string.Equals(existing.Name, incoming.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
+                        if (!existing.PreviousNames.Contains(existing.Name)) {
+                            existing.PreviousNames.Add(existing.Name);
+                        }
+
+                        existing.Name = incoming.Name;
+                    }
+
+                    if (!existing.IsOnline && incoming.IsOnline) {
+                        this.CharacterLoggedOn?.Invoke(existing);
+                    }
+
+                    existing.IsOnline = incoming.IsOnline;
+
+                    if (incoming.CurrentWorldId > 0) {
+                        existing.CurrentWorldId = incoming.CurrentWorldId;
+                    }
+
+                    if (incoming.LocationId > 0) {
+                        existing.LocationId = incoming.LocationId;
+                    }
+
+                    if (incoming.IsOnline) {
+                        existing.LastSeenAt = DateTime.Now;
+                        existing.OnlineStateMask = incoming.OnlineStateMask;
+                    }
+
+                    if (incoming.JobId > 0) {
+                        existing.JobId = incoming.JobId;
+                    }
+
+                    if (incoming.Level > 0) {
+                        existing.Level = incoming.Level;
+                    }
+
+                    if (!string.IsNullOrEmpty(incoming.FcTag)) {
+                        existing.FcTag = incoming.FcTag;
+                    }
+
+                    if (incoming.SourceSpecificData.TryGetValue(source.SourceId, out var specificData)) {
+                        existing.SourceSpecificData[source.SourceId] = specificData;
+                    }
+                }
+
+                existing.ActiveSourceIds.Add(source.SourceId);
+                processedIds.Add(existing.Id);
+            }
+
+            foreach (var character in this.masterList) {
+                if (character.ActiveSourceIds.Contains(source.SourceId) && !processedIds.Contains(character.Id)) {
+                    character.ActiveSourceIds.Remove(source.SourceId);
+                    if (!character.IsActivelyTracked) {
+                        character.IsOnline = false;
+                    }
+                }
+            }
+
+            this.SaveMasterList();
+        }
+        this.RegistryUpdated?.Invoke();
+    }
+
+    public IReadOnlyList<Character> GetAllCharacters() {
+        lock (this.lockObj) {
+            return this.masterList.ToList();
+        }
+    }
+
+    public IReadOnlyList<Character> GetCharactersBySource(Guid sourceId) {
+        lock (this.lockObj) {
+            return this.masterList.Where(c => c.ActiveSourceIds.Contains(sourceId)).ToList();
         }
     }
 
     public Character? GetCharacterById(Guid id) {
         lock (this.lockObj) {
-            return this.consolidatedCache.FirstOrDefault(c => c.Id == id);
+            return this.masterList.FirstOrDefault(c => c.Id == id);
         }
     }
 
-    private void ConsolidateData() {
+    public void RemoveCharacter(Guid id) {
         lock (this.lockObj) {
-            var activeSources = this.sources
-                .Where(s => s.IsEnabled)
-                .OrderBy(s => s.Priority)
-                .ToList();
-
-            var newCache = new List<Character>();
-
-            foreach (var source in activeSources) {
-                var characters = source.GetCharacters();
-
-                foreach (var sourceChar in characters) {
-                    var existing = newCache.FirstOrDefault(c => c.IsSameIdentity(sourceChar.ContentId, sourceChar.Name, sourceChar.HomeWorldId));
-
-                    if (existing == null) {
-                        existing = new Character {
-                            Id = sourceChar.Id != Guid.Empty ? sourceChar.Id : Guid.NewGuid(),
-                            ContentId = sourceChar.ContentId,
-                            Name = sourceChar.Name,
-                            HomeWorldId = sourceChar.HomeWorldId
-                        };
-                        newCache.Add(existing);
-                    }
-
-                    // Overwrite basic data based on priority order
-                    if (sourceChar.ContentId > 0) {
-                        existing.ContentId = sourceChar.ContentId;
-                    }
-
-                    if (sourceChar.CurrentWorldId > 0) {
-                        existing.CurrentWorldId = sourceChar.CurrentWorldId;
-                    }
-
-                    if (sourceChar.JobId > 0) {
-                        existing.JobId = sourceChar.JobId;
-                    }
-
-                    if (sourceChar.Level > 0) {
-                        existing.Level = sourceChar.Level;
-                    }
-
-                    if (sourceChar.LocationId > 0) {
-                        existing.LocationId = sourceChar.LocationId;
-                    }
-
-                    if (!string.IsNullOrEmpty(sourceChar.FcTag)) {
-                        existing.FcTag = sourceChar.FcTag;
-                    }
-
-                    if (sourceChar.OnlineStateMask > 0) {
-                        existing.OnlineStateMask = sourceChar.OnlineStateMask;
-                    }
-
-                    if (sourceChar.OnlineStatusId > 0) {
-                        existing.OnlineStatusId = sourceChar.OnlineStatusId;
-                    }
-
-                    if (sourceChar.ClientLanguages > 0) {
-                        existing.ClientLanguages = sourceChar.ClientLanguages;
-                    }
-
-                    if (sourceChar.TitleId > 0) {
-                        existing.TitleId = sourceChar.TitleId;
-                    }
-
-                    if (sourceChar.Race > 0) {
-                        existing.Race = sourceChar.Race;
-                    }
-
-                    if (sourceChar.Tribe > 0) {
-                        existing.Tribe = sourceChar.Tribe;
-                    }
-
-                    if (sourceChar.Gender > 0) {
-                        existing.Gender = sourceChar.Gender;
-                    }
-
-                    if (sourceChar.GrandCompany > 0) {
-                        existing.GrandCompany = sourceChar.GrandCompany;
-                    }
-
-                    if (sourceChar.AddedLocationId > 0) {
-                        existing.AddedLocationId = sourceChar.AddedLocationId;
-                    }
-
-                    if (sourceChar.AddedAt > DateTime.MinValue) {
-                        existing.AddedAt = sourceChar.AddedAt;
-                    }
-
-                    if (sourceChar.ArchivedAt > DateTime.MinValue) {
-                        existing.ArchivedAt = sourceChar.ArchivedAt;
-                    }
-
-                    if (sourceChar.LastSeenAt > existing.LastSeenAt) {
-                        existing.LastSeenAt = sourceChar.LastSeenAt;
-                    }
-
-                    if (sourceChar.CustomGroupId.HasValue) {
-                        existing.CustomGroupId = sourceChar.CustomGroupId;
-                    }
-
-                    if (!string.IsNullOrEmpty(sourceChar.Notes)) {
-                        existing.Notes = sourceChar.Notes;
-                    }
-
-                    // Boolean flags logic: Combine via OR so active states persist across consolidation
-                    existing.IsOnline |= sourceChar.IsOnline;
-                    existing.IsFantasiaDetected |= sourceChar.IsFantasiaDetected;
-                    existing.IsArchived |= sourceChar.IsArchived;
-                    existing.IsCharacterDeleted |= sourceChar.IsCharacterDeleted;
-                    existing.IsMarkedForRemoval |= sourceChar.IsMarkedForRemoval;
-                    existing.IsMissing |= sourceChar.IsMissing;
-                    existing.IsTrackedForNotifications |= sourceChar.IsTrackedForNotifications;
-
-                    // Merge collection data
-                    foreach (var tag in sourceChar.Tags) {
-                        if (!existing.Tags.Contains(tag)) {
-                            existing.Tags.Add(tag);
-                        }
-                    }
-
-                    foreach (var prevName in sourceChar.PreviousNames) {
-                        if (!existing.PreviousNames.Contains(prevName)) {
-                            existing.PreviousNames.Add(prevName);
-                        }
-                    }
-
-                    // Merge IPC custom properties
-                    foreach (var kvp in sourceChar.CustomProperties) {
-                        existing.CustomProperties[kvp.Key] = kvp.Value;
-                    }
-
-                    existing.ActiveSourceIds.Add(source.SourceId);
-                }
-            }
-
-            this.consolidatedCache = newCache;
+            this.masterList.RemoveAll(c => c.Id == id);
         }
 
         this.RegistryUpdated?.Invoke();
+    }
+
+    public void RequestManualRefresh() {
+        lock (this.lockObj) {
+            foreach (var source in this.sources) {
+                source.RequestManualRefresh();
+            }
+        }
+    }
+
+    public void NotifyDataChanged() {
+        this.RegistryUpdated?.Invoke();
+    }
+
+    public void Dispose() {
+        this.clientState.Logout -= this.OnLogout;
+        this.framework.Update -= this.OnFrameworkUpdate;
     }
 }

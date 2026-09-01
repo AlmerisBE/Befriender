@@ -17,7 +17,11 @@ public class JsonCharacterStorage : ICharacterStorage {
     public JsonCharacterStorage(IDalamudPluginInterface pluginInterface, IPluginLog pluginLog) {
         this.pluginInterface = pluginInterface;
         this.pluginLog = pluginLog;
-        this.jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        this.jsonOptions = new JsonSerializerOptions {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            IncludeFields = true
+        };
     }
 
     private string GetFilePath(string storeName, string accountIdentity) {

@@ -3,6 +3,7 @@
 using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
 using System;
+using System.Collections.Generic;
 
 [Serializable]
 public class PluginConfiguration : IPluginConfiguration {
@@ -13,7 +14,6 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool SyncOnLogin { get; set; } = true;
     public bool SyncOnTerritoryChange { get; set; } = true;
-    public bool SyncOnFriendListChange { get; set; } = true;
 
     public string SelectedThemeName { get; set; } = "Dark";
 
@@ -28,4 +28,6 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool EnableProximityDetection { get; set; } = true;
     public bool NotifyOnNearbyFriends { get; set; } = true;
     public bool NotifyOnNearbyArchived { get; set; } = false;
+
+    public Dictionary<string, TabState> TabStates { get; set; } = new();
 }

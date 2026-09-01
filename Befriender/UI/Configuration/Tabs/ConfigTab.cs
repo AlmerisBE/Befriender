@@ -2,9 +2,9 @@
 
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Localization.Contracts;
-using Befriender.UI.FriendList.Components;
+using Befriender.UI.MainWindow.Components;
+using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.Theme.Contracts;
-using Befriender.UI.Windows.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 using System;
@@ -32,27 +32,32 @@ public class ConfigTab : ITab {
     }
 
     public void Draw() {
-        if (ImGui.BeginTabBar("ConfigurationTabBar")) {
-            if (ImGui.BeginTabItem(this.loc.Translate("Tab_General"))) {
-                ImGui.Spacing();
-                this.DrawGeneralConfiguration();
-                ImGui.EndTabItem();
-            }
+        float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
 
-            if (ImGui.BeginTabItem(this.loc.Translate("Tab_Groups"))) {
-                ImGui.Spacing();
-                this.groupComponent.Draw();
-                ImGui.EndTabItem();
-            }
+        if (ImGui.BeginChild("ConfigContent", new Vector2(0, -footerHeight))) {
+            if (ImGui.BeginTabBar("ConfigurationTabBar")) {
+                if (ImGui.BeginTabItem(this.loc.Translate("Tab_General"))) {
+                    ImGui.Spacing();
+                    this.DrawGeneralConfiguration();
+                    ImGui.EndTabItem();
+                }
 
-            if (ImGui.BeginTabItem(this.loc.Translate("Tab_Tags"))) {
-                ImGui.Spacing();
-                this.tagComponent.Draw();
-                ImGui.EndTabItem();
-            }
+                if (ImGui.BeginTabItem(this.loc.Translate("Tab_Groups"))) {
+                    ImGui.Spacing();
+                    this.groupComponent.Draw();
+                    ImGui.EndTabItem();
+                }
 
-            ImGui.EndTabBar();
+                if (ImGui.BeginTabItem(this.loc.Translate("Tab_Tags"))) {
+                    ImGui.Spacing();
+                    this.tagComponent.Draw();
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.EndTabBar();
+            }
         }
+        ImGui.EndChild();
     }
 
     private void DrawGeneralConfiguration() {
@@ -103,12 +108,6 @@ public class ConfigTab : ITab {
         bool syncOnTerritory = config.SyncOnTerritoryChange;
         if (ImGui.Checkbox(this.loc.Translate("Config_SyncOnZoneChange"), ref syncOnTerritory)) {
             config.SyncOnTerritoryChange = syncOnTerritory;
-            configChanged = true;
-        }
-
-        bool syncOnFriendList = config.SyncOnFriendListChange;
-        if (ImGui.Checkbox(this.loc.Translate("Config_SyncOnFriendListChange"), ref syncOnFriendList)) {
-            config.SyncOnFriendListChange = syncOnFriendList;
             configChanged = true;
         }
 

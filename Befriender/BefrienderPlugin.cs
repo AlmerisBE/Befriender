@@ -1,13 +1,14 @@
 ﻿namespace Befriender;
 
-using Befriender.Core.Command.Services;
+using Befriender.Core.Characters.Services;
+using Befriender.Core.Configuration.Services;
 using Befriender.Core.Framework;
-using Befriender.Core.Friends.Services;
-using Befriender.Core.Input.Services;
-using Befriender.Core.Notifications.Services;
 using Befriender.Core.Proximity.Contracts;
-using Befriender.UI.FriendList.Contracts;
-using Befriender.UI.FriendList.Services;
+using Befriender.UI.Command.Services;
+using Befriender.UI.Input.Services;
+using Befriender.UI.MainWindow.Contracts;
+using Befriender.UI.MainWindow.Services;
+using Befriender.UI.Notifications.Services;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -58,12 +59,14 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
 
         this.serviceProvider = services.BuildServiceProvider();
 
+        // Bootstrapping core active services
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
-        this.serviceProvider.GetRequiredService<FriendSyncService>();
+        this.serviceProvider.GetRequiredService<CharacterRegistry>();
         this.serviceProvider.GetRequiredService<VanillaFriendListModifierService>();
         this.serviceProvider.GetRequiredService<HotkeyService>();
         this.serviceProvider.GetRequiredService<OnlineNotificationService>();
         this.serviceProvider.GetRequiredService<IProximityService>();
+        this.serviceProvider.GetRequiredService<AutomationService>();
 
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {

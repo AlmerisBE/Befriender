@@ -1,7 +1,7 @@
 ﻿namespace Befriender.Tests.UI.FriendList.Commands;
 
-using Befriender.UI.FriendList.Commands;
-using Befriender.UI.FriendList.Contracts;
+using Befriender.UI.MainWindow.Commands;
+using Befriender.UI.MainWindow.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -10,7 +10,7 @@ public class OpenFriendListCommandTests {
     public void Execute_WithConfigArgument_CallsOpenTabWithConfigInternalName() {
         // Arrange
         var mockNavService = Substitute.For<IWindowNavigationService>();
-        var command = new OpenFriendListCommand(mockNavService);
+        var command = new OpenMainWindowCommand(mockNavService);
 
         // Act
         command.Execute("config");
@@ -23,7 +23,7 @@ public class OpenFriendListCommandTests {
     public void Execute_WithEmptyArgument_CallsToggleWindow() {
         // Arrange
         var mockNavService = Substitute.For<IWindowNavigationService>();
-        var command = new OpenFriendListCommand(mockNavService);
+        var command = new OpenMainWindowCommand(mockNavService);
 
         // Act
         command.Execute(string.Empty);
