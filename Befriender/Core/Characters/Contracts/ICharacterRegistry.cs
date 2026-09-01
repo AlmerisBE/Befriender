@@ -20,6 +20,7 @@ public interface ICharacterRegistry {
 
     void RemoveCharacter(Guid id);
     void RequestManualRefresh();
+    void RequestManualRefresh(IEnumerable<Guid> sourceIds);
 
     void NotifyDataChanged();
 }

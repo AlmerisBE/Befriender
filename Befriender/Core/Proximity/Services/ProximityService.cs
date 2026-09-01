@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class ProximityService : IProximityService, IDisposable {
+    public event Action<IEnumerable<Character>>? CharactersDeparted;
     private ICharacterRegistry registry;
     private IObjectTable objectTable;
     private IClientState clientState;
@@ -82,8 +83,6 @@ public class ProximityService : IProximityService, IDisposable {
         uint effectiveLocationId = currentTerritory;
         bool hasServerLocation = isStandardTerritory;
 
-        // Stratégie Ysaline : Le joueur local est l'ancre de vérité absolue.
-        // Si nous sommes dans une instance, on récupère le vrai LocationId du serveur depuis le propre profil du joueur local.
         if (!isStandardTerritory) {
             var localPlayerChar = allCharacters.FirstOrDefault(c =>
                 c.Name.Equals(localPlayer.Name.TextValue, StringComparison.Ordinal) &&
@@ -101,7 +100,14 @@ public class ProximityService : IProximityService, IDisposable {
         for (int i = 0; i < this.objectTable.Length; i++) {
             var obj = this.objectTable[i];
 
-            if (obj is IPlayerCharacter pc && pc.Address != localPlayer.Address && pc.HomeWorld.RowId > 0) {
+            if (obj is not IPlayerCharacter pc || pc.Address == localPlayer.Address || pc.HomeWorld.RowId == 0) {
+                continue;
+            }
+
+            // We isolate each entity parsing in a try/catch block.
+            // In highly populated areas (e.g., Limsa Lominsa), the client handles partially loaded entities.
+            // Accessing their native pointers or strings can throw exceptions, which must not abort the entire scan loop.
+            try {
                 var key = (pc.Name.TextValue, pc.HomeWorld.RowId);
 
                 if (lookup.TryGetValue(key, out var friend)) {
@@ -112,8 +118,11 @@ public class ProximityService : IProximityService, IDisposable {
                     if (friend.Level != pc.Level) { friend.Level = pc.Level; changed = true; }
                     if (friend.JobId != pc.ClassJob.RowId) { friend.JobId = (byte)pc.ClassJob.RowId; changed = true; }
 
-                    var tag = pc.CompanyTag.TextValue;
-                    if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
+                    // Safety check: CompanyTag can be null on partially loaded characters
+                    if (pc.CompanyTag != null) {
+                        var tag = pc.CompanyTag.TextValue;
+                        if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
+                    }
 
                     if (friend.CurrentWorldId != localCurrentWorld) {
                         friend.CurrentWorldId = localCurrentWorld;
@@ -172,6 +181,22 @@ public class ProximityService : IProximityService, IDisposable {
                         }
                     }
                 }
+            }
+            catch (Exception) {
+
+            }
+        }
+
+        var departedIds = this.currentlyNearbyIds.Except(newNearbyIds).ToList();
+        if (departedIds.Count > 0) {
+            var departedCharacters = departedIds
+                .Select(id => this.registry.GetCharacterById(id))
+                .Where(c => c != null)
+                .Cast<Character>()
+                .ToList();
+
+            if (departedCharacters.Count > 0) {
+                this.CharactersDeparted?.Invoke(departedCharacters);
             }
         }
 
