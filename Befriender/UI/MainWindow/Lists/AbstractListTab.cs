@@ -187,40 +187,40 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ImGui.Separator();
         ImGui.Spacing();
 
-        if (this.cachedCharacterList.Count == 0) {
-            ImGui.TextDisabled(this.loc.Translate(this.EmptyListMessageKey));
-            return;
-        }
-
         float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
         float tableWidth = this.selectedCharacter != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
         if (ImGui.BeginChild($"{this.InternalName}_Container", new Vector2(tableWidth, -footerHeight))) {
-            float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
-
-            if (this.groupByGroups) {
-                var allGroups = this.groupRepository.GetGroups();
-
-                foreach (var group in allGroups) {
-                    var groupChars = this.cachedCharacterList.Where(c => c.CustomGroupId == group.Id).ToList();
-                    if (groupChars.Count == 0) {
-                        continue;
-                    }
-
-                    if (ImGui.CollapsingHeader($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.DefaultOpen)) {
-                        this.DrawCharacterTable($"{this.InternalName}_Table_{group.Id}", groupChars, palette, textOffsetY, false);
-                    }
-                }
-
-                var unassignedChars = this.cachedCharacterList.Where(c => c.CustomGroupId == null).ToList();
-                if (unassignedChars.Count > 0) {
-                    if (ImGui.CollapsingHeader($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.DefaultOpen)) {
-                        this.DrawCharacterTable($"{this.InternalName}_Table_Unassigned", unassignedChars, palette, textOffsetY, false);
-                    }
-                }
+            if (this.cachedCharacterList.Count == 0) {
+                ImGui.TextDisabled(this.loc.Translate(this.EmptyListMessageKey));
             }
             else {
-                this.DrawCharacterTable($"{this.InternalName}_Table", this.cachedCharacterList, palette, textOffsetY, true);
+                float textOffsetY = Math.Max(0, (24.0f - ImGui.GetTextLineHeight()) * 0.5f);
+
+                if (this.groupByGroups) {
+                    var allGroups = this.groupRepository.GetGroups();
+
+                    foreach (var group in allGroups) {
+                        var groupChars = this.cachedCharacterList.Where(c => c.CustomGroupId == group.Id).ToList();
+                        if (groupChars.Count == 0) {
+                            continue;
+                        }
+
+                        if (ImGui.CollapsingHeader($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.DefaultOpen)) {
+                            this.DrawCharacterTable($"{this.InternalName}_Table_{group.Id}", groupChars, palette, textOffsetY, false);
+                        }
+                    }
+
+                    var unassignedChars = this.cachedCharacterList.Where(c => c.CustomGroupId == null).ToList();
+                    if (unassignedChars.Count > 0) {
+                        if (ImGui.CollapsingHeader($"{this.loc.Translate("Group_Unassigned")} ({unassignedChars.Count})###Group_Unassigned", ImGuiTreeNodeFlags.DefaultOpen)) {
+                            this.DrawCharacterTable($"{this.InternalName}_Table_Unassigned", unassignedChars, palette, textOffsetY, false);
+                        }
+                    }
+                }
+                else {
+                    this.DrawCharacterTable($"{this.InternalName}_Table", this.cachedCharacterList, palette, textOffsetY, true);
+                }
             }
         }
         ImGui.EndChild();
