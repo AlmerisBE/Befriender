@@ -17,8 +17,4 @@
 	<ItemGroup>
 		<EmbeddedResource Include="UI\*\Resources\*.json" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="UI\MainWindow\Resources\" />
-	</ItemGroup>
 </Project>
