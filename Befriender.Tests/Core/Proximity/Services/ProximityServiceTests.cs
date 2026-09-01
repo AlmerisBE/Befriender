@@ -22,13 +22,8 @@ public class ProximityServiceTests {
 
         // Act
         var service = new ProximityService(
-            mockRegistry,
-            mockObjectTable,
-            mockClientState,
-            mockConfig,
-            mockNotif,
-            mockLoc,
-            mockFramework);
+            mockRegistry, mockObjectTable, mockClientState, mockConfig,
+            mockNotif, mockLoc, mockFramework);
 
         // Assert Subscription
         mockFramework.Received(1).Update += Arg.Any<IFramework.OnUpdateDelegate>();

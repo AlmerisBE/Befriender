@@ -57,11 +57,11 @@ public class ProximityService : IProximityService, IDisposable {
             if (this.currentlyNearbyIds.Count > 0) {
                 this.currentlyNearbyIds.Clear();
             }
+
             return;
         }
 
         var allCharacters = this.registry.GetAllCharacters();
-
         var lookup = new Dictionary<(string, uint), Character>();
         foreach (var c in allCharacters) {
             lookup[(c.Name, c.HomeWorldId)] = c;
@@ -72,8 +72,8 @@ public class ProximityService : IProximityService, IDisposable {
             return;
         }
 
-        var currentTerritory = this.clientState.TerritoryType;
-        var localCurrentWorld = localPlayer.CurrentWorld.RowId;
+        uint currentTerritory = this.clientState.TerritoryType;
+        uint localCurrentWorld = localPlayer.CurrentWorld.RowId;
 
         var newNearbyIds = new HashSet<Guid>();
         bool stateChanged = false;
@@ -89,6 +89,7 @@ public class ProximityService : IProximityService, IDisposable {
 
                     bool changed = false;
 
+                    // La vérité absolue : si le joueur est dans notre table d'objets, il est exactement là où nous sommes.
                     if (friend.LocationId != currentTerritory) { friend.LocationId = currentTerritory; changed = true; }
                     if (friend.CurrentWorldId != localCurrentWorld) { friend.CurrentWorldId = localCurrentWorld; changed = true; }
                     if (friend.JobId != pc.ClassJob.RowId) { friend.JobId = (byte)pc.ClassJob.RowId; changed = true; }
@@ -104,7 +105,6 @@ public class ProximityService : IProximityService, IDisposable {
                         stateChanged = true;
                     }
 
-                    // Notification si c'est la première fois qu'on le détecte
                     if (!this.currentlyNearbyIds.Contains(friend.Id)) {
                         bool shouldNotify = (friend.IsActivelyTracked && config.NotifyOnNearbyFriends) ||
                                             (!friend.IsActivelyTracked && config.NotifyOnNearbyArchived);
