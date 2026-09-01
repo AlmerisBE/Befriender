@@ -3,6 +3,7 @@
 using Dalamud.Plugin.Services;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Configuration.Contracts;
+using global::Befriender.Core.GameData.Contracts;
 using global::Befriender.Core.Localization.Contracts;
 using global::Befriender.Core.Proximity.Services;
 using NSubstitute;
@@ -18,10 +19,11 @@ public class ProximityServiceTests {
         var mockNotif = Substitute.For<INotificationManager>();
         var mockLoc = Substitute.For<ILocalizationService>();
         var mockFramework = Substitute.For<IFramework>();
+        var mockGameData = Substitute.For<IGameDataService>();
 
         var service = new ProximityService(
             mockRegistry, mockObjectTable, mockClientState, mockConfig,
-            mockNotif, mockLoc, mockFramework);
+            mockNotif, mockLoc, mockFramework, mockGameData);
 
         mockFramework.Received(1).Update += Arg.Any<IFramework.OnUpdateDelegate>();
 

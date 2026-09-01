@@ -3,6 +3,7 @@
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
 using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
 using Dalamud.Game.ClientState.Objects.SubKinds;
@@ -20,6 +21,7 @@ public class ProximityService : IProximityService, IDisposable {
     private INotificationManager notificationManager;
     private ILocalizationService loc;
     private IFramework framework;
+    private IGameDataService gameDataService;
 
     private HashSet<Guid> currentlyNearbyIds = new();
     private DateTime lastScanTime = DateTime.MinValue;
@@ -31,7 +33,8 @@ public class ProximityService : IProximityService, IDisposable {
         IConfigurationService configService,
         INotificationManager notificationManager,
         ILocalizationService loc,
-        IFramework framework) {
+        IFramework framework,
+        IGameDataService gameDataService) {
 
         this.registry = registry;
         this.objectTable = objectTable;
@@ -40,19 +43,29 @@ public class ProximityService : IProximityService, IDisposable {
         this.notificationManager = notificationManager;
         this.loc = loc;
         this.framework = framework;
+        this.gameDataService = gameDataService;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
         var now = DateTime.Now;
-        if ((now - this.lastScanTime).TotalSeconds < 2.0) return;
+        if ((now - this.lastScanTime).TotalSeconds < 2.0) {
+            return;
+        }
 
         this.lastScanTime = now;
 
         var config = this.configService.GetConfig();
         if (!config.EnableProximityDetection) {
-            if (this.currentlyNearbyIds.Count > 0) this.currentlyNearbyIds.Clear();
+            if (this.currentlyNearbyIds.Count > 0) {
+                this.currentlyNearbyIds.Clear();
+            }
+            return;
+        }
+
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) {
             return;
         }
 
@@ -62,11 +75,25 @@ public class ProximityService : IProximityService, IDisposable {
             lookup[(c.Name, c.HomeWorldId)] = c;
         }
 
-        var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null) return;
-
         uint currentTerritory = this.clientState.TerritoryType;
         uint localCurrentWorld = localPlayer.CurrentWorld.RowId;
+        bool isStandardTerritory = this.gameDataService.IsStandardTerritory(currentTerritory);
+
+        uint effectiveLocationId = currentTerritory;
+        bool hasServerLocation = isStandardTerritory;
+
+        // Stratégie Ysaline : Le joueur local est l'ancre de vérité absolue.
+        // Si nous sommes dans une instance, on récupère le vrai LocationId du serveur depuis le propre profil du joueur local.
+        if (!isStandardTerritory) {
+            var localPlayerChar = allCharacters.FirstOrDefault(c =>
+                c.Name.Equals(localPlayer.Name.TextValue, StringComparison.Ordinal) &&
+                c.HomeWorldId == localPlayer.HomeWorld.RowId);
+
+            if (localPlayerChar != null && localPlayerChar.LocationId > 0 && localPlayerChar.LocationId != currentTerritory) {
+                effectiveLocationId = localPlayerChar.LocationId;
+                hasServerLocation = true;
+            }
+        }
 
         var newNearbyIds = new HashSet<Guid>();
         bool stateChanged = false;
@@ -114,7 +141,13 @@ public class ProximityService : IProximityService, IDisposable {
                         }
                     }
 
-                    if (friend.LocationId != currentTerritory) { friend.LocationId = currentTerritory; changed = true; }
+                    bool canUpdateLocation = hasServerLocation || !friend.IsActivelyTracked || friend.LocationId == 0;
+
+                    if (canUpdateLocation && friend.LocationId != effectiveLocationId) {
+                        friend.LocationId = effectiveLocationId;
+                        changed = true;
+                    }
+
                     if (!friend.IsOnline) { friend.IsOnline = true; changed = true; }
 
                     if ((now - friend.LastSeenAt).TotalMinutes > 5) {
@@ -122,7 +155,9 @@ public class ProximityService : IProximityService, IDisposable {
                         changed = true;
                     }
 
-                    if (changed) stateChanged = true;
+                    if (changed) {
+                        stateChanged = true;
+                    }
 
                     if (!this.currentlyNearbyIds.Contains(friend.Id)) {
                         bool shouldNotify = (friend.IsActivelyTracked && config.NotifyOnNearbyFriends) ||
