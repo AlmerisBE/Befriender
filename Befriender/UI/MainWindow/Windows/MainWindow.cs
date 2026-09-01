@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 
 public class MainWindow : Window, IDisposable {
     private IEnumerable<ITab> tabs = null!;
@@ -41,7 +42,7 @@ public class MainWindow : Window, IDisposable {
         RemoveConfirmationModalComponent removeModal,
         IHotkeyService hotkeyService,
         IThemeService themeService)
-        : base("Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+        : base($"Befriender v{Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"}###Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs;
         this.registry = registry;
