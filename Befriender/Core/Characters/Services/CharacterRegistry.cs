@@ -110,7 +110,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         lock (this.lockObj) {
             var sourceState = source.GetCurrentState().ToList();
 
-            // NOUVEAU : On trace les Ids internes traités plutôt que le ContentId volatile
             var processedIds = new HashSet<Guid>();
 
             foreach (var incoming in sourceState) {
@@ -239,6 +238,10 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 source.RequestManualRefresh();
             }
         }
+    }
+
+    public void NotifyDataChanged() {
+        this.RegistryUpdated?.Invoke();
     }
 
     public void Dispose() {

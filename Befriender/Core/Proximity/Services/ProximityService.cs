@@ -46,18 +46,13 @@ public class ProximityService : IProximityService, IDisposable {
 
     private void OnFrameworkUpdate(IFramework fw) {
         var now = DateTime.Now;
-        if ((now - this.lastScanTime).TotalSeconds < 2.0) {
-            return;
-        }
+        if ((now - this.lastScanTime).TotalSeconds < 2.0) return;
 
         this.lastScanTime = now;
 
         var config = this.configService.GetConfig();
         if (!config.EnableProximityDetection) {
-            if (this.currentlyNearbyIds.Count > 0) {
-                this.currentlyNearbyIds.Clear();
-            }
-
+            if (this.currentlyNearbyIds.Count > 0) this.currentlyNearbyIds.Clear();
             return;
         }
 
@@ -68,9 +63,7 @@ public class ProximityService : IProximityService, IDisposable {
         }
 
         var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null) {
-            return;
-        }
+        if (localPlayer == null) return;
 
         uint currentTerritory = this.clientState.TerritoryType;
         uint localCurrentWorld = localPlayer.CurrentWorld.RowId;
@@ -89,11 +82,39 @@ public class ProximityService : IProximityService, IDisposable {
 
                     bool changed = false;
 
-                    // La vérité absolue : si le joueur est dans notre table d'objets, il est exactement là où nous sommes.
-                    if (friend.LocationId != currentTerritory) { friend.LocationId = currentTerritory; changed = true; }
-                    if (friend.CurrentWorldId != localCurrentWorld) { friend.CurrentWorldId = localCurrentWorld; changed = true; }
-                    if (friend.JobId != pc.ClassJob.RowId) { friend.JobId = (byte)pc.ClassJob.RowId; changed = true; }
                     if (friend.Level != pc.Level) { friend.Level = pc.Level; changed = true; }
+                    if (friend.JobId != pc.ClassJob.RowId) { friend.JobId = (byte)pc.ClassJob.RowId; changed = true; }
+
+                    var tag = pc.CompanyTag.TextValue;
+                    if (friend.FcTag != tag) { friend.FcTag = tag; changed = true; }
+
+                    if (friend.CurrentWorldId != localCurrentWorld) {
+                        friend.CurrentWorldId = localCurrentWorld;
+                        changed = true;
+                    }
+
+                    unsafe {
+                        var csChar = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)pc.Address;
+                        if (csChar != null) {
+                            if (friend.TitleId != csChar->TitleId) { friend.TitleId = csChar->TitleId; changed = true; }
+                            if (friend.OnlineStatusId != csChar->CharacterData.OnlineStatus) { friend.OnlineStatusId = csChar->CharacterData.OnlineStatus; changed = true; }
+
+                            byte race = csChar->DrawData.CustomizeData.Race;
+                            byte tribe = csChar->DrawData.CustomizeData.Tribe;
+                            byte gender = csChar->DrawData.CustomizeData.Sex;
+
+                            if (friend.Race != 0 && (friend.Race != race || friend.Gender != gender)) {
+                                friend.IsFantasiaDetected = true;
+                                changed = true;
+                            }
+
+                            if (friend.Race != race) { friend.Race = race; changed = true; }
+                            if (friend.Tribe != tribe) { friend.Tribe = tribe; changed = true; }
+                            if (friend.Gender != gender) { friend.Gender = gender; changed = true; }
+                        }
+                    }
+
+                    if (friend.LocationId != currentTerritory) { friend.LocationId = currentTerritory; changed = true; }
                     if (!friend.IsOnline) { friend.IsOnline = true; changed = true; }
 
                     if ((now - friend.LastSeenAt).TotalMinutes > 5) {
@@ -101,9 +122,7 @@ public class ProximityService : IProximityService, IDisposable {
                         changed = true;
                     }
 
-                    if (changed) {
-                        stateChanged = true;
-                    }
+                    if (changed) stateChanged = true;
 
                     if (!this.currentlyNearbyIds.Contains(friend.Id)) {
                         bool shouldNotify = (friend.IsActivelyTracked && config.NotifyOnNearbyFriends) ||
@@ -125,6 +144,7 @@ public class ProximityService : IProximityService, IDisposable {
 
         if (stateChanged) {
             this.registry.SaveMasterList();
+            this.registry.NotifyDataChanged();
         }
     }
 
