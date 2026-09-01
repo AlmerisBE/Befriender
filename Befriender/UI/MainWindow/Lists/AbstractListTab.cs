@@ -100,6 +100,10 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     private void OnRegistryUpdated() {
         this.requiresListRebuild = true;
+
+        if (this.selectedCharacter != null && this.registry.GetCharacterById(this.selectedCharacter.Id) == null) {
+            this.selectedCharacter = null;
+        }
     }
 
     protected virtual IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {
