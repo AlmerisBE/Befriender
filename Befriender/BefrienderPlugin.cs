@@ -3,6 +3,7 @@
 using Befriender.Core.Characters.Services;
 using Befriender.Core.Configuration.Services;
 using Befriender.Core.Framework;
+using Befriender.Core.Ipc.Contracts;
 using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.Command.Services;
 using Befriender.UI.Input.Services;
@@ -67,6 +68,9 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<OnlineNotificationService>();
         this.serviceProvider.GetRequiredService<IProximityService>();
         this.serviceProvider.GetRequiredService<AutomationService>();
+
+        var ipcProvider = this.serviceProvider.GetRequiredService<IIpcProviderService>();
+        ipcProvider.Initialize();
 
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {
