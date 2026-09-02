@@ -18,6 +18,7 @@ public class FriendListTab : AbstractListTab {
 
     public override string InternalName => "Tab_List";
     public override string Name => this.loc.Translate("Tab_List");
+    public override int Order => 10;
     protected override string EmptyListMessageKey => "List_Empty";
 
     public FriendListTab(

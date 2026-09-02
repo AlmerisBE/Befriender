@@ -18,6 +18,7 @@ public class FreeCompanyTab : AbstractListTab {
 
     public override string InternalName => "Tab_FreeCompany";
     public override string Name => this.loc.Translate("Tab_FreeCompany");
+    public override int Order => 20;
     protected override string EmptyListMessageKey => "FreeCompany_Empty";
 
     public FreeCompanyTab(

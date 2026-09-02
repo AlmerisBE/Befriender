@@ -44,7 +44,7 @@ public class MainWindow : Window, IDisposable {
         IThemeService themeService)
         : base($"Befriender v{Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"}###Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
-        this.tabs = tabs;
+        this.tabs = tabs.OrderBy(t => t.Order).ToList();
         this.registry = registry;
         this.configurationService = configurationService;
         this.loc = loc;

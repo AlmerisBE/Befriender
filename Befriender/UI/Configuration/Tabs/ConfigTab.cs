@@ -20,8 +20,9 @@ public class ConfigTab : ITab {
     private TagManagementComponent tagComponent;
 
     public string InternalName => "Tab_Config";
-    public bool IsProfilePanelOpen => false;
     public string Name => this.loc.Translate("Tab_Config");
+    public int Order => 40;
+    public bool IsProfilePanelOpen => false;
 
     public ConfigTab(IConfigurationService configurationService, ILocalizationService loc, IThemeService themeService, GroupManagementComponent groupComponent, TagManagementComponent tagComponent) {
         this.configurationService = configurationService;

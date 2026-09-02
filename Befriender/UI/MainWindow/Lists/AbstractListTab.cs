@@ -47,6 +47,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     public abstract string InternalName { get; }
     public abstract string Name { get; }
+    public abstract int Order { get; }
     public bool IsProfilePanelOpen => this.selectedCharacter != null;
 
     protected abstract string EmptyListMessageKey { get; }

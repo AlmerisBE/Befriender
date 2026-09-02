@@ -15,6 +15,7 @@ public class AboutTab : ITab {
 
     public string InternalName => "Tab_About";
     public string Name => this.loc.Translate("Tab_About");
+    public int Order => 50;
     public bool IsProfilePanelOpen => false;
 
     public AboutTab(ILocalizationService loc) {

@@ -6,9 +6,9 @@ using Befriender.UI.Command.Contracts;
 using Befriender.UI.MainWindow.Commands;
 using Befriender.UI.MainWindow.Components;
 using Befriender.UI.MainWindow.Contracts;
-using Befriender.UI.MainWindow.Lists.Consolidated;
 using Befriender.UI.MainWindow.Lists.FreeCompany;
 using Befriender.UI.MainWindow.Lists.Friends;
+using Befriender.UI.MainWindow.Lists.Others;
 using Befriender.UI.MainWindow.Providers;
 using Befriender.UI.MainWindow.Services;
 using Befriender.UI.MainWindow.Tabs;
@@ -33,7 +33,7 @@ public class MainWindowFeature : IFeatureModule {
 
         // Register the tabs
         services.AddSingleton<ITab, FriendListTab>();
-        services.AddSingleton<ITab, ConsolidatedTab>();
+        services.AddSingleton<ITab, OthersTab>();
         services.AddSingleton<ITab, FreeCompanyTab>();
         services.AddSingleton<ITab, AboutTab>();
 

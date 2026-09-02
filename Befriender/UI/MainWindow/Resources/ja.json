@@ -146,5 +146,7 @@
   "List_Empty": "現在のフィルターに一致するフレンドは見つかりませんでした。",
   "StatusBar_Status": "更新から {0} | {1}/{2} オンライン",
   "Tooltip_QuickActions": "クイックアクション",
-  "Action_ManualRefresh": "手動更新"
+  "Action_ManualRefresh": "手動更新",
+  "Tab_Others": "その他",
+  "Others_Empty": "表示する未同期の連絡先はありません。"
 }

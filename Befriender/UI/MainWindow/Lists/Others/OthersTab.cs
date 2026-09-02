@@ -1,4 +1,4 @@
-﻿namespace Befriender.UI.MainWindow.Lists.Consolidated;
+﻿namespace Befriender.UI.MainWindow.Lists.Others;
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
@@ -7,17 +7,19 @@ using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Localization.Contracts;
 using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.MainWindow.Components;
+using Befriender.UI.MainWindow.Lists;
 using Befriender.UI.Theme.Contracts;
 using Dalamud.Plugin.Services;
 using System.Collections.Generic;
 using System.Linq;
 
-public class ConsolidatedTab : AbstractListTab {
-    public override string InternalName => "Tab_Consolidated";
-    public override string Name => this.loc.Translate("Tab_Consolidated");
-    protected override string EmptyListMessageKey => "Consolidated_Empty";
+public class OthersTab : AbstractListTab {
+    public override string InternalName => "Tab_Others";
+    public override string Name => this.loc.Translate("Tab_Others");
+    public override int Order => 30;
+    protected override string EmptyListMessageKey => "Others_Empty";
 
-    public ConsolidatedTab(
+    public OthersTab(
         ICharacterRegistry registry,
         ILocalizationService loc,
         IGameDataService gameDataService,
@@ -34,12 +36,10 @@ public class ConsolidatedTab : AbstractListTab {
     }
 
     protected override IEnumerable<Character> GetBaseCharacterList() {
-        return this.registry.GetAllCharacters();
+        return this.registry.GetAllCharacters().Where(c => !c.IsActivelyTracked);
     }
 
     protected override IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {
-        return characters.OrderByDescending(c => c.IsActivelyTracked)
-                         .ThenByDescending(c => c.IsOnline)
-                         .ThenBy(c => c.Name);
+        return characters.OrderByDescending(c => c.IsOnline).ThenBy(c => c.Name);
     }
 }

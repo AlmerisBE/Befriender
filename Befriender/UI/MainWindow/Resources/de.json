@@ -146,5 +146,7 @@
   "List_Empty": "Es wurden keine Freunde gefunden, die den aktuellen Filtern entsprechen.",
   "StatusBar_Status": "Aktualisiert vor {0} | {1}/{2} Online",
   "Tooltip_QuickActions": "Schnellaktionen",
-  "Action_ManualRefresh": "Manuell aktualisieren"
+  "Action_ManualRefresh": "Manuell aktualisieren",
+  "Tab_Others": "Andere",
+  "Others_Empty": "Keine unsynchronisierten Kontakte anzuzeigen."
 }
