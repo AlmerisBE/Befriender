@@ -20,6 +20,7 @@ public class AbstractListTabTests {
     private class TestListTab : AbstractListTab {
         public override string InternalName => "TestTab";
         public override string Name => "Test";
+        public override int Order => 0; // Added the missing abstract member implementation
         protected override string EmptyListMessageKey => "Empty";
 
         public TestListTab(
@@ -32,7 +33,6 @@ public class AbstractListTabTests {
 
         protected override IEnumerable<Character> GetBaseCharacterList() => new List<Character>();
 
-        // Expose la propriété protégée pour pouvoir simuler un clic dans le test
         public void SelectCharacter(Character character) {
             this.selectedCharacter = character;
         }
@@ -40,12 +40,10 @@ public class AbstractListTabTests {
 
     [Fact]
     public void OnRegistryUpdated_ClearsSelection_WhenCharacterNoLongerInRegistry() {
-        // Arrange
         var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockConfig = Substitute.For<IConfigurationService>();
         mockConfig.GetConfig().Returns(new PluginConfiguration());
 
-        // On instancie la classe de test en utilisant "null!" pour les dépendances inutilisées dans ce contexte précis
         using var tab = new TestListTab(
             mockRegistry, null!, null!, null!, null!, null!, null!, null!, null!,
             new ListToolbarComponent(Substitute.For<ILocalizationService>()), null!, mockConfig);
@@ -56,13 +54,10 @@ public class AbstractListTabTests {
         tab.SelectCharacter(character);
         Assert.True(tab.IsProfilePanelOpen);
 
-        // On simule le fait que le personnage a disparu du registre (ex: changement de personnage)
         mockRegistry.GetCharacterById(charId).Returns((Character)null!);
 
-        // Act
         mockRegistry.RegistryUpdated += Raise.Event<Action>();
 
-        // Assert
         Assert.False(tab.IsProfilePanelOpen);
     }
 }
