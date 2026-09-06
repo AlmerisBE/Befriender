@@ -11,6 +11,7 @@ using System.Linq;
 public class FreeCompanySource : ICharacterSource, IDisposable {
     private IFreeCompanyScanner scanner;
     private IFramework framework;
+    private IObjectTable objectTable;
 
     private ulong lastStateHash = 0;
     private ulong pendingHash = 0;
@@ -28,9 +29,10 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     public event Action? DataUpdated;
 
-    public FreeCompanySource(IFreeCompanyScanner scanner, IFramework framework) {
+    public FreeCompanySource(IFreeCompanyScanner scanner, IFramework framework, IObjectTable objectTable) {
         this.scanner = scanner;
         this.framework = framework;
+        this.objectTable = objectTable;
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
@@ -61,7 +63,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         if (currentHash != this.lastStateHash) {
             if (currentHash != this.pendingHash) {
                 this.pendingHash = currentHash;
-                this.dataStabilizedTime = now.AddSeconds(1); // Drastically reduced from 5s to 1s
+                this.dataStabilizedTime = now.AddSeconds(1); // Stabilization delay
             }
         }
         else if (this.pendingHash != this.lastStateHash) {
@@ -79,8 +81,16 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private void RefreshState() {
         var scannedCharacters = this.scanner.ScanMembers().ToList();
 
+        // The FFXIV client aggressively unloads the FreeCompanyMember proxy memory 
+        // shortly after the data is received if the UI is not actively open.
+        // If we receive an empty list but previously had data, we verify 
+        // if the player is still in an FC via their CompanyTag before wiping our cache.
         if (scannedCharacters.Count == 0 && this.currentState.Count > 0) {
-            if (this.scanner.GetEntryCount() > 0) {
+            var localPlayer = this.objectTable.LocalPlayer;
+            bool hasFc = localPlayer != null && localPlayer.CompanyTag != null && !string.IsNullOrEmpty(localPlayer.CompanyTag.TextValue);
+
+            if (hasFc) {
+                this.isManualRefreshPending = false;
                 return;
             }
         }
