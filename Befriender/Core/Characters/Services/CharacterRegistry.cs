@@ -72,6 +72,13 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         lock (this.lockObj) {
             this.currentAccountIdentity = accountIdentity;
             this.masterList = this.storage.Load("MasterCharacterList", accountIdentity).ToList();
+
+            // Force the local player to be online immediately upon loading the cache
+            var localChar = this.masterList.FirstOrDefault(c => $"{c.Name}_{c.HomeWorldId}" == accountIdentity);
+            if (localChar != null) {
+                localChar.IsOnline = true;
+                localChar.LastSeenAt = DateTime.Now;
+            }
         }
         this.RegistryUpdated?.Invoke();
     }
@@ -86,9 +93,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
 
     public void RegisterSource(ICharacterSource source) {
         lock (this.lockObj) {
-            if (this.sources.Any(s => s.SourceId == source.SourceId)) {
-                return;
-            }
+            if (this.sources.Any(s => s.SourceId == source.SourceId)) return;
 
             this.sources.Add(source);
             source.DataUpdated += () => this.ProcessSourceUpdate(source);
@@ -98,9 +103,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     public void UnregisterSource(Guid sourceId) {
         lock (this.lockObj) {
             var source = this.sources.FirstOrDefault(s => s.SourceId == sourceId);
-            if (source == null) {
-                return;
-            }
+            if (source == null) return;
 
             this.sources.Remove(source);
         }
@@ -109,7 +112,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     private void ProcessSourceUpdate(ICharacterSource source) {
         lock (this.lockObj) {
             var sourceState = source.GetCurrentState().ToList();
-
             var processedIds = new HashSet<Guid>();
 
             foreach (var incoming in sourceState) {
@@ -128,27 +130,15 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                     this.masterList.Add(existing);
                 }
                 else {
-                    if (incoming.ContentId > 0) {
-                        existing.ContentId = incoming.ContentId;
-                    }
-
-                    if (incoming.Race > 0) {
-                        existing.Race = incoming.Race;
-                    }
-
-                    if (incoming.Tribe > 0) {
-                        existing.Tribe = incoming.Tribe;
-                    }
-
-                    if (incoming.Gender > 0) {
-                        existing.Gender = incoming.Gender;
-                    }
+                    if (incoming.ContentId > 0) existing.ContentId = incoming.ContentId;
+                    if (incoming.Race > 0) existing.Race = incoming.Race;
+                    if (incoming.Tribe > 0) existing.Tribe = incoming.Tribe;
+                    if (incoming.Gender > 0) existing.Gender = incoming.Gender;
 
                     if (!string.Equals(existing.Name, incoming.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
                         if (!existing.PreviousNames.Contains(existing.Name)) {
                             existing.PreviousNames.Add(existing.Name);
                         }
-
                         existing.Name = incoming.Name;
                     }
 
@@ -158,30 +148,17 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
 
                     existing.IsOnline = incoming.IsOnline;
 
-                    if (incoming.CurrentWorldId > 0) {
-                        existing.CurrentWorldId = incoming.CurrentWorldId;
-                    }
-
-                    if (incoming.LocationId > 0) {
-                        existing.LocationId = incoming.LocationId;
-                    }
+                    if (incoming.CurrentWorldId > 0) existing.CurrentWorldId = incoming.CurrentWorldId;
+                    if (incoming.LocationId > 0) existing.LocationId = incoming.LocationId;
 
                     if (incoming.IsOnline) {
                         existing.LastSeenAt = DateTime.Now;
                         existing.OnlineStateMask = incoming.OnlineStateMask;
                     }
 
-                    if (incoming.JobId > 0) {
-                        existing.JobId = incoming.JobId;
-                    }
-
-                    if (incoming.Level > 0) {
-                        existing.Level = incoming.Level;
-                    }
-
-                    if (!string.IsNullOrEmpty(incoming.FcTag)) {
-                        existing.FcTag = incoming.FcTag;
-                    }
+                    if (incoming.JobId > 0) existing.JobId = incoming.JobId;
+                    if (incoming.Level > 0) existing.Level = incoming.Level;
+                    if (!string.IsNullOrEmpty(incoming.FcTag)) existing.FcTag = incoming.FcTag;
 
                     if (incoming.SourceSpecificData.TryGetValue(source.SourceId, out var specificData)) {
                         existing.SourceSpecificData[source.SourceId] = specificData;
@@ -198,6 +175,15 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                     if (!character.IsActivelyTracked) {
                         character.IsOnline = false;
                     }
+                }
+            }
+
+            // Enforce domain rule: Local player is always online
+            if (!string.IsNullOrEmpty(this.currentAccountIdentity)) {
+                var localChar = this.masterList.FirstOrDefault(c => $"{c.Name}_{c.HomeWorldId}" == this.currentAccountIdentity);
+                if (localChar != null && !localChar.IsOnline) {
+                    localChar.IsOnline = true;
+                    localChar.LastSeenAt = DateTime.Now;
                 }
             }
 
@@ -228,7 +214,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         lock (this.lockObj) {
             this.masterList.RemoveAll(c => c.Id == id);
         }
-
         this.RegistryUpdated?.Invoke();
     }
 
