@@ -13,8 +13,9 @@ public class FreeCompanySourceTests {
         var mockScanner = Substitute.For<IFreeCompanyScanner>();
         var mockFramework = Substitute.For<IFramework>();
         var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockClientState = Substitute.For<IClientState>();
 
-        using var source = new FreeCompanySource(mockScanner, mockFramework, mockObjectTable);
+        using var source = new FreeCompanySource(mockScanner, mockFramework, mockObjectTable, mockClientState);
 
         bool eventFired = false;
         source.DataUpdated += () => eventFired = true;
@@ -36,8 +37,9 @@ public class FreeCompanySourceTests {
         var mockScanner = Substitute.For<IFreeCompanyScanner>();
         var mockFramework = Substitute.For<IFramework>();
         var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockClientState = Substitute.For<IClientState>();
 
-        using var source = new FreeCompanySource(mockScanner, mockFramework, mockObjectTable);
+        using var source = new FreeCompanySource(mockScanner, mockFramework, mockObjectTable, mockClientState);
 
         Assert.False(source.IsSyncing);
 

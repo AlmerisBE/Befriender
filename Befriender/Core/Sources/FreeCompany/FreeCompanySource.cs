@@ -12,6 +12,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private IFreeCompanyScanner scanner;
     private IFramework framework;
     private IObjectTable objectTable;
+    private IClientState clientState;
 
     private ulong lastStateHash = 0;
     private ulong pendingHash = 0;
@@ -29,11 +30,21 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     public event Action? DataUpdated;
 
-    public FreeCompanySource(IFreeCompanyScanner scanner, IFramework framework, IObjectTable objectTable) {
+    public FreeCompanySource(IFreeCompanyScanner scanner, IFramework framework, IObjectTable objectTable, IClientState clientState) {
         this.scanner = scanner;
         this.framework = framework;
         this.objectTable = objectTable;
+        this.clientState = clientState;
+
         this.framework.Update += this.OnFrameworkUpdate;
+        this.clientState.Logout += this.OnLogout;
+    }
+
+    private void OnLogout(int type, int code) {
+        this.currentState.Clear();
+        this.lastStateHash = 0;
+        this.pendingHash = 0;
+        this.dataStabilizedTime = DateTime.MaxValue;
     }
 
     public IEnumerable<Character> GetCurrentState() {
@@ -53,17 +64,14 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private void OnFrameworkUpdate(IFramework fw) {
         var now = DateTime.Now;
 
-        // Periodic server request since Free Company data isn't actively pushed
-        if (now - this.lastSyncTime >= this.syncInterval) {
-            this.TriggerManualRefresh();
-        }
+        if (now - this.lastSyncTime >= this.syncInterval) this.TriggerManualRefresh();
 
         ulong currentHash = this.scanner.GetStateHash();
 
         if (currentHash != this.lastStateHash) {
             if (currentHash != this.pendingHash) {
                 this.pendingHash = currentHash;
-                this.dataStabilizedTime = now.AddSeconds(1); // Stabilization delay
+                this.dataStabilizedTime = now.AddSeconds(1);
             }
         }
         else if (this.pendingHash != this.lastStateHash) {
@@ -81,10 +89,6 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private void RefreshState() {
         var scannedCharacters = this.scanner.ScanMembers().ToList();
 
-        // The FFXIV client aggressively unloads the FreeCompanyMember proxy memory 
-        // shortly after the data is received if the UI is not actively open.
-        // If we receive an empty list but previously had data, we verify 
-        // if the player is still in an FC via their CompanyTag before wiping our cache.
         if (scannedCharacters.Count == 0 && this.currentState.Count > 0) {
             var localPlayer = this.objectTable.LocalPlayer;
             bool hasFc = localPlayer != null && localPlayer.CompanyTag != null && !string.IsNullOrEmpty(localPlayer.CompanyTag.TextValue);
@@ -95,12 +99,23 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
             }
         }
 
-        this.currentState = scannedCharacters;
+        var newState = new Dictionary<ulong, Character>();
+
+        foreach (var c in this.currentState) {
+            if (c.ContentId > 0) newState[c.ContentId] = c;
+        }
+
+        foreach (var scanned in scannedCharacters) {
+            if (scanned.ContentId > 0) newState[scanned.ContentId] = scanned;
+        }
+
+        this.currentState = newState.Values.ToList();
         this.isManualRefreshPending = false;
         this.DataUpdated?.Invoke();
     }
 
     public void Dispose() {
         this.framework.Update -= this.OnFrameworkUpdate;
+        this.clientState.Logout -= this.OnLogout;
     }
 }
