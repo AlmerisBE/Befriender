@@ -21,7 +21,7 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
         if (fcProxy == null) return members;
 
         var count = fcProxy->InfoProxyPageInterface.InfoProxyInterface.GetEntryCount();
-        if (count > 1000) return members; // Sanity check
+        if (count > 1000) return members;
 
         for (uint i = 0; i < count; i++) {
             var entry = fcProxy->GetEntry(i);
@@ -32,9 +32,7 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
 
             if (!nameSpan.IsEmpty) {
                 int nullIndex = nameSpan.IndexOf((byte)0);
-                if (nullIndex >= 0) {
-                    nameSpan = nameSpan[..nullIndex];
-                }
+                if (nullIndex >= 0) nameSpan = nameSpan[..nullIndex];
                 name = Encoding.UTF8.GetString(nameSpan);
             }
 
@@ -43,9 +41,7 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
 
             if (!fcTagSpan.IsEmpty) {
                 int nullIndex = fcTagSpan.IndexOf((byte)0);
-                if (nullIndex >= 0) {
-                    fcTagSpan = fcTagSpan[..nullIndex];
-                }
+                if (nullIndex >= 0) fcTagSpan = fcTagSpan[..nullIndex];
                 fcTag = Encoding.UTF8.GetString(fcTagSpan);
             }
 
@@ -88,18 +84,11 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
         var infoModule = uiModule->GetInfoModule();
         if (infoModule == null) return;
 
-        // FFXIV Server bandwidth optimization: 
-        // The server ignores FreeCompanyMember list requests if the main Free Company profile is not initialized.
-        // Opening the native UI triggers both. We replicate this native execution flow here.
         var fcProfileProxy = infoModule->GetInfoProxyById(InfoProxyId.FreeCompany);
-        if (fcProfileProxy != null) {
-            fcProfileProxy->RequestData();
-        }
+        if (fcProfileProxy != null) fcProfileProxy->RequestData();
 
         var fcMemberProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FreeCompanyMember);
-        if (fcMemberProxy != null) {
-            fcMemberProxy->RequestData();
-        }
+        if (fcMemberProxy != null) fcMemberProxy->RequestData();
     }
 
     public ulong GetStateHash() {
