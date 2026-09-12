@@ -170,6 +170,10 @@ public class MainWindow : Window, IDisposable {
         ImGui.PopStyleColor(22);
     }
 
+    public override void OnOpen() {
+        this.registry.RequestManualRefresh();
+    }
+
     public void Dispose() {
         if (this.navService != null) {
             this.navService.OnTabRequested -= this.SetTab;

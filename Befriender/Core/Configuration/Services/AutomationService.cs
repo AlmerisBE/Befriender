@@ -20,6 +20,9 @@ public class AutomationService : IDisposable {
     private DateTime? refreshTriggerTime = null;
     private readonly TimeSpan departureDelay = TimeSpan.FromSeconds(10);
 
+    private Random random = new();
+    private DateTime nextPeriodicSyncTime = DateTime.MaxValue;
+
     public AutomationService(
         IClientState clientState,
         IConfigurationService configService,
@@ -37,36 +40,41 @@ public class AutomationService : IDisposable {
         this.clientState.TerritoryChanged += this.OnTerritoryChanged;
         this.proximityService.CharactersDeparted += this.OnCharactersDeparted;
         this.framework.Update += this.OnFrameworkUpdate;
+
+        this.ScheduleNextPeriodicSync();
+    }
+
+    private void ScheduleNextPeriodicSync() {
+        var config = this.configService.GetConfig();
+        int min = config.MinSyncIntervalMinutes;
+        int max = config.MaxSyncIntervalMinutes;
+
+        if (min > max) min = max;
+
+        int delayMinutes = this.random.Next(min, max + 1);
+        this.nextPeriodicSyncTime = DateTime.Now.AddMinutes(delayMinutes);
     }
 
     private void OnLogin() {
-        if (this.configService.GetConfig().SyncOnLogin) {
-            this.registry.RequestManualRefresh();
-        }
+        if (this.configService.GetConfig().SyncOnLogin) this.registry.RequestManualRefresh();
+
+        this.ScheduleNextPeriodicSync();
     }
 
     private void OnTerritoryChanged(uint territoryId) {
-        if (this.configService.GetConfig().SyncOnTerritoryChange) {
-            this.registry.RequestManualRefresh();
-        }
+        if (this.configService.GetConfig().SyncOnTerritoryChange) this.registry.RequestManualRefresh();
     }
 
     private void OnCharactersDeparted(IEnumerable<Character> characters) {
-        if (!this.configService.GetConfig().SyncOnProximityDeparture) {
-            return;
-        }
+        if (!this.configService.GetConfig().SyncOnProximityDeparture) return;
 
         bool sourcesAdded = false;
 
         foreach (var character in characters) {
-            if (character.ActiveSourceIds == null) {
-                continue;
-            }
+            if (character.ActiveSourceIds == null) continue;
 
             foreach (var sourceId in character.ActiveSourceIds) {
-                if (this.pendingSourcesToRefresh.Add(sourceId)) {
-                    sourcesAdded = true;
-                }
+                if (this.pendingSourcesToRefresh.Add(sourceId)) sourcesAdded = true;
             }
         }
 
@@ -83,6 +91,11 @@ public class AutomationService : IDisposable {
                 this.registry.RequestManualRefresh(this.pendingSourcesToRefresh.ToList());
                 this.pendingSourcesToRefresh.Clear();
             }
+        }
+
+        if (DateTime.Now >= this.nextPeriodicSyncTime) {
+            this.registry.RequestManualRefresh();
+            this.ScheduleNextPeriodicSync();
         }
     }
 
