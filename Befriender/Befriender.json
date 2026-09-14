@@ -2,7 +2,7 @@
   "Author": "Almeris",
   "Name": "Befriender",
   "InternalName": "Befriender",
-  "AssemblyVersion": "1.2.0.0",
+  "AssemblyVersion": "1.2.1.0",
   "Description": "An improved, responsive, and feature-rich friend list for Final Fantasy XIV.",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 15,
@@ -17,3 +17,4 @@
     "utility"
   ]
 }
+
