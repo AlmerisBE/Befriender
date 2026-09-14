@@ -25,12 +25,25 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
     private HashSet<nint> activeNodesThisFrame = new();
     private List<nint> staleKeysToRemove = new();
 
+    // Cache to prevent memory allocation and LINQ queries on every draw frame
+    private HashSet<string> cachedMarkedCharacters = new(StringComparer.OrdinalIgnoreCase);
+
     public VanillaFriendListModifierService(IAddonLifecycle addonLifecycle, ICharacterRegistry registry, IPluginLog pluginLog) {
         this.addonLifecycle = addonLifecycle;
         this.registry = registry;
         this.pluginLog = pluginLog;
 
+        this.registry.RegistryUpdated += this.UpdateMarkedCharactersCache;
         this.addonLifecycle.RegisterListener(AddonEvent.PreDraw, "FriendList", this.OnFriendListPreDraw);
+
+        this.UpdateMarkedCharactersCache();
+    }
+
+    private void UpdateMarkedCharactersCache() {
+        this.cachedMarkedCharacters = this.registry.GetAllCharacters()
+            .Where(c => c.IsMarkedForRemoval)
+            .Select(c => c.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     private void OnFriendListPreDraw(AddonEvent type, AddonArgs args) {
@@ -43,12 +56,7 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
                 return;
             }
 
-            var markedCharacters = this.registry.GetAllCharacters()
-                .Where(c => c.IsMarkedForRemoval)
-                .Select(c => c.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            this.TraverseAndColor(&addon->UldManager, markedCharacters);
+            this.TraverseAndColor(&addon->UldManager, this.cachedMarkedCharacters);
             this.CleanupStaleNodes();
         }
         catch (Exception ex) {
@@ -57,20 +65,17 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
     }
 
     private void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> markedNames) {
-        if (uldManager == null) {
-            return;
-        }
+        if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
             var node = uldManager->NodeList[i];
-            if (node == null || !node->IsVisible()) {
-                continue;
-            }
+            if (node == null || !node->IsVisible()) continue;
 
             if (node->Type == NodeType.Text) {
                 var textNode = (AtkTextNode*)node;
 
-                byte* stringPtr = textNode->NodeText.StringPtr;
+                // Explicit cast to interface correctly with the new CStringPointer struct in Dawntrail
+                byte* stringPtr = (byte*)textNode->NodeText.StringPtr;
 
                 if (stringPtr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue.Trim();
@@ -110,7 +115,7 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
                 var state = kvp.Value;
                 var textNode = (AtkTextNode*)nodePtr;
 
-                byte* stringPtr = textNode->NodeText.StringPtr;
+                byte* stringPtr = (byte*)textNode->NodeText.StringPtr;
 
                 if (stringPtr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue.Trim();
@@ -130,6 +135,7 @@ public unsafe class VanillaFriendListModifierService : IDisposable {
     }
 
     public void Dispose() {
+        this.registry.RegistryUpdated -= this.UpdateMarkedCharactersCache;
         this.addonLifecycle.UnregisterListener(AddonEvent.PreDraw, "FriendList", this.OnFriendListPreDraw);
         this.originalNodeStates.Clear();
         this.activeNodesThisFrame.Clear();
