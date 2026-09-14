@@ -5,6 +5,7 @@ using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using System;
 using System.Linq;
 using System.Numerics;
 
@@ -20,13 +21,31 @@ public class TagManagementComponent {
         this.loc = loc;
     }
 
+    public void CreateTag(string name) {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        this.tagRepository.AddTag(name);
+    }
+
+    public void DeleteTag(Guid tagId) {
+        var characters = this.registry.GetAllCharacters();
+        var charsWithTag = characters.Where(c => c.Tags.Contains(tagId)).ToList();
+
+        foreach (var c in charsWithTag) {
+            c.Tags.Remove(tagId);
+        }
+
+        if (charsWithTag.Count > 0) this.registry.SaveMasterList();
+
+        this.tagRepository.RemoveTag(tagId);
+    }
+
     public void Draw() {
         ImGui.SetNextItemWidth(250);
         ImGui.InputTextWithHint("##newTag", this.loc.Translate("Tag_NewNameHint"), ref this.newTagBuffer, 30);
         ImGui.SameLine();
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus) && !string.IsNullOrWhiteSpace(this.newTagBuffer)) {
-            this.tagRepository.AddTag(this.newTagBuffer);
+            this.CreateTag(this.newTagBuffer);
             this.newTagBuffer = string.Empty;
         }
 
@@ -67,16 +86,7 @@ public class TagManagementComponent {
 
                 ImGui.TableNextColumn();
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.TrashAlt)) {
-                    var charsWithTag = characters.Where(c => c.Tags.Contains(tag.Id)).ToList();
-                    foreach (var c in charsWithTag) {
-                        c.Tags.Remove(tag.Id);
-                    }
-
-                    if (charsWithTag.Count > 0) {
-                        this.registry.SaveMasterList();
-                    }
-
-                    this.tagRepository.RemoveTag(tag.Id);
+                    this.DeleteTag(tag.Id);
                 }
 
                 if (ImGui.IsItemHovered()) {

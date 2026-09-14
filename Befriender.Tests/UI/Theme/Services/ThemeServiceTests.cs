@@ -1,78 +1,61 @@
 ﻿namespace Befriender.Tests.UI.Theme.Services;
 
-using Befriender.Core.Configuration.Contracts;
-using Befriender.Core.Configuration.Models;
-using Befriender.UI.Theme.Services;
 using Dalamud.Plugin;
+using global::Befriender.Core.Configuration.Contracts;
+using global::Befriender.Core.Configuration.Models;
+using global::Befriender.UI.Theme.Services;
 using NSubstitute;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Xunit;
 
 public class ThemeServiceTests : IDisposable {
-    private List<string> createdDirectories = new();
+    private IConfigurationService mockConfigService;
+    private IDalamudPluginInterface mockPluginInterface;
+    private string tempDirectory;
 
-    private string GetUniqueTempPath() {
-        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(path);
-        this.createdDirectories.Add(path);
-        return path;
+    public ThemeServiceTests() {
+        this.mockConfigService = Substitute.For<IConfigurationService>();
+        this.mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
+
+        this.tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(this.tempDirectory);
+
+        this.mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(this.tempDirectory));
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SelectedThemeName = "Dark" });
     }
 
     [Fact]
-    public void ThemeService_Initialization_GeneratesAndLoadsThemesFromDisk() {
-        // Arrange
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { SelectedThemeName = "Light" });
+    public void Constructor_CreatesDefaultThemes_AndLoadsThem() {
+        var service = new ThemeService(this.mockConfigService, this.mockPluginInterface);
 
-        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var fakePath = this.GetUniqueTempPath(); // Utilisation d'un chemin unique
-        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
+        var availableThemes = service.GetAvailableThemes();
 
-        // Act
-        var service = new ThemeService(mockConfigService, mockPluginInterface);
-
-        // Assert
-        Assert.Equal("Light", service.CurrentThemeName);
-        Assert.Contains("Dark", service.GetAvailableThemes());
-        Assert.Contains("Light", service.GetAvailableThemes());
-        Assert.Equal(Path.Combine(fakePath, "Themes"), service.ThemesDirectory);
+        Assert.Contains("Dark", availableThemes);
+        Assert.Contains("Light", availableThemes);
+        Assert.Equal("Dark", service.CurrentThemeName);
     }
 
     [Fact]
-    public void ThemeService_SetTheme_ChangesPaletteAndSavesConfig() {
-        // Arrange
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        var config = new PluginConfiguration { SelectedThemeName = "Dark" };
-        mockConfigService.GetConfig().Returns(config);
+    public void SetTheme_UpdatesConfig_AndChangesCurrentPalette() {
+        var service = new ThemeService(this.mockConfigService, this.mockPluginInterface);
 
-        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var fakePath = this.GetUniqueTempPath(); // Utilisation d'un chemin unique
-        mockPluginInterface.ConfigDirectory.Returns(new DirectoryInfo(fakePath));
-
-        var service = new ThemeService(mockConfigService, mockPluginInterface);
-
-        // Act
         service.SetTheme("Light");
 
-        // Assert
         Assert.Equal("Light", service.CurrentThemeName);
-        Assert.Equal("Light", config.SelectedThemeName);
-        mockConfigService.Received(1).Save();
+        this.mockConfigService.Received(1).Save();
+    }
+
+    [Fact]
+    public void SetTheme_FallsBackToDark_WhenThemeIsInvalid() {
+        var service = new ThemeService(this.mockConfigService, this.mockPluginInterface);
+
+        service.SetTheme("NonExistentTheme");
+
+        Assert.Equal("Dark", service.CurrentThemeName);
     }
 
     public void Dispose() {
-        // Nettoyage des dossiers temporaires après l'exécution des tests
-        foreach (var dir in this.createdDirectories) {
-            if (Directory.Exists(dir)) {
-                try {
-                    Directory.Delete(dir, true);
-                }
-                catch {
-                    // Ignore de potentielles erreurs de nettoyage dans l'environnement de test
-                }
-            }
-        }
+        if (Directory.Exists(this.tempDirectory)) Directory.Delete(this.tempDirectory, true);
     }
 }

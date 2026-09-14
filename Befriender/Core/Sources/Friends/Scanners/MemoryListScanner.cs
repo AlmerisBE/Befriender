@@ -26,42 +26,47 @@ public unsafe class MemoryFriendListScanner : IFriendListScanner {
 
         for (uint i = 0; i < count; i++) {
             var entry = friendProxy->GetEntry(i);
-            if (entry == null) continue;
-
-            string name = string.Empty;
-            var nameSpan = entry->Name;
-
-            if (!nameSpan.IsEmpty) {
-                int nullIndex = nameSpan.IndexOf((byte)0);
-                if (nullIndex >= 0) nameSpan = nameSpan[..nullIndex];
-                name = Encoding.UTF8.GetString(nameSpan);
-            }
-
-            string fcTag = string.Empty;
-            var fcTagSpan = entry->FCTag;
-
-            if (!fcTagSpan.IsEmpty) {
-                int nullIndex = fcTagSpan.IndexOf((byte)0);
-                if (nullIndex >= 0) fcTagSpan = fcTagSpan[..nullIndex];
-                fcTag = Encoding.UTF8.GetString(fcTagSpan);
-            }
-
-            friends.Add(new Character {
-                ContentId = entry->ContentId,
-                Name = name,
-                HomeWorldId = entry->HomeWorld,
-                CurrentWorldId = entry->CurrentWorld,
-                IsOnline = entry->State != 0,
-                JobId = entry->Job,
-                LocationId = entry->Location,
-                FcTag = fcTag,
-                OnlineStateMask = (ulong)entry->State,
-                ClientLanguages = (byte)entry->Languages,
-                GrandCompany = (byte)entry->GrandCompany
-            });
+            var parsed = this.ParseEntry(entry);
+            if (parsed != null) friends.Add(parsed);
         }
 
         return friends;
+    }
+
+    public Character? ParseEntry(InfoProxyCommonList.CharacterData* entry) {
+        if (entry == null) return null;
+
+        string name = string.Empty;
+        var nameSpan = entry->Name;
+
+        if (!nameSpan.IsEmpty) {
+            int nullIndex = nameSpan.IndexOf((byte)0);
+            if (nullIndex >= 0) nameSpan = nameSpan[..nullIndex];
+            name = Encoding.UTF8.GetString(nameSpan);
+        }
+
+        string fcTag = string.Empty;
+        var fcTagSpan = entry->FCTag;
+
+        if (!fcTagSpan.IsEmpty) {
+            int nullIndex = fcTagSpan.IndexOf((byte)0);
+            if (nullIndex >= 0) fcTagSpan = fcTagSpan[..nullIndex];
+            fcTag = Encoding.UTF8.GetString(fcTagSpan);
+        }
+
+        return new Character {
+            ContentId = entry->ContentId,
+            Name = name,
+            HomeWorldId = entry->HomeWorld,
+            CurrentWorldId = entry->CurrentWorld,
+            IsOnline = entry->State != 0,
+            JobId = entry->Job,
+            LocationId = entry->Location,
+            FcTag = fcTag,
+            OnlineStateMask = (ulong)entry->State,
+            ClientLanguages = (byte)entry->Languages,
+            GrandCompany = (byte)entry->GrandCompany
+        };
     }
 
     public int GetCurrentFriendCount() {
@@ -97,9 +102,7 @@ public unsafe class MemoryFriendListScanner : IFriendListScanner {
 
         for (uint i = 0; i < count; i++) {
             var entry = friendProxy->GetEntry(i);
-            if (entry != null) {
-                hash = unchecked(hash * 314159 + (ulong)entry->State);
-            }
+            if (entry != null) hash = unchecked(hash * 314159 + (ulong)entry->State);
         }
 
         return hash;

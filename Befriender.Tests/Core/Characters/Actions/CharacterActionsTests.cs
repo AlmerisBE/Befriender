@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using global::Befriender.Core.Characters.Actions;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Characters.Models;
+using global::Befriender.Core.GameData.Contracts;
 using NSubstitute;
 using System;
 using Xunit;
@@ -17,9 +18,9 @@ public class CharacterActionsTests {
         var action = new DeleteCharacterDataAction(mockRegistry);
 
         var activelyTrackedChar = new Character();
-        activelyTrackedChar.ActiveSourceIds.Add(Guid.NewGuid()); // Makes IsActivelyTracked = true
+        activelyTrackedChar.ActiveSourceIds.Add(Guid.NewGuid());
 
-        var untrackedChar = new Character(); // IsActivelyTracked = false
+        var untrackedChar = new Character();
 
         Assert.False(action.CanExecute(activelyTrackedChar));
         Assert.True(action.CanExecute(untrackedChar));
@@ -44,13 +45,13 @@ public class CharacterActionsTests {
         var action = new TrackCharacterAction(mockRegistry);
 
         var validChar = new Character { Name = "John Doe" };
-        validChar.ActiveSourceIds.Add(Guid.NewGuid()); // Must be tracked by a source
-        validChar.IsTrackedForNotifications = false; // Must not be tracked yet
+        validChar.ActiveSourceIds.Add(Guid.NewGuid());
+        validChar.IsTrackedForNotifications = false;
 
         Assert.True(action.CanExecute(validChar));
 
         validChar.IsTrackedForNotifications = true;
-        Assert.False(action.CanExecute(validChar)); // Already tracked
+        Assert.False(action.CanExecute(validChar));
     }
 
     [Fact]
@@ -114,7 +115,7 @@ public class CharacterActionsTests {
         Assert.False(action.CanExecute(invalidChar));
     }
 
-    // --- Native Guards (CanExecute Logic Only) ---
+    // --- ViewPartyFinderListingAction ---
     [Fact]
     public void ViewPartyFinderListingAction_CanExecute_RequiresRecruitingStatus() {
         var action = new ViewPartyFinderListingAction();
@@ -135,5 +136,73 @@ public class CharacterActionsTests {
             OnlineStateMask = (ulong)InfoProxyCommonList.CharacterData.OnlineStatus.RecruitingPartyMembers
         };
         Assert.True(action.CanExecute(onlineRecruiting));
+    }
+
+    // --- JoinCharacterAction ---
+    [Fact]
+    public void JoinCharacterAction_CanExecute_ReturnsFalse_WhenOfflineOrNoLocation() {
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockDataManager = Substitute.For<IDataManager>();
+        var mockPluginLog = Substitute.For<IPluginLog>();
+        var action = new JoinCharacterAction(mockObjectTable, mockDataManager, mockPluginLog);
+
+        Assert.False(action.CanExecute(new Character { IsOnline = false, Name = "Alice", LocationId = 123 }));
+        Assert.False(action.CanExecute(new Character { IsOnline = true, Name = "", LocationId = 123 }));
+        Assert.False(action.CanExecute(new Character { IsOnline = true, Name = "Alice", LocationId = 0 }));
+    }
+
+    // --- SendTellAction ---
+    [Fact]
+    public void SendTellAction_CanExecute_OnlyIfNameIsNotEmpty() {
+        var mockGameDataService = Substitute.For<IGameDataService>();
+        var action = new SendTellAction(mockGameDataService);
+
+        Assert.True(action.CanExecute(new Character { Name = "Alice" }));
+        Assert.False(action.CanExecute(new Character { Name = "" }));
+    }
+
+    // --- NativeInviteToPartyAction ---
+    [Fact]
+    public void NativeInviteToPartyAction_CanExecute_OnlyIfNameIsNotEmpty() {
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var action = new NativeInviteToPartyAction(mockObjectTable);
+
+        Assert.True(action.CanExecute(new Character { Name = "Alice" }));
+        Assert.False(action.CanExecute(new Character { Name = "" }));
+    }
+
+    // --- EstateTeleportationAction ---
+    [Fact]
+    public void EstateTeleportationAction_CanExecute_RequiresActiveTrackingAndName() {
+        var action = new EstateTeleportationAction();
+
+        var valid = new Character { Name = "Alice" };
+        valid.ActiveSourceIds.Add(Guid.NewGuid());
+
+        var untracked = new Character { Name = "Bob" };
+
+        var noName = new Character { Name = "" };
+        noName.ActiveSourceIds.Add(Guid.NewGuid());
+
+        Assert.True(action.CanExecute(valid));
+        Assert.False(action.CanExecute(untracked));
+        Assert.False(action.CanExecute(noName));
+    }
+
+    // --- ViewAdventurerPlateAction & ViewSearchInfoAction ---
+    [Fact]
+    public void InfoActions_CanExecute_OnlyIfNameIsNotEmpty() {
+        var mockPluginLog = Substitute.For<IPluginLog>();
+        var plateAction = new ViewAdventurerPlateAction(mockPluginLog);
+        var searchAction = new ViewSearchInfoAction();
+
+        var validChar = new Character { Name = "Alice" };
+        var invalidChar = new Character { Name = "" };
+
+        Assert.True(plateAction.CanExecute(validChar));
+        Assert.False(plateAction.CanExecute(invalidChar));
+
+        Assert.True(searchAction.CanExecute(validChar));
+        Assert.False(searchAction.CanExecute(invalidChar));
     }
 }

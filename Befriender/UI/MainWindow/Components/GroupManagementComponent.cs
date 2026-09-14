@@ -27,13 +27,31 @@ public class GroupManagementComponent {
         this.loc = loc;
     }
 
+    public void CreateGroup(string name) {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        this.groupRepository.AddGroup(name);
+    }
+
+    public void DeleteGroup(Guid groupId) {
+        var characters = this.registry.GetAllCharacters();
+        var charsInGroup = characters.Where(c => c.CustomGroupId == groupId).ToList();
+
+        foreach (var c in charsInGroup) {
+            c.CustomGroupId = null;
+        }
+
+        if (charsInGroup.Count > 0) this.registry.SaveMasterList();
+
+        this.groupRepository.RemoveGroup(groupId);
+    }
+
     public void Draw() {
         ImGui.SetNextItemWidth(250);
         ImGui.InputTextWithHint("##newGroup", this.loc.Translate("Group_NewNameHint"), ref this.newGroupBuffer, 50);
         ImGui.SameLine();
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus) && !string.IsNullOrWhiteSpace(this.newGroupBuffer)) {
-            this.groupRepository.AddGroup(this.newGroupBuffer);
+            this.CreateGroup(this.newGroupBuffer);
             this.newGroupBuffer = string.Empty;
         }
 
@@ -65,44 +83,27 @@ public class GroupManagementComponent {
                 bool canMoveDown = i < groups.Count - 1;
                 float frameHeight = ImGui.GetFrameHeight();
 
-                if (!canMoveUp) {
-                    ImGui.BeginDisabled();
-                }
+                if (!canMoveUp) ImGui.BeginDisabled();
 
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp)) {
                     this.groupRepository.MoveGroupUp(group.Id);
                     this.groupToOpen = group.Id;
                 }
-                if (!canMoveUp) {
-                    ImGui.EndDisabled();
-                }
+                if (!canMoveUp) ImGui.EndDisabled();
 
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, this.loc.Translate("Group_Delete"))) {
-                    var charsInGroup = characters.Where(c => c.CustomGroupId == group.Id).ToList();
-                    foreach (var c in charsInGroup) {
-                        c.CustomGroupId = null;
-                    }
-
-                    if (charsInGroup.Count > 0) {
-                        this.registry.SaveMasterList();
-                    }
-
-                    this.groupRepository.RemoveGroup(group.Id);
+                    this.DeleteGroup(group.Id);
                 }
 
                 ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - frameHeight);
-                if (!canMoveDown) {
-                    ImGui.BeginDisabled();
-                }
+                if (!canMoveDown) ImGui.BeginDisabled();
 
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown)) {
                     this.groupRepository.MoveGroupDown(group.Id);
                     this.groupToOpen = group.Id;
                 }
-                if (!canMoveDown) {
-                    ImGui.EndDisabled();
-                }
+                if (!canMoveDown) ImGui.EndDisabled();
 
                 ImGui.Spacing();
                 ImGui.Separator();
@@ -133,7 +134,6 @@ public class GroupManagementComponent {
                     foreach (var c in groupChars) {
                         ImGui.Text(c.Name);
                     }
-
                     ImGui.EndListBox();
                 }
                 ImGui.Spacing();

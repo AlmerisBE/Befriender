@@ -25,40 +25,45 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
 
         for (uint i = 0; i < count; i++) {
             var entry = fcProxy->GetEntry(i);
-            if (entry == null) continue;
-
-            string name = string.Empty;
-            var nameSpan = entry->Name;
-
-            if (!nameSpan.IsEmpty) {
-                int nullIndex = nameSpan.IndexOf((byte)0);
-                if (nullIndex >= 0) nameSpan = nameSpan[..nullIndex];
-                name = Encoding.UTF8.GetString(nameSpan);
-            }
-
-            string fcTag = string.Empty;
-            var fcTagSpan = entry->FCTag;
-
-            if (!fcTagSpan.IsEmpty) {
-                int nullIndex = fcTagSpan.IndexOf((byte)0);
-                if (nullIndex >= 0) fcTagSpan = fcTagSpan[..nullIndex];
-                fcTag = Encoding.UTF8.GetString(fcTagSpan);
-            }
-
-            members.Add(new Character {
-                ContentId = entry->ContentId,
-                Name = name,
-                HomeWorldId = entry->HomeWorld,
-                CurrentWorldId = entry->CurrentWorld,
-                JobId = entry->Job,
-                LocationId = entry->Location,
-                IsOnline = entry->State != 0,
-                OnlineStateMask = (ulong)entry->State,
-                FcTag = fcTag
-            });
+            var parsed = this.ParseEntry(entry);
+            if (parsed != null) members.Add(parsed);
         }
 
         return members;
+    }
+
+    public Character? ParseEntry(InfoProxyCommonList.CharacterData* entry) {
+        if (entry == null) return null;
+
+        string name = string.Empty;
+        var nameSpan = entry->Name;
+
+        if (!nameSpan.IsEmpty) {
+            int nullIndex = nameSpan.IndexOf((byte)0);
+            if (nullIndex >= 0) nameSpan = nameSpan[..nullIndex];
+            name = Encoding.UTF8.GetString(nameSpan);
+        }
+
+        string fcTag = string.Empty;
+        var fcTagSpan = entry->FCTag;
+
+        if (!fcTagSpan.IsEmpty) {
+            int nullIndex = fcTagSpan.IndexOf((byte)0);
+            if (nullIndex >= 0) fcTagSpan = fcTagSpan[..nullIndex];
+            fcTag = Encoding.UTF8.GetString(fcTagSpan);
+        }
+
+        return new Character {
+            ContentId = entry->ContentId,
+            Name = name,
+            HomeWorldId = entry->HomeWorld,
+            CurrentWorldId = entry->CurrentWorld,
+            JobId = entry->Job,
+            LocationId = entry->Location,
+            IsOnline = entry->State != 0,
+            OnlineStateMask = (ulong)entry->State,
+            FcTag = fcTag
+        };
     }
 
     public int GetEntryCount() {
@@ -108,9 +113,7 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
 
         for (uint i = 0; i < count; i++) {
             var entry = fcProxy->GetEntry(i);
-            if (entry != null) {
-                hash = unchecked(hash * 314159 + (ulong)entry->State);
-            }
+            if (entry != null) hash = unchecked(hash * 314159 + (ulong)entry->State);
         }
 
         return hash;
