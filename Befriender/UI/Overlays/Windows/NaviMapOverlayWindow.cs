@@ -26,6 +26,9 @@ public unsafe class NaviMapOverlayWindow : Window {
     private IGameDataService gameDataService;
     private IPluginLog pluginLog;
 
+    private DateTime lastLogTime = DateTime.MinValue;
+    private bool frameRequiresLog = false;
+
     public NaviMapOverlayWindow(
         IGameGui gameGui,
         IClientState clientState,
@@ -57,6 +60,11 @@ public unsafe class NaviMapOverlayWindow : Window {
     }
 
     public override bool DrawConditions() {
+        if ((DateTime.Now - this.lastLogTime).TotalSeconds > 3) {
+            this.lastLogTime = DateTime.Now;
+            this.frameRequiresLog = true;
+        }
+
         if (!this.IsOpen) this.IsOpen = true;
 
         if (!this.configService.GetConfig().ShowFriendsOnMinimap) return false;
@@ -88,14 +96,14 @@ public unsafe class NaviMapOverlayWindow : Window {
         this.Size = new Vector2(mapWidth, mapHeight);
     }
 
-    public Vector2 CalculateOverlayPosition(Vector3 localPos, Vector3 friendPos, Vector2 mapCenter, float rotation, float zoom, float naviScale, float sizeFactor, float maxRadius, bool isLocked) {
+    public static Vector2 CalculateOverlayPosition(Vector3 localPos, Vector3 friendPos, Vector2 mapCenter, float rotation, float zoom, float naviScale, float sizeFactor, float maxRadius, bool isLocked) {
         Vector2 relativePos = new Vector2(localPos.X - friendPos.X, localPos.Z - friendPos.Z);
 
         float zoneScale = sizeFactor / 100f;
         if (zoneScale <= 0f) zoneScale = 1f;
         if (zoom <= 0f) zoom = 1f;
 
-        float offsetMultiplier = zoneScale * zoom * naviScale * 0.5f;
+        float offsetMultiplier = zoneScale * zoom * naviScale;
 
         relativePos *= offsetMultiplier;
         Vector2 pos = mapCenter - relativePos;
@@ -123,6 +131,7 @@ public unsafe class NaviMapOverlayWindow : Window {
     public override void Draw() {
         var nearbyIds = this.proximityService.GetNearbyFriendIds();
         if (nearbyIds.Count == 0) {
+            this.frameRequiresLog = false;
             return;
         }
 
@@ -152,28 +161,33 @@ public unsafe class NaviMapOverlayWindow : Window {
 
         try {
             var lockNode = naviMap->AtkUnitBase.GetNodeById(4);
-            if (lockNode != null && lockNode->Type == NodeType.Component) {
-                var checkBox = (AtkComponentCheckBox*)((AtkComponentNode*)lockNode)->Component;
-                if (checkBox != null) isLocked = checkBox->IsChecked;
+            if (lockNode != null) {
+                var lockComp = lockNode->GetComponent();
+                if (lockComp != null) {
+                    var checkBox = (AtkComponentCheckBox*)lockComp;
+                    isLocked = checkBox->IsChecked;
+                }
             }
 
             if (naviMap->AtkUnitBase.UldManager.LoadedState == AtkLoadState.Loaded) {
                 var rotNode = naviMap->AtkUnitBase.GetNodeById(8);
-                if (rotNode != null) {
-                    rotation = rotNode->Rotation;
-                }
+                if (rotNode != null) rotation = rotNode->Rotation;
 
-                var mapComponentNode = naviMap->AtkUnitBase.GetNodeById(18);
-                if (mapComponentNode != null && mapComponentNode->Type == NodeType.Component) {
-                    var comp = ((AtkComponentNode*)mapComponentNode)->Component;
-                    if (comp != null) {
-                        var imageNode = comp->UldManager.SearchNodeById(6);
-                        if (imageNode != null) zoom = imageNode->ScaleX;
+                var mapResNode = naviMap->AtkUnitBase.GetNodeById(18);
+                if (mapResNode != null) {
+                    var mapComp = mapResNode->GetComponent();
+                    if (mapComp != null) {
+                        // Crucial: Use GetImageNodeById to query the dedicated array, bypassing standard ULD tree limits
+                        var imageNode = mapComp->GetImageNodeById(6);
+                        if (imageNode != null) {
+                            zoom = imageNode->AtkResNode.ScaleX;
+                        }
                     }
                 }
             }
         }
         catch {
+            // Failsafe to bypass unexpected native memory states during UI reloading
         }
 
         float sizeFactor = this.gameDataService.GetMapSizeFactor(AgentMap.Instance()->CurrentMapId);
@@ -182,14 +196,19 @@ public unsafe class NaviMapOverlayWindow : Window {
         var color = ImGui.GetColorU32(this.themeService.CurrentPalette.StatusFallbackOnline);
         var friends = this.registry.GetAllCharacters().Where(c => nearbyIds.Contains(c.ContentId));
 
+        if (this.frameRequiresLog) {
+            this.pluginLog.Debug($"[NaviMapOverlay] Rendering {friends.Count()} friends. Center: {center}, Rotation: {rotation}, Zoom: {zoom}, SizeFactor: {sizeFactor}, IsLocked: {isLocked}");
+        }
+
         foreach (var friend in friends) {
             if (friend.LastKnownPosition == Vector3.Zero) continue;
 
-            var pos = this.CalculateOverlayPosition(localPlayer.Position, friend.LastKnownPosition, center, rotation, zoom, scale, sizeFactor, maxRadius, isLocked);
+            var pos = CalculateOverlayPosition(localPlayer.Position, friend.LastKnownPosition, center, rotation, zoom, scale, sizeFactor, maxRadius, isLocked);
 
             drawList.AddCircleFilled(pos, 4f * scale, color);
             drawList.AddCircle(pos, 4f * scale, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.7f)), 0, 1.5f * scale);
         }
 
+        this.frameRequiresLog = false;
     }
 }

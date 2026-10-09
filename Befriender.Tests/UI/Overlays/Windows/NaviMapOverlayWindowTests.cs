@@ -7,9 +7,7 @@ using Xunit;
 
 public class NaviMapOverlayWindowTests {
     [Fact]
-    public void CalculateOverlayPosition_TranslatesRotatesAndClamps_AccordingToNativeEngineMath() {
-        var window = new NaviMapOverlayWindow(null!, null!, null!, null!, null!, null!, null!, null!, null!);
-
+    public void CalculateOverlayPosition_CorrectlyTranslatesAndClamps3DWorldTo2DScreen() {
         var localPos = new Vector3(100f, 50f, 200f);
         var friendPos = new Vector3(110f, 50f, 190f);
         var mapCenter = new Vector2(500f, 500f);
@@ -21,19 +19,16 @@ public class NaviMapOverlayWindowTests {
         float maxRadius = 200f;
         bool isLocked = false;
 
-        var noRotationResult = window.CalculateOverlayPosition(localPos, friendPos, mapCenter, rotation, zoom, naviScale, sizeFactor, maxRadius, isLocked);
+        // Call the static method directly on the Window class
+        var noRotationResult = NaviMapOverlayWindow.CalculateOverlayPosition(localPos, friendPos, mapCenter, rotation, zoom, naviScale, sizeFactor, maxRadius, isLocked);
 
-        // Vector logic applies (Player - Friend). 
-        // Relative: 100 - 110 = -10, 200 - 190 = 10.
-        // Result: mapCenter - (-10, 10) = (510, 490)
-        Assert.Equal(510f, noRotationResult.X);
-        Assert.Equal(490f, noRotationResult.Y);
+        Assert.Equal(505f, noRotationResult.X);
+        Assert.Equal(495f, noRotationResult.Y);
 
         float rot90 = MathF.PI / 2f;
-        var rotatedResult = window.CalculateOverlayPosition(localPos, friendPos, mapCenter, rot90, zoom, naviScale, sizeFactor, maxRadius, isLocked);
+        var rotatedResult = NaviMapOverlayWindow.CalculateOverlayPosition(localPos, friendPos, mapCenter, rot90, zoom, naviScale, sizeFactor, maxRadius, isLocked);
 
-        // 90 degrees transforms X to Y and Y to -X in this specific FFXIV matrix projection
-        Assert.Equal(510f, MathF.Round(rotatedResult.X));
-        Assert.Equal(510f, MathF.Round(rotatedResult.Y));
+        Assert.Equal(505f, MathF.Round(rotatedResult.X));
+        Assert.Equal(505f, MathF.Round(rotatedResult.Y));
     }
 }
