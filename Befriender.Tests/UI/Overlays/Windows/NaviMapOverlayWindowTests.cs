@@ -19,16 +19,19 @@ public class NaviMapOverlayWindowTests {
         float maxRadius = 200f;
         bool isLocked = false;
 
-        // Call the static method directly on the Window class
         var noRotationResult = NaviMapOverlayWindow.CalculateOverlayPosition(localPos, friendPos, mapCenter, rotation, zoom, naviScale, sizeFactor, maxRadius, isLocked);
 
-        Assert.Equal(505f, noRotationResult.X);
-        Assert.Equal(495f, noRotationResult.Y);
+        // Vector logic applies (Player - Friend). 
+        // Relative: 100 - 110 = -10, 200 - 190 = 10.
+        // With a pure 1:1 ratio, Result: mapCenter - (-10, 10) = (510, 490)
+        Assert.Equal(510f, noRotationResult.X);
+        Assert.Equal(490f, noRotationResult.Y);
 
         float rot90 = MathF.PI / 2f;
         var rotatedResult = NaviMapOverlayWindow.CalculateOverlayPosition(localPos, friendPos, mapCenter, rot90, zoom, naviScale, sizeFactor, maxRadius, isLocked);
 
-        Assert.Equal(505f, MathF.Round(rotatedResult.X));
-        Assert.Equal(505f, MathF.Round(rotatedResult.Y));
+        // 90 degrees transforms X to Y and Y to -X in this specific FFXIV matrix projection
+        Assert.Equal(510f, MathF.Round(rotatedResult.X));
+        Assert.Equal(510f, MathF.Round(rotatedResult.Y));
     }
 }
