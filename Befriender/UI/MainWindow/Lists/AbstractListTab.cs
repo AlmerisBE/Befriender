@@ -32,6 +32,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected IConfigurationService configurationService;
     protected ListToolbarComponent toolbarComponent;
     protected CharacterProfilePanelComponent profilePanelComponent;
+    protected IGameGui gameGui;
 
     protected string searchQuery = string.Empty;
     protected int statusFilter = 0;
@@ -52,7 +53,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     protected abstract string EmptyListMessageKey { get; }
     protected abstract IEnumerable<Character> GetBaseCharacterList();
-
     protected virtual bool ShowStatusFilter => true;
 
     protected AbstractListTab(
@@ -67,7 +67,8 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ICharacterTagRepository tagRepository,
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent,
-        IConfigurationService configurationService) {
+        IConfigurationService configurationService,
+        IGameGui gameGui) {
 
         this.registry = registry;
         this.loc = loc;
@@ -81,16 +82,15 @@ public abstract class AbstractListTab : ITab, IDisposable {
         this.toolbarComponent = toolbarComponent;
         this.profilePanelComponent = profilePanelComponent;
         this.configurationService = configurationService;
+        this.gameGui = gameGui;
 
         var config = this.configurationService.GetConfig();
         if (config.TabStates.TryGetValue(this.InternalName, out var state)) {
             this.statusFilter = state.StatusFilter;
-
             if (state.ShowOnlineOnly && this.statusFilter == 0) {
                 this.statusFilter = 1;
                 state.ShowOnlineOnly = false;
             }
-
             this.showNearbyOnly = state.ShowNearbyOnly;
             this.groupByGroups = state.GroupByGroups;
             this.isFiltersExpanded = state.IsFiltersExpanded;
@@ -101,7 +101,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     private void OnRegistryUpdated() {
         this.requiresListRebuild = true;
-
         if (this.selectedCharacter != null && this.registry.GetCharacterById(this.selectedCharacter.Id) == null) {
             this.selectedCharacter = null;
         }
@@ -118,37 +117,21 @@ public abstract class AbstractListTab : ITab, IDisposable {
             return;
         }
 
-        if (this.statusFilter == 1) {
-            baseList = baseList.Where(m => m.IsOnline && m.IsActivelyTracked);
-        }
-        else if (this.statusFilter == 2) {
-            baseList = baseList.Where(m => !m.IsOnline && m.IsActivelyTracked);
-        }
-        else if (this.statusFilter == 3) {
-            baseList = baseList.Where(m => !m.IsActivelyTracked);
-        }
+        if (this.statusFilter == 1) baseList = baseList.Where(m => m.IsOnline && m.IsActivelyTracked);
+        else if (this.statusFilter == 2) baseList = baseList.Where(m => !m.IsOnline && m.IsActivelyTracked);
+        else if (this.statusFilter == 3) baseList = baseList.Where(m => !m.IsActivelyTracked);
 
-        if (this.showNearbyOnly) {
-            baseList = baseList.Where(m => this.proximityService.IsFriendNearby(m.ContentId));
-        }
+        if (this.showNearbyOnly) baseList = baseList.Where(m => this.proximityService.IsFriendNearby(m.ContentId));
 
         if (!string.IsNullOrWhiteSpace(this.searchQuery)) {
             var allTags = this.tagRepository.GetTags();
             var query = this.searchQuery.ToLowerInvariant();
 
             baseList = baseList.Where(m => {
-                if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) {
-                    return true;
-                }
-                if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) {
-                    return true;
-                }
-
+                if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+                if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
                 var characterTags = allTags.Where(t => m.Tags.Contains(t.Id));
-                if (characterTags.Any(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))) {
-                    return true;
-                }
-
+                if (characterTags.Any(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))) return true;
                 return false;
             });
         }
@@ -158,7 +141,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     public void Draw() {
         var palette = this.themeService.CurrentPalette;
-
         int oldStatus = this.statusFilter;
         bool oldNearby = this.showNearbyOnly;
         bool oldGroup = this.groupByGroups;
@@ -203,9 +185,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
                     foreach (var group in allGroups) {
                         var groupChars = this.cachedCharacterList.Where(c => c.CustomGroupId == group.Id).ToList();
-                        if (groupChars.Count == 0) {
-                            continue;
-                        }
+                        if (groupChars.Count == 0) continue;
 
                         if (ImGui.CollapsingHeader($"{group.Title} ({groupChars.Count})###Group_{group.Id}", ImGuiTreeNodeFlags.DefaultOpen)) {
                             this.DrawCharacterTable($"{this.InternalName}_Table_{group.Id}", groupChars, palette, textOffsetY, false);
@@ -234,10 +214,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     private void DrawCharacterTable(string tableId, IEnumerable<Character> characters, ThemePalette palette, float textOffsetY, bool useScrollY) {
         var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Sortable;
-
-        if (useScrollY) {
-            flags |= ImGuiTableFlags.ScrollY;
-        }
+        if (useScrollY) flags |= ImGuiTableFlags.ScrollY;
 
         if (ImGui.BeginTable(tableId, 4, flags)) {
             ImGui.TableSetupColumn(this.loc.Translate("Column_Status"), ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.DefaultSort, 0f, 0u);
@@ -245,10 +222,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
             ImGui.TableSetupColumn(this.loc.Translate("Column_Job"), ImGuiTableColumnFlags.WidthFixed, 0f, 2u);
             ImGui.TableSetupColumn(this.loc.Translate("Column_Location"), ImGuiTableColumnFlags.None, 0f, 3u);
 
-            if (useScrollY) {
-                ImGui.TableSetupScrollFreeze(0, 1);
-            }
-
+            if (useScrollY) ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
 
             var sortSpecs = ImGui.TableGetSortSpecs();
@@ -280,20 +254,11 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         bool isAvailable = this.gameDataService.IsFriendAvailable(character.OnlineStateMask);
         bool isDeleted = string.IsNullOrEmpty(character.Name);
-        Vector4 rowColor = palette.TextOnline; // Initialisation par défaut pour satisfaire CS0165
+        Vector4 rowColor = palette.TextOnline;
 
-        if (isDeleted || !character.IsActivelyTracked) {
-            rowColor = palette.TextArchived; // Conserve la couleur d'archive visuellement pour les "Non synchronisés"
-        }
-        else if (!character.IsOnline) {
-            rowColor = palette.TextOffline;
-        }
-        else if (!isAvailable) {
-            rowColor = palette.TextBusy;
-        }
-        else {
-            rowColor = palette.TextOnline;
-        }
+        if (isDeleted || !character.IsActivelyTracked) rowColor = palette.TextArchived;
+        else if (!character.IsOnline) rowColor = palette.TextOffline;
+        else if (!isAvailable) rowColor = palette.TextBusy;
 
         ImGui.PushStyleColor(ImGuiCol.Text, rowColor);
 
@@ -309,29 +274,22 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         if (ImGui.BeginPopupContextItem($"ContextMenu_{character.ContentId}")) {
             var actions = this.actionService.GetAvailableActions(character);
-            if (actions.Count == 0) {
-                ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
-            }
+            if (actions.Count == 0) ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
             foreach (var action in actions) {
-                if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) {
-                    action.Execute(character);
-                }
+                if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) action.Execute(character);
             }
             ImGui.EndPopup();
         }
 
         if (isDeleted || !character.IsActivelyTracked) {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
-            // Utilisation de QuestionCircle pour les statuts non-synchronisés
             var iconStr = isDeleted ? ((char)FontAwesomeIcon.Ghost).ToString() : ((char)FontAwesomeIcon.QuestionCircle).ToString();
             float textWidth = ImGui.CalcTextSize(iconStr).X;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - textWidth) * 0.5f));
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
             ImGui.Text(iconStr);
             ImGui.PopFont();
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip(this.loc.Translate(isDeleted ? "Profile_StatusDeleted" : "Profile_StatusUnsynchronized"));
-            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.loc.Translate(isDeleted ? "Profile_StatusDeleted" : "Profile_StatusUnsynchronized"));
         }
         else {
             ulong effectiveMask = character.IsOnline ? character.OnlineStateMask : 0;
@@ -342,9 +300,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
             if (iconWrap != null) {
                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (statusColWidth - 24.0f) * 0.5f));
                 ImGui.Image(iconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, palette.IconDefaultTint);
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip(statusInfo.Name);
-                }
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip(statusInfo.Name);
             }
             else {
                 float textWidth = ImGui.CalcTextSize("●").X;
@@ -353,9 +309,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
                 ImGui.PushStyleColor(ImGuiCol.Text, character.IsOnline ? palette.StatusFallbackOnline : palette.StatusFallbackOffline);
                 ImGui.Text("●");
                 ImGui.PopStyleColor();
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip(statusInfo.Name);
-                }
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip(statusInfo.Name);
             }
         }
 
@@ -366,9 +320,22 @@ public abstract class AbstractListTab : ITab, IDisposable {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
             ImGui.TextColored(palette.StatusFallbackOnline, ((char)FontAwesomeIcon.StreetView).ToString());
             ImGui.PopFont();
+
+            // L'astuce magique : passer les coordonnées brutes (mètres) castées en entiers (1/1000m) force le payload à les transformer en coordonnées de carte affichables !
+            var mapId = this.gameDataService.GetMapIdForTerritory(character.LocationId);
+            int rawX = (int)(character.LastKnownPosition.X * 1000f);
+            int rawY = (int)(character.LastKnownPosition.Z * 1000f); // L'axe Z du monde 3D équivaut à l'axe Y sur la carte 2D
+
+            var payload = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(character.LocationId, mapId, rawX, rawY);
+
             if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip(this.loc.Translate("Tooltip_Nearby"));
+                ImGui.SetTooltip($"{this.loc.Translate("Tooltip_Nearby")}\n{payload.PlaceName} (X: {payload.XCoord:F1}, Y: {payload.YCoord:F1})");
             }
+
+            if (ImGui.IsItemClicked()) {
+                this.gameGui.OpenMapWithMapLink(payload);
+            }
+
             ImGui.SameLine();
         }
 
@@ -379,9 +346,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
             ImGui.TextColored(palette.IconDefaultTint, ((char)FontAwesomeIcon.Bell).ToString());
             ImGui.PopFont();
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip(this.loc.Translate("Tooltip_Tracked"));
-            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.loc.Translate("Tooltip_Tracked"));
         }
 
         if (!string.IsNullOrWhiteSpace(character.Notes)) {
@@ -389,9 +354,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
             ImGui.TextDisabled(((char)FontAwesomeIcon.StickyNote).ToString());
             ImGui.PopFont();
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip(character.Notes);
-            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(character.Notes);
         }
 
         ImGui.TableNextColumn();
@@ -409,9 +372,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
                 if (jIconWrap != null) {
                     ImGui.SetCursorPosX(ImGui.GetCursorPosX() + Math.Max(0, (jobColWidth - 24.0f) * 0.5f));
                     ImGui.Image(jIconWrap.Handle, new Vector2(24, 24), Vector2.Zero, Vector2.One, character.IsOnline ? palette.IconDefaultTint : palette.IconDimmedTint);
-                    if (ImGui.IsItemHovered()) {
-                        ImGui.SetTooltip(jobAbbr);
-                    }
+                    if (ImGui.IsItemHovered()) ImGui.SetTooltip(jobAbbr);
                     iconDrawn = true;
                 }
             }
@@ -423,9 +384,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
                 ImGui.Text(jobAbbr);
             }
         }
-        else {
-            ImGui.Text(string.Empty);
-        }
+        else ImGui.Text(string.Empty);
 
         ImGui.TableNextColumn();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);

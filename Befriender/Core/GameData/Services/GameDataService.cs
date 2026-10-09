@@ -146,6 +146,13 @@ public class GameDataService : IGameDataService {
         return locationName;
     }
 
+    public uint GetMapIdForTerritory(uint territoryId) {
+        if (territoryId == 0) return 0;
+        var sheet = this.dataManager.GetExcelSheet<TerritoryType>();
+        var row = sheet?.GetRowOrDefault(territoryId);
+        return row.HasValue ? row.Value.Map.RowId : 0;
+    }
+
     private uint GetOnlineStatusRowId(ulong stateMask, uint locationId) {
         if (stateMask == 0) {
             return 10;

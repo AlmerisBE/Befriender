@@ -150,6 +150,10 @@ public class ProximityService : IProximityService, IDisposable {
                         }
                     }
 
+                    if (friend.LastKnownPosition != pc.Position) {
+                        friend.LastKnownPosition = pc.Position;
+                    }
+
                     bool canUpdateLocation = hasServerLocation || !friend.IsActivelyTracked || friend.LocationId == 0;
 
                     if (canUpdateLocation && friend.LocationId != effectiveLocationId) {

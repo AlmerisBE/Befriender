@@ -28,8 +28,8 @@ public class AbstractListTabTests {
             IThemeService themeService, ITextureProvider textureProvider, IProximityService proximityService,
             ICharacterActionService actionService, ICharacterGroupRepository groupRepository,
             ICharacterTagRepository tagRepository, ListToolbarComponent toolbarComponent,
-            CharacterProfilePanelComponent profilePanelComponent, IConfigurationService configurationService)
-            : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService) { }
+            CharacterProfilePanelComponent profilePanelComponent, IConfigurationService configurationService, IGameGui gameGui)
+            : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui) { }
 
         protected override IEnumerable<Character> GetBaseCharacterList() => new List<Character>();
 
@@ -46,7 +46,7 @@ public class AbstractListTabTests {
 
         using var tab = new TestListTab(
             mockRegistry, null!, null!, null!, null!, null!, null!, null!, null!,
-            new ListToolbarComponent(Substitute.For<ILocalizationService>()), null!, mockConfig);
+            new ListToolbarComponent(Substitute.For<ILocalizationService>()), null!, mockConfig, null!);
 
         var charId = Guid.NewGuid();
         var character = new Character { Id = charId };

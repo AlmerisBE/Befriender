@@ -34,8 +34,9 @@ public class FreeCompanyTab : AbstractListTab {
         ICharacterTagRepository tagRepository,
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent,
-        IConfigurationService configurationService)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService) {
+        IConfigurationService configurationService,
+        IGameGui gameGui)
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui) {
 
         var src = sources.FirstOrDefault(s => s.Name == "FreeCompany");
         if (src != null) {

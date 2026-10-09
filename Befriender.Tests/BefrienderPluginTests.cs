@@ -31,6 +31,7 @@ public class BefrienderPluginTests {
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockKeyState = Substitute.For<IKeyState>();
         var mockNotificationManager = Substitute.For<INotificationManager>();
+        var mockGameGui = Substitute.For<IGameGui>();
 
         var exception = Record.Exception(() => new BefrienderPlugin(
             mockPluginInterface,
@@ -45,7 +46,8 @@ public class BefrienderPluginTests {
             mockGameInteropProvider,
             mockAddonLifecycle,
             mockKeyState,
-            mockNotificationManager));
+            mockNotificationManager,
+            mockGameGui));
 
         Assert.Null(exception);
     }

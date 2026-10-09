@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 public class Character {
     // --- Intrinsic & Immutable Data (Master List identity) ---
@@ -27,6 +28,9 @@ public class Character {
     public byte GrandCompany { get; set; }
     public DateTime LastSeenAt { get; set; }
 
+    [JsonIgnore]
+    public System.Numerics.Vector3 LastKnownPosition { get; set; }
+
     // --- Plugin Metadata (User defined) ---
     public DateTime AddedAt { get; set; }
     public uint AddedLocationId { get; set; }
@@ -36,26 +40,16 @@ public class Character {
     public string Notes { get; set; } = string.Empty;
     public bool IsFantasiaDetected { get; set; }
     public bool IsMarkedForRemoval { get; set; }
-    public bool IsTrackedForNotifications { get; set; } // Property added for tracking actions
+    public bool IsTrackedForNotifications { get; set; }
 
     // --- Tracking & Architecture ---
     public HashSet<Guid> ActiveSourceIds { get; set; } = new();
-
-    // Key: SourceId, Value: Dictionary of specific metadata for that source
     public Dictionary<Guid, Dictionary<string, string>> SourceSpecificData { get; set; } = new();
-
-    // Helper property to determine if the character is currently tracked by any active source
     public bool IsActivelyTracked => this.ActiveSourceIds.Count > 0;
 
     public bool IsSameIdentity(ulong otherContentId, string otherName, uint otherHomeWorldId) {
-        if (this.ContentId > 0 && otherContentId > 0 && this.ContentId == otherContentId) {
-            return true;
-        }
-
-        if (this.HomeWorldId == otherHomeWorldId && string.Equals(this.Name, otherName, StringComparison.OrdinalIgnoreCase)) {
-            return true;
-        }
-
+        if (this.ContentId > 0 && otherContentId > 0 && this.ContentId == otherContentId) return true;
+        if (this.HomeWorldId == otherHomeWorldId && string.Equals(this.Name, otherName, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }
 }

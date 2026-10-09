@@ -35,7 +35,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         IGameInteropProvider gameInteropProvider,
         IAddonLifecycle addonLifecycle,
         IKeyState keyState,
-        INotificationManager notificationManager) {
+        INotificationManager notificationManager,
+        IGameGui gameGui) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -55,6 +56,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(keyState);
         services.AddSingleton(notificationManager);
+        services.AddSingleton(gameGui);
 
         services.AddPluginFeatures();
 
