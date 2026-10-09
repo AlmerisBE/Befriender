@@ -148,5 +148,6 @@
   "Tooltip_QuickActions": "Quick Actions",
   "Action_ManualRefresh": "Manual Refresh",
   "Tab_Others": "Others",
-  "Others_Empty": "No unsynchronized contacts to display."
+  "Others_Empty": "No unsynchronized contacts to display.",
+  "Config_ShowOnMinimap": "Show nearby contacts on minimap"
 }

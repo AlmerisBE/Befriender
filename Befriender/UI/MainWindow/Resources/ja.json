@@ -148,5 +148,6 @@
   "Tooltip_QuickActions": "クイックアクション",
   "Action_ManualRefresh": "手動更新",
   "Tab_Others": "その他",
-  "Others_Empty": "表示する未同期の連絡先はありません。"
+  "Others_Empty": "表示する未同期の連絡先はありません。",
+  "Config_ShowOnMinimap": "近くの連絡先をミニマップに表示する"
 }

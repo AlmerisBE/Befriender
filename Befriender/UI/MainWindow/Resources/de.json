@@ -148,5 +148,6 @@
   "Tooltip_QuickActions": "Schnellaktionen",
   "Action_ManualRefresh": "Manuell aktualisieren",
   "Tab_Others": "Andere",
-  "Others_Empty": "Keine unsynchronisierten Kontakte anzuzeigen."
+  "Others_Empty": "Keine unsynchronisierten Kontakte anzuzeigen.",
+  "Config_ShowOnMinimap": "Nahegelegene Kontakte auf der Minikarte anzeigen"
 }

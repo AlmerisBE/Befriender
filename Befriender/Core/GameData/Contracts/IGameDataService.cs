@@ -6,6 +6,7 @@ public interface IGameDataService {
     uint GetJobIconId(byte jobId);
     string GetLocationName(uint territoryId);
     uint GetMapIdForTerritory(uint territoryId);
+    ushort GetMapSizeFactor(uint mapId);
 
     bool IsCrossWorld(uint currentWorldId, uint homeWorldId, ulong stateMask, uint locationId);
     bool IsStandardTerritory(uint territoryId);

@@ -29,6 +29,7 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool EnableProximityDetection { get; set; } = true;
     public bool NotifyOnNearbyFriends { get; set; } = true;
     public bool NotifyOnNearbyArchived { get; set; } = false;
+    public bool ShowFriendsOnMinimap { get; set; } = true;
 
     public Dictionary<string, TabState> TabStates { get; set; } = new();
 }

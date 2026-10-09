@@ -153,6 +153,16 @@ public class GameDataService : IGameDataService {
         return row.HasValue ? row.Value.Map.RowId : 0;
     }
 
+    public ushort GetMapSizeFactor(uint mapId) {
+        if (mapId == 0) return 100;
+
+        var mapSheet = this.dataManager.GetExcelSheet<Map>();
+        if (mapSheet == null) return 100;
+
+        var mapRow = mapSheet.GetRowOrDefault(mapId);
+        return mapRow.HasValue ? mapRow.Value.SizeFactor : (ushort)100;
+    }
+
     private uint GetOnlineStatusRowId(ulong stateMask, uint locationId) {
         if (stateMask == 0) {
             return 10;

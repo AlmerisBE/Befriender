@@ -159,6 +159,12 @@ public class ConfigTab : ITab {
                 config.NotifyOnNearbyArchived = notifyArchived;
                 configChanged = true;
             }
+
+            bool showOnMinimap = config.ShowFriendsOnMinimap;
+            if (ImGui.Checkbox(this.loc.Translate("Config_ShowOnMinimap"), ref showOnMinimap)) {
+                config.ShowFriendsOnMinimap = showOnMinimap;
+                configChanged = true;
+            }
             ImGui.Unindent();
         }
 
