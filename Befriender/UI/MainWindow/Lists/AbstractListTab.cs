@@ -170,7 +170,9 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ImGui.Separator();
         ImGui.Spacing();
 
+        // On revient à un calcul de hauteur de footer simple
         float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
+
         float tableWidth = this.selectedCharacter != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
         if (ImGui.BeginChild($"{this.InternalName}_Container", new Vector2(tableWidth, -footerHeight))) {
@@ -254,9 +256,14 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
         bool isAvailable = this.gameDataService.IsFriendAvailable(character.OnlineStateMask);
         bool isDeleted = string.IsNullOrEmpty(character.Name);
+
+        // We evaluate proximity early to override the offline/untracked visual masking
+        bool isNearby = this.proximityService.IsFriendNearby(character.ContentId);
+
         Vector4 rowColor = palette.TextOnline;
 
-        if (isDeleted || !character.IsActivelyTracked) rowColor = palette.TextArchived;
+        // An untracked character will only be greyed out if they are not currently standing near the player
+        if (isDeleted || (!character.IsActivelyTracked && !isNearby)) rowColor = palette.TextArchived;
         else if (!character.IsOnline) rowColor = palette.TextOffline;
         else if (!isAvailable) rowColor = palette.TextBusy;
 
@@ -281,7 +288,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
             ImGui.EndPopup();
         }
 
-        if (isDeleted || !character.IsActivelyTracked) {
+        if (isDeleted || (!character.IsActivelyTracked && !isNearby)) {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
             var iconStr = isDeleted ? ((char)FontAwesomeIcon.Ghost).ToString() : ((char)FontAwesomeIcon.QuestionCircle).ToString();
             float textWidth = ImGui.CalcTextSize(iconStr).X;
@@ -316,15 +323,14 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ImGui.TableNextColumn();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textOffsetY);
 
-        if (this.proximityService.IsFriendNearby(character.ContentId)) {
+        if (isNearby) {
             ImGui.PushFont(Dalamud.Interface.UiBuilder.IconFont);
             ImGui.TextColored(palette.StatusFallbackOnline, ((char)FontAwesomeIcon.StreetView).ToString());
             ImGui.PopFont();
 
-            // L'astuce magique : passer les coordonnées brutes (mètres) castées en entiers (1/1000m) force le payload à les transformer en coordonnées de carte affichables !
             var mapId = this.gameDataService.GetMapIdForTerritory(character.LocationId);
             int rawX = (int)(character.LastKnownPosition.X * 1000f);
-            int rawY = (int)(character.LastKnownPosition.Z * 1000f); // L'axe Z du monde 3D équivaut à l'axe Y sur la carte 2D
+            int rawY = (int)(character.LastKnownPosition.Z * 1000f);
 
             var payload = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(character.LocationId, mapId, rawX, rawY);
 

@@ -16,6 +16,7 @@ public class CharactersFeature : IFeatureModule {
         services.AddSingleton<CharacterRegistry>();
         services.AddSingleton<ICharacterRegistry>(provider => provider.GetRequiredService<CharacterRegistry>());
         services.AddSingleton<ICharacterStorage, JsonCharacterStorage>();
+        services.AddSingleton<IDeleteCharacterDataRequestService, DeleteCharacterDataRequestService>();
 
         // Groups & Tags
         services.AddSingleton<ICharacterGroupStorage, JsonCharacterGroupStorage>();

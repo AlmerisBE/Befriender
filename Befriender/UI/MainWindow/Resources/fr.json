@@ -149,5 +149,8 @@
   "Action_ManualRefresh": "Actualiser manuellement",
   "Tab_Others": "Autres",
   "Others_Empty": "Aucun contact désynchronisé à afficher.",
-  "Config_ShowOnMinimap": "Afficher les contacts proches sur la mini-carte"
+  "Config_ShowOnMinimap": "Afficher les contacts proches sur la mini-carte",
+  "Action_AddToBefriender": "Ajouter à Befriender",
+  "Action_RemoveManualContact": "Supprimer le contact manuel",
+  "Modal_DeleteConfirmText": "Êtes-vous sûr de vouloir supprimer définitivement {0} ?\nCette action est irréversible."
 }

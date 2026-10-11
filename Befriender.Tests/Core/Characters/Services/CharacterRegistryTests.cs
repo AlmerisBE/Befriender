@@ -159,4 +159,25 @@ public class CharacterRegistryTests {
 
         Assert.Contains(proximityGuid, resolvedChar.ActiveSourceIds);
     }
+
+    [Fact]
+    public void TryAddManualCharacter_CreatesUntrackedCharacterAndSaves() {
+        var registry = this.CreateRegistry();
+        registry.LoadMasterList("TestAccount_33");
+
+        // Ajout du ContentId (ex: 123456) et du LocationId (ex: 129)
+        bool result = registry.TryAddManualCharacter(123456, "Manual Friend", 33, 129);
+
+        Assert.True(result);
+        var chars = registry.GetAllCharacters();
+
+        var manualChar = chars.FirstOrDefault(c => c.Name == "Manual Friend");
+
+        Assert.NotNull(manualChar);
+        Assert.Equal(123456ul, manualChar.ContentId);
+        Assert.Equal(129u, manualChar.AddedLocationId);
+        Assert.False(manualChar.IsActivelyTracked);
+
+        this.mockStorage.Received().Save("MasterCharacterList", "TestAccount_33", Arg.Any<IEnumerable<Character>>());
+    }
 }

@@ -22,5 +22,7 @@ public interface ICharacterRegistry {
     void RequestManualRefresh();
     void RequestManualRefresh(IEnumerable<Guid> sourceIds);
 
+    bool TryAddManualCharacter(ulong contentId, string name, uint homeWorldId, uint locationId);
+
     void NotifyDataChanged();
 }

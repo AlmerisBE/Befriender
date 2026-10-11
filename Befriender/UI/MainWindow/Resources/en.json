@@ -149,5 +149,8 @@
   "Action_ManualRefresh": "Manual Refresh",
   "Tab_Others": "Others",
   "Others_Empty": "No unsynchronized contacts to display.",
-  "Config_ShowOnMinimap": "Show nearby contacts on minimap"
+  "Config_ShowOnMinimap": "Show nearby contacts on minimap",
+  "Action_AddToBefriender": "Add to Befriender",
+  "Action_RemoveManualContact": "Remove Custom Contact",
+  "Modal_DeleteConfirmText": "Are you sure you want to permanently delete {0}?\nThis action cannot be undone."
 }

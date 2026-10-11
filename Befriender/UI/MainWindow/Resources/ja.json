@@ -149,5 +149,8 @@
   "Action_ManualRefresh": "手動更新",
   "Tab_Others": "その他",
   "Others_Empty": "表示する未同期の連絡先はありません。",
-  "Config_ShowOnMinimap": "近くの連絡先をミニマップに表示する"
+  "Config_ShowOnMinimap": "近くの連絡先をミニマップに表示する",
+  "Action_AddToBefriender": "Befrienderに追加",
+  "Action_RemoveManualContact": "カスタム連絡先を削除",
+  "Modal_DeleteConfirmText": "{0} を完全に削除してもよろしいですか？\nこの操作は元に戻せません。"
 }

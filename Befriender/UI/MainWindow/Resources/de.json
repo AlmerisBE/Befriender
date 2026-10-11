@@ -149,5 +149,8 @@
   "Action_ManualRefresh": "Manuell aktualisieren",
   "Tab_Others": "Andere",
   "Others_Empty": "Keine unsynchronisierten Kontakte anzuzeigen.",
-  "Config_ShowOnMinimap": "Nahegelegene Kontakte auf der Minikarte anzeigen"
+  "Config_ShowOnMinimap": "Nahegelegene Kontakte auf der Minikarte anzeigen",
+  "Action_AddToBefriender": "Zu Befriender hinzufügen",
+  "Action_RemoveManualContact": "Benutzerdefinierten Kontakt entfernen",
+  "Modal_DeleteConfirmText": "Bist du sicher, dass du {0} dauerhaft löschen möchtest?\nDiese Aktion kann nicht rückgängig gemacht werden."
 }

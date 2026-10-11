@@ -14,8 +14,8 @@ public class CharacterActionsTests {
     // --- DeleteCharacterDataAction ---
     [Fact]
     public void DeleteCharacterDataAction_CanExecute_OnlyIfCharacterIsNotActivelyTracked() {
-        var mockRegistry = Substitute.For<ICharacterRegistry>();
-        var action = new DeleteCharacterDataAction(mockRegistry);
+        var mockRequestService = Substitute.For<IDeleteCharacterDataRequestService>();
+        var action = new DeleteCharacterDataAction(mockRequestService);
 
         var activelyTrackedChar = new Character();
         activelyTrackedChar.ActiveSourceIds.Add(Guid.NewGuid());
@@ -27,15 +27,14 @@ public class CharacterActionsTests {
     }
 
     [Fact]
-    public void DeleteCharacterDataAction_Execute_RemovesFromRegistryAndSaves() {
-        var mockRegistry = Substitute.For<ICharacterRegistry>();
-        var action = new DeleteCharacterDataAction(mockRegistry);
+    public void DeleteCharacterDataAction_Execute_InvokesDeletionRequestService() {
+        var mockRequestService = Substitute.For<IDeleteCharacterDataRequestService>();
+        var action = new DeleteCharacterDataAction(mockRequestService);
         var targetChar = new Character { Id = Guid.NewGuid() };
 
         action.Execute(targetChar);
 
-        mockRegistry.Received(1).RemoveCharacter(targetChar.Id);
-        mockRegistry.Received(1).SaveMasterList();
+        mockRequestService.Received(1).RequestDeletion(targetChar);
     }
 
     // --- Track / Untrack Actions ---

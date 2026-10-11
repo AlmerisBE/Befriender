@@ -6,6 +6,7 @@ using Befriender.Core.Framework;
 using Befriender.Core.Ipc.Contracts;
 using Befriender.Core.Proximity.Contracts;
 using Befriender.UI.Command.Services;
+using Befriender.UI.ContextMenu.Services;
 using Befriender.UI.Input.Services;
 using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.MainWindow.Services;
@@ -36,7 +37,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         IAddonLifecycle addonLifecycle,
         IKeyState keyState,
         INotificationManager notificationManager,
-        IGameGui gameGui) {
+        IGameGui gameGui,
+        IContextMenu contextMenu) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -57,6 +59,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(keyState);
         services.AddSingleton(notificationManager);
         services.AddSingleton(gameGui);
+        services.AddSingleton(contextMenu);
 
         services.AddPluginFeatures();
 
@@ -70,6 +73,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<OnlineNotificationService>();
         this.serviceProvider.GetRequiredService<IProximityService>();
         this.serviceProvider.GetRequiredService<AutomationService>();
+        this.serviceProvider.GetRequiredService<ContextMenuService>();
 
         var ipcProvider = this.serviceProvider.GetRequiredService<IIpcProviderService>();
         ipcProvider.Initialize();

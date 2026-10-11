@@ -238,6 +238,42 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         this.RegistryUpdated?.Invoke();
     }
 
+    public bool TryAddManualCharacter(ulong contentId, string name, uint homeWorldId, uint locationId) {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+
+        lock (this.lockObj) {
+            var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(contentId, name, homeWorldId));
+
+            if (existing != null) {
+                if (!existing.IsActivelyTracked) {
+                    if (contentId > 0) existing.ContentId = contentId;
+                    if (locationId > 0 && existing.AddedLocationId == 0) existing.AddedLocationId = locationId;
+                    this.SaveMasterList();
+                    this.NotifyDataChanged();
+                    return true;
+                }
+                return false;
+            }
+
+            var newCharacter = new Character {
+                Id = Guid.NewGuid(),
+                ContentId = contentId,
+                Name = name.Trim(),
+                HomeWorldId = homeWorldId,
+                AddedAt = DateTime.Now,
+                AddedLocationId = locationId,
+                LastSeenAt = DateTime.Now,
+                IsOnline = true
+            };
+
+            this.masterList.Add(newCharacter);
+            this.SaveMasterList();
+        }
+
+        this.NotifyDataChanged();
+        return true;
+    }
+
     public void Dispose() {
         this.clientState.Logout -= this.OnLogout;
         this.framework.Update -= this.OnFrameworkUpdate;

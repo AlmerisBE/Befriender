@@ -24,6 +24,7 @@ public class MainWindow : Window, IDisposable {
     private IWindowNavigationService navService = null!;
     private FriendStatusBarComponent statusBar = null!;
     private RemoveConfirmationModalComponent removeModal = null!;
+    private DeleteConfirmationModalComponent deleteModal = null!;
     private IHotkeyService hotkeyService = null!;
     private IThemeService themeService = null!;
 
@@ -41,7 +42,8 @@ public class MainWindow : Window, IDisposable {
         FriendStatusBarComponent statusBar,
         RemoveConfirmationModalComponent removeModal,
         IHotkeyService hotkeyService,
-        IThemeService themeService)
+        IThemeService themeService,
+        DeleteConfirmationModalComponent deleteModal)
         : base($"Befriender v{Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"}###Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs.OrderBy(t => t.Order).ToList();
@@ -53,6 +55,7 @@ public class MainWindow : Window, IDisposable {
         this.removeModal = removeModal;
         this.hotkeyService = hotkeyService;
         this.themeService = themeService;
+        this.deleteModal = deleteModal;
 
         if (this.tabs != null && this.tabs.Any()) {
             this.currentTab = this.tabs.First();
@@ -142,6 +145,7 @@ public class MainWindow : Window, IDisposable {
         this.statusBar.Draw();
 
         this.removeModal.Draw();
+        this.deleteModal.Draw();
 
         if (this.currentTab != null) {
             bool isPanelOpen = this.currentTab.IsProfilePanelOpen;

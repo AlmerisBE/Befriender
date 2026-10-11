@@ -30,6 +30,7 @@ public class MainWindowFeature : IFeatureModule {
         services.AddSingleton<GroupManagementComponent>();
         services.AddSingleton<TagManagementComponent>();
         services.AddSingleton<RemoveConfirmationModalComponent>();
+        services.AddSingleton<DeleteConfirmationModalComponent>();
 
         // Register the tabs
         services.AddSingleton<ITab, FriendListTab>();
