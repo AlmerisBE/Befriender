@@ -21,8 +21,6 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     private List<Character> currentState = new();
     private bool isManualRefreshPending = false;
-    private DateTime lastSyncTime = DateTime.MinValue;
-    private readonly TimeSpan syncInterval = TimeSpan.FromSeconds(60);
 
     public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000002");
     public string Name => "FreeCompany";
@@ -61,7 +59,6 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     public void TriggerManualRefresh() {
         this.isManualRefreshPending = true;
-        this.lastSyncTime = DateTime.Now;
         this.timeoutTime = DateTime.Now.AddSeconds(5);
         this.scanner.RequestServerUpdate();
         this.DataUpdated?.Invoke();
@@ -69,9 +66,6 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
 
     private void OnFrameworkUpdate(IFramework fw) {
         var now = DateTime.Now;
-
-        if (now - this.lastSyncTime >= this.syncInterval) this.TriggerManualRefresh();
-
         ulong currentHash = this.scanner.GetStateHash();
 
         if (currentHash != this.lastStateHash) {
