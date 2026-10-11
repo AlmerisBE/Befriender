@@ -155,8 +155,8 @@ public class CharacterProfilePanelComponent {
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_Status"), ImGuiTreeNodeFlags.DefaultOpen)) {
                     ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
                     ImGui.SameLine();
-                    ulong effectiveMask = character.IsOnline ? character.OnlineStateMask : 0;
-                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, character.CurrentWorldId, character.HomeWorldId, character.LocationId);
+
+                    var statusInfo = this.gameDataService.GetOnlineStatusInfo(character.IsOnline, character.OnlineStateMask, character.OnlineStatusId, character.CurrentWorldId, character.HomeWorldId, character.LocationId);
 
                     var statusIconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
                     var statusIconWrap = this.textureProvider.GetFromGameIcon(statusIconLookup).GetWrapOrDefault();

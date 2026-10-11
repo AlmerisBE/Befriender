@@ -163,150 +163,77 @@ public class GameDataService : IGameDataService {
         return mapRow.HasValue ? mapRow.Value.SizeFactor : (ushort)100;
     }
 
-    private uint GetOnlineStatusRowId(ulong stateMask, uint locationId) {
-        if (stateMask == 0) {
+    private uint GetOnlineStatusRowId(bool isOnline, ulong stateMask, byte onlineStatusId, uint locationId) {
+        if (!isOnline) {
             return 10;
         }
 
-        var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
+        uint rowId = 47; // Default to Online
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP)) {
-            return 13;
-        }
+        if (stateMask > 0) {
+            var state = (InfoProxyCommonList.CharacterData.OnlineStatus)stateMask;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty)) {
-            return 43;
-        }
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvP)) return 13;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.InDuty)) return 43;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld)) return 40;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty)) return 41;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty)) return 42;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AnotherWorld)) {
-            return 40;
-        }
+            if (this.IsInDutyTerritory(locationId)) return 43;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SharingDuty)) {
-            return 41;
-        }
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.WaitingForDutyFinder)) return 25;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.ViewingCutscene)) return 15;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.CameraMode)) return 18;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AwayFromKeyboard)) return 17;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Busy)) return 12;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.RecruitingPartyMembers)) return 26;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PlayingTripleTriad)) return 14;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.SimilarDuty)) {
-            return 42;
-        }
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeaderCrossWorld)) return 38;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyMemberCrossWorld)) return 39;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AllianceLeader)) return 33;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyLeader)) return 34;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyMember)) return 35;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeader)) return 36;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyMember)) return 37;
 
-        if (this.IsInDutyTerritory(locationId)) {
-            return 43;
-        }
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.RolePlaying)) return 22;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingForParty)) return 23;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingToMeldMateria)) return 21;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingForRepairs)) return 19;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingToRepair)) return 20;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.WaitingForDutyFinder)) {
-            return 25;
-        }
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvPMentor)) return 30;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.TradeMentor)) return 29;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvEMentor)) return 28;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Mentor)) return 27;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.BattleMentor)) return 11;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.NewAdventurer)) return 32;
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Returner)) return 31;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.ViewingCutscene)) {
-            return 15;
-        }
+            if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Online)) return 47;
 
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.CameraMode)) {
-            return 18;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AwayFromKeyboard)) {
-            return 17;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Busy)) {
-            return 12;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.RecruitingPartyMembers)) {
-            return 26;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PlayingTripleTriad)) {
-            return 14;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeaderCrossWorld)) {
-            return 38;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyMemberCrossWorld)) {
-            return 39;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AllianceLeader)) {
-            return 33;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyLeader)) {
-            return 34;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.AlliancePartyMember)) {
-            return 35;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyLeader)) {
-            return 36;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PartyMember)) {
-            return 37;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.RolePlaying)) {
-            return 22;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingForParty)) {
-            return 23;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingToMeldMateria)) {
-            return 21;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingForRepairs)) {
-            return 19;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.LookingToRepair)) {
-            return 20;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvPMentor)) {
-            return 30;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.TradeMentor)) {
-            return 29;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.PvEMentor)) {
-            return 28;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Mentor)) {
-            return 27;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.BattleMentor)) {
-            return 11;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.NewAdventurer)) {
-            return 32;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Returner)) {
-            return 31;
-        }
-
-        if (state.HasFlag(InfoProxyCommonList.CharacterData.OnlineStatus.Online)) {
             return 47;
         }
+        else if (onlineStatusId > 0) {
+            rowId = onlineStatusId;
+            // Apply the smart override even for proximity-detected friends!
+            if (this.IsInDutyTerritory(locationId) && rowId == 47) {
+                return 43;
+            }
+        }
+        else {
+            // No mask, no ID, but IsOnline is true
+            if (this.IsInDutyTerritory(locationId)) {
+                return 43;
+            }
+        }
 
-        return 47;
+        return rowId;
     }
 
-    public (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask, uint currentWorldId, uint homeWorldId, uint locationId) {
-        uint rowId = this.GetOnlineStatusRowId(stateMask, locationId);
+    public (uint IconId, string Name) GetOnlineStatusInfo(bool isOnline, ulong stateMask, byte onlineStatusId, uint currentWorldId, uint homeWorldId, uint locationId) {
+        uint rowId = this.GetOnlineStatusRowId(isOnline, stateMask, onlineStatusId, locationId);
         bool isCrossWorld = this.IsCrossWorld(currentWorldId, homeWorldId, stateMask, locationId);
 
         if (rowId == 10) {

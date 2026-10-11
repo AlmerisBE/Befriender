@@ -299,8 +299,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.loc.Translate(isDeleted ? "Profile_StatusDeleted" : "Profile_StatusUnsynchronized"));
         }
         else {
-            ulong effectiveMask = character.IsOnline ? character.OnlineStateMask : 0;
-            var statusInfo = this.gameDataService.GetOnlineStatusInfo(effectiveMask, character.CurrentWorldId, character.HomeWorldId, character.LocationId);
+            var statusInfo = this.gameDataService.GetOnlineStatusInfo(character.IsOnline, character.OnlineStateMask, character.OnlineStatusId, character.CurrentWorldId, character.HomeWorldId, character.LocationId);
             var iconLookup = new Dalamud.Interface.Textures.GameIconLookup { IconId = statusInfo.IconId };
             var iconWrap = this.textureProvider.GetFromGameIcon(iconLookup).GetWrapOrDefault();
 

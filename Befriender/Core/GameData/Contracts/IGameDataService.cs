@@ -12,7 +12,7 @@ public interface IGameDataService {
     bool IsStandardTerritory(uint territoryId);
     string GetDisplayLocation(uint locationId, uint currentWorldId, uint homeWorldId, ulong stateMask);
 
-    (uint IconId, string Name) GetOnlineStatusInfo(ulong stateMask, uint currentWorldId, uint homeWorldId, uint locationId);
+    (uint IconId, string Name) GetOnlineStatusInfo(bool isOnline, ulong stateMask, byte onlineStatusId, uint currentWorldId, uint homeWorldId, uint locationId);
     bool IsFriendAvailable(ulong stateMask);
     string GetClientLanguageString(byte languageMask);
     uint GetGrandCompanyIconId(byte grandCompanyId);
