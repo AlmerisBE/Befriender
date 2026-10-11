@@ -16,6 +16,8 @@ public class FriendListSource : ICharacterSource, IDisposable {
     private ulong lastStateHash = 0;
     private ulong pendingHash = 0;
     private DateTime dataStabilizedTime = DateTime.MaxValue;
+    private DateTime timeoutTime = DateTime.MaxValue;
+
     private List<Character> currentState = new();
     private bool isManualRefreshPending = false;
 
@@ -41,6 +43,8 @@ public class FriendListSource : ICharacterSource, IDisposable {
         this.lastStateHash = 0;
         this.pendingHash = 0;
         this.dataStabilizedTime = DateTime.MaxValue;
+        this.timeoutTime = DateTime.MaxValue;
+        this.isManualRefreshPending = false;
     }
 
     public IEnumerable<Character> GetCurrentState() {
@@ -53,16 +57,19 @@ public class FriendListSource : ICharacterSource, IDisposable {
 
     public void TriggerManualRefresh() {
         this.isManualRefreshPending = true;
+        this.timeoutTime = DateTime.Now.AddSeconds(5);
         this.scanner.RequestServerUpdate();
+        this.DataUpdated?.Invoke();
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
+        var now = DateTime.Now;
         ulong currentHash = this.scanner.GetStateHash();
 
         if (currentHash != this.lastStateHash) {
             if (currentHash != this.pendingHash) {
                 this.pendingHash = currentHash;
-                this.dataStabilizedTime = DateTime.Now.AddSeconds(1);
+                this.dataStabilizedTime = now.AddSeconds(1);
             }
         }
         else if (this.pendingHash != this.lastStateHash) {
@@ -70,19 +77,25 @@ public class FriendListSource : ICharacterSource, IDisposable {
             this.dataStabilizedTime = DateTime.MaxValue;
         }
 
-        if (this.dataStabilizedTime != DateTime.MaxValue && DateTime.Now >= this.dataStabilizedTime) {
+        if (this.dataStabilizedTime != DateTime.MaxValue && now >= this.dataStabilizedTime) {
             this.lastStateHash = this.pendingHash;
             this.dataStabilizedTime = DateTime.MaxValue;
+            this.timeoutTime = DateTime.MaxValue;
+            this.RefreshState();
+        }
+        else if (this.isManualRefreshPending && now >= this.timeoutTime) {
+            this.timeoutTime = DateTime.MaxValue;
             this.RefreshState();
         }
     }
 
     private void RefreshState() {
+        this.isManualRefreshPending = false;
         var scannedCharacters = this.scanner.ScanActiveFriends().ToList();
 
         if (scannedCharacters.Count == 0 && this.currentState.Count > 0) {
             if (this.scanner.GetCurrentFriendCount() > 0) {
-                this.isManualRefreshPending = false;
+                this.DataUpdated?.Invoke();
                 return;
             }
         }
@@ -98,7 +111,6 @@ public class FriendListSource : ICharacterSource, IDisposable {
         }
 
         this.currentState = newState.Values.ToList();
-        this.isManualRefreshPending = false;
         this.DataUpdated?.Invoke();
     }
 

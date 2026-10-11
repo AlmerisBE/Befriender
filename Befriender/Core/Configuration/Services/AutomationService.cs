@@ -18,6 +18,11 @@ public class AutomationService : IDisposable {
 
     private HashSet<Guid> pendingSourcesToRefresh = new();
     private DateTime? refreshTriggerTime = null;
+    private bool fullRefreshPending = false;
+
+    // Exposed for pragmatic unit testing without massive Thread.Sleep delays
+    internal TimeSpan LoginDelay = TimeSpan.FromSeconds(12);
+    internal TimeSpan TerritoryDelay = TimeSpan.FromSeconds(5);
     private readonly TimeSpan departureDelay = TimeSpan.FromSeconds(10);
 
     private Random random = new();
@@ -56,13 +61,18 @@ public class AutomationService : IDisposable {
     }
 
     private void OnLogin() {
-        if (this.configService.GetConfig().SyncOnLogin) this.registry.RequestManualRefresh();
-
+        if (this.configService.GetConfig().SyncOnLogin) {
+            this.fullRefreshPending = true;
+            this.refreshTriggerTime = DateTime.Now.Add(this.LoginDelay);
+        }
         this.ScheduleNextPeriodicSync();
     }
 
     private void OnTerritoryChanged(uint territoryId) {
-        if (this.configService.GetConfig().SyncOnTerritoryChange) this.registry.RequestManualRefresh();
+        if (this.configService.GetConfig().SyncOnTerritoryChange) {
+            this.fullRefreshPending = true;
+            this.refreshTriggerTime = DateTime.Now.Add(this.TerritoryDelay);
+        }
     }
 
     private void OnCharactersDeparted(IEnumerable<Character> characters) {
@@ -79,7 +89,9 @@ public class AutomationService : IDisposable {
         }
 
         if (sourcesAdded || this.pendingSourcesToRefresh.Count > 0) {
-            this.refreshTriggerTime = DateTime.Now.Add(this.departureDelay);
+            if (!this.fullRefreshPending) {
+                this.refreshTriggerTime = DateTime.Now.Add(this.departureDelay);
+            }
         }
     }
 
@@ -87,7 +99,12 @@ public class AutomationService : IDisposable {
         if (this.refreshTriggerTime.HasValue && DateTime.Now >= this.refreshTriggerTime.Value) {
             this.refreshTriggerTime = null;
 
-            if (this.pendingSourcesToRefresh.Count > 0) {
+            if (this.fullRefreshPending) {
+                this.fullRefreshPending = false;
+                this.pendingSourcesToRefresh.Clear();
+                this.registry.RequestManualRefresh();
+            }
+            else if (this.pendingSourcesToRefresh.Count > 0) {
                 this.registry.RequestManualRefresh(this.pendingSourcesToRefresh.ToList());
                 this.pendingSourcesToRefresh.Clear();
             }

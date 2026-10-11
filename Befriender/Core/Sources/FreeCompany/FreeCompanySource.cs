@@ -17,6 +17,8 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     private ulong lastStateHash = 0;
     private ulong pendingHash = 0;
     private DateTime dataStabilizedTime = DateTime.MaxValue;
+    private DateTime timeoutTime = DateTime.MaxValue;
+
     private List<Character> currentState = new();
     private bool isManualRefreshPending = false;
     private DateTime lastSyncTime = DateTime.MinValue;
@@ -45,6 +47,8 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         this.lastStateHash = 0;
         this.pendingHash = 0;
         this.dataStabilizedTime = DateTime.MaxValue;
+        this.timeoutTime = DateTime.MaxValue;
+        this.isManualRefreshPending = false;
     }
 
     public IEnumerable<Character> GetCurrentState() {
@@ -58,7 +62,9 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
     public void TriggerManualRefresh() {
         this.isManualRefreshPending = true;
         this.lastSyncTime = DateTime.Now;
+        this.timeoutTime = DateTime.Now.AddSeconds(5);
         this.scanner.RequestServerUpdate();
+        this.DataUpdated?.Invoke();
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -82,11 +88,17 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         if (this.dataStabilizedTime != DateTime.MaxValue && now >= this.dataStabilizedTime) {
             this.lastStateHash = this.pendingHash;
             this.dataStabilizedTime = DateTime.MaxValue;
+            this.timeoutTime = DateTime.MaxValue;
+            this.RefreshState();
+        }
+        else if (this.isManualRefreshPending && now >= this.timeoutTime) {
+            this.timeoutTime = DateTime.MaxValue;
             this.RefreshState();
         }
     }
 
     private void RefreshState() {
+        this.isManualRefreshPending = false;
         var scannedCharacters = this.scanner.ScanMembers().ToList();
 
         if (scannedCharacters.Count == 0 && this.currentState.Count > 0) {
@@ -94,7 +106,7 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
             bool hasFc = localPlayer != null && localPlayer.CompanyTag != null && !string.IsNullOrEmpty(localPlayer.CompanyTag.TextValue);
 
             if (hasFc) {
-                this.isManualRefreshPending = false;
+                this.DataUpdated?.Invoke();
                 return;
             }
         }
@@ -110,7 +122,6 @@ public class FreeCompanySource : ICharacterSource, IDisposable {
         }
 
         this.currentState = newState.Values.ToList();
-        this.isManualRefreshPending = false;
         this.DataUpdated?.Invoke();
     }
 
