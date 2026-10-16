@@ -20,6 +20,7 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool IsProfilePanelOpen { get; set; } = false;
     public bool GroupByCustomGroups { get; set; } = false;
+    public bool ShowSharedManualContacts { get; set; } = false;
 
     public VirtualKey Hotkey { get; set; } = 0;
     public bool HotkeyCtrl { get; set; } = false;

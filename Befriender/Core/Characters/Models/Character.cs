@@ -32,6 +32,7 @@ public class Character {
     public System.Numerics.Vector3 LastKnownPosition { get; set; }
 
     // --- Plugin Metadata (User defined) ---
+    public HashSet<ulong> AssociatedLocalPlayerIds { get; set; } = new();
     public DateTime AddedAt { get; set; }
     public uint AddedLocationId { get; set; }
     public Guid? CustomGroupId { get; set; }

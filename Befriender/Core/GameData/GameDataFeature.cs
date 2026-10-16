@@ -8,5 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 public class GameDataFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IGameDataService, GameDataService>();
+        services.AddSingleton<ILocalPlayerContext, LocalPlayerContext>();
     }
 }

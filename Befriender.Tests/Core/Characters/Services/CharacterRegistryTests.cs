@@ -1,5 +1,6 @@
 ﻿namespace Befriender.Tests.Core.Characters.Services;
 
+using Befriender.Core.GameData.Contracts;
 using Dalamud.Plugin.Services;
 using global::Befriender.Core.Characters.Contracts;
 using global::Befriender.Core.Characters.Models;
@@ -17,6 +18,7 @@ public class CharacterRegistryTests {
     private IClientState mockClientState;
     private IFramework mockFramework;
     private IPluginLog mockPluginLog;
+    private ILocalPlayerContext mockLocalPlayerContext = Substitute.For<ILocalPlayerContext>();
 
     public CharacterRegistryTests() {
         this.mockStorage = Substitute.For<ICharacterStorage>();
@@ -25,6 +27,7 @@ public class CharacterRegistryTests {
         this.mockClientState = Substitute.For<IClientState>();
         this.mockFramework = Substitute.For<IFramework>();
         this.mockPluginLog = Substitute.For<IPluginLog>();
+        this.mockLocalPlayerContext = Substitute.For<ILocalPlayerContext>();
     }
 
     private CharacterRegistry CreateRegistry() {
@@ -35,7 +38,8 @@ public class CharacterRegistryTests {
             this.mockIdentity,
             this.mockClientState,
             this.mockFramework,
-            this.mockPluginLog);
+            this.mockPluginLog,
+            this.mockLocalPlayerContext);
     }
 
     [Fact]
@@ -165,7 +169,9 @@ public class CharacterRegistryTests {
         var registry = this.CreateRegistry();
         registry.LoadMasterList("TestAccount_33");
 
-        // Ajout du ContentId (ex: 123456) et du LocationId (ex: 129)
+        // Simple and elegant mocking of the local player state
+        this.mockLocalPlayerContext.GetLocalContentId().Returns(999ul);
+
         bool result = registry.TryAddManualCharacter(123456, "Manual Friend", 33, 129);
 
         Assert.True(result);
@@ -176,6 +182,7 @@ public class CharacterRegistryTests {
         Assert.NotNull(manualChar);
         Assert.Equal(123456ul, manualChar.ContentId);
         Assert.Equal(129u, manualChar.AddedLocationId);
+        Assert.Contains(999ul, manualChar.AssociatedLocalPlayerIds);
         Assert.False(manualChar.IsActivelyTracked);
 
         this.mockStorage.Received().Save("MasterCharacterList", "TestAccount_33", Arg.Any<IEnumerable<Character>>());

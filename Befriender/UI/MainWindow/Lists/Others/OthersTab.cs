@@ -14,6 +14,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class OthersTab : AbstractListTab {
+    private ILocalPlayerContext localPlayerContext;
+
     public override string InternalName => "Tab_Others";
     public override string Name => this.loc.Translate("Tab_Others");
     public override int Order => 30;
@@ -32,12 +34,26 @@ public class OthersTab : AbstractListTab {
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent,
         IConfigurationService configurationService,
-        IGameGui gameGui)
+        IGameGui gameGui,
+        ILocalPlayerContext localPlayerContext)
         : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui) {
+
+        this.localPlayerContext = localPlayerContext;
     }
 
     protected override IEnumerable<Character> GetBaseCharacterList() {
-        return this.registry.GetAllCharacters().Where(c => !c.IsActivelyTracked);
+        var config = this.configurationService.GetConfig();
+        ulong currentLocalPlayerId = this.localPlayerContext.GetLocalContentId();
+
+        return this.registry.GetAllCharacters().Where(c => {
+            if (c.IsActivelyTracked) return false;
+
+            bool isAssociated = c.AssociatedLocalPlayerIds.Count == 0 || (currentLocalPlayerId > 0 && c.AssociatedLocalPlayerIds.Contains(currentLocalPlayerId));
+
+            if (!isAssociated && !config.ShowSharedManualContacts) return false;
+
+            return true;
+        });
     }
 
     protected override IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {

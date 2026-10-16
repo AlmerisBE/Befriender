@@ -2,6 +2,7 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.GameData.Contracts;
 using Befriender.Core.Migrations.Contracts;
 using Dalamud.Plugin.Services;
 using System;
@@ -19,6 +20,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     private IClientState clientState;
     private IFramework framework;
     private IPluginLog pluginLog;
+    private ILocalPlayerContext localPlayerContext;
 
     private string currentAccountIdentity = string.Empty;
     private readonly object lockObj = new();
@@ -32,7 +34,8 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         ICharacterIdentityService identityService,
         IClientState clientState,
         IFramework framework,
-        IPluginLog pluginLog) {
+        IPluginLog pluginLog,
+        ILocalPlayerContext localPlayerContext) {
 
         this.storage = storage;
         this.migrationService = migrationService;
@@ -40,6 +43,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         this.clientState = clientState;
         this.framework = framework;
         this.pluginLog = pluginLog;
+        this.localPlayerContext = localPlayerContext;
 
         foreach (var source in initialSources) {
             this.RegisterSource(source);
@@ -241,6 +245,9 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     public bool TryAddManualCharacter(ulong contentId, string name, uint homeWorldId, uint locationId) {
         if (string.IsNullOrWhiteSpace(name)) return false;
 
+        ulong currentLocalPlayerId = this.localPlayerContext.GetLocalContentId();
+        if (currentLocalPlayerId == 0) return false;
+
         lock (this.lockObj) {
             var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(contentId, name, homeWorldId));
 
@@ -248,6 +255,9 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 if (!existing.IsActivelyTracked) {
                     if (contentId > 0) existing.ContentId = contentId;
                     if (locationId > 0 && existing.AddedLocationId == 0) existing.AddedLocationId = locationId;
+
+                    existing.AssociatedLocalPlayerIds.Add(currentLocalPlayerId);
+
                     this.SaveMasterList();
                     this.NotifyDataChanged();
                     return true;
@@ -265,6 +275,8 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 LastSeenAt = DateTime.Now,
                 IsOnline = true
             };
+
+            newCharacter.AssociatedLocalPlayerIds.Add(currentLocalPlayerId);
 
             this.masterList.Add(newCharacter);
             this.SaveMasterList();
