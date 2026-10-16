@@ -334,7 +334,15 @@ public abstract class AbstractListTab : ITab, IDisposable {
             var payload = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(character.LocationId, mapId, rawX, rawY);
 
             if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip($"{this.loc.Translate("Tooltip_Nearby")}\n{payload.PlaceName} (X: {payload.XCoord:F1}, Y: {payload.YCoord:F1})");
+                string tooltip = $"{this.loc.Translate("Tooltip_Nearby")}\n{payload.PlaceName} (X: {payload.XCoord:F1}, Y: {payload.YCoord:F1})";
+
+                var spatialRelation = this.proximityService.GetSpatialRelation(character.LastKnownPosition);
+                if (spatialRelation.HasValue) {
+                    string directionStr = this.loc.Translate(spatialRelation.Value.CardinalDirectionKey);
+                    tooltip += $"\n{spatialRelation.Value.Distance:F1}y - {directionStr}";
+                }
+
+                ImGui.SetTooltip(tooltip);
             }
 
             if (ImGui.IsItemClicked()) {

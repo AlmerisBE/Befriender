@@ -224,6 +224,38 @@ public class ProximityService : IProximityService, IDisposable {
             .ToList();
     }
 
+    public (float Distance, string CardinalDirectionKey)? GetSpatialRelation(System.Numerics.Vector3 targetPosition) {
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) return null;
+
+        var localPos = localPlayer.Position;
+
+        // Calculate 3D distance including elevation
+        float distance = System.Numerics.Vector3.Distance(localPos, targetPosition);
+
+        // Calculate 2D heading for cardinal direction
+        float dx = targetPosition.X - localPos.X;
+        float dz = targetPosition.Z - localPos.Z;
+
+        // FFXIV specific coordinates: -Z is North. 
+        // Math.Atan2(y, x) where y is -dz (North-oriented) and x is dx (East-oriented)
+        float headingRadians = (float)Math.Atan2(dx, -dz);
+        float headingDegrees = headingRadians * 180f / (float)Math.PI;
+
+        if (headingDegrees < 0) headingDegrees += 360f;
+
+        string directionKey = "Dir_N";
+        if (headingDegrees >= 22.5f && headingDegrees < 67.5f) directionKey = "Dir_NE";
+        else if (headingDegrees >= 67.5f && headingDegrees < 112.5f) directionKey = "Dir_E";
+        else if (headingDegrees >= 112.5f && headingDegrees < 157.5f) directionKey = "Dir_SE";
+        else if (headingDegrees >= 157.5f && headingDegrees < 202.5f) directionKey = "Dir_S";
+        else if (headingDegrees >= 202.5f && headingDegrees < 247.5f) directionKey = "Dir_SW";
+        else if (headingDegrees >= 247.5f && headingDegrees < 292.5f) directionKey = "Dir_W";
+        else if (headingDegrees >= 292.5f && headingDegrees < 337.5f) directionKey = "Dir_NW";
+
+        return (distance, directionKey);
+    }
+
     public void Dispose() {
         this.framework.Update -= this.OnFrameworkUpdate;
     }

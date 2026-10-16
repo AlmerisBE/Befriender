@@ -14,6 +14,7 @@ using global::Befriender.Core.Proximity.Services;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using Xunit;
@@ -181,8 +182,9 @@ public class ProximityServiceTests {
 
     [Fact]
     public void IsFriendNearby_ReturnsTrue_WhenCharacterIsTracked() {
+        var friendId = Guid.NewGuid();
         var friendChar = new Character {
-            Id = Guid.NewGuid(),
+            Id = friendId,
             Name = "Charlie",
             HomeWorldId = 33,
             ContentId = 999,
@@ -202,8 +204,28 @@ public class ProximityServiceTests {
         using var service = this.CreateService();
         this.mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(this.mockFramework);
 
-        Assert.True(service.IsFriendNearby(999));
+        Assert.True(service.IsFriendNearby(999ul));
         Assert.Single(service.GetNearbyFriendIds());
         Assert.Equal(999ul, service.GetNearbyFriendIds()[0]);
+    }
+
+    [Theory]
+    [InlineData(0, -10, "Dir_N")]   // North (-Z)
+    [InlineData(10, 0, "Dir_E")]    // East (+X)
+    [InlineData(0, 10, "Dir_S")]    // South (+Z)
+    [InlineData(-10, 0, "Dir_W")]   // West (-X)
+    [InlineData(10, -10, "Dir_NE")] // North-East
+    [InlineData(-10, 10, "Dir_SW")] // South-West
+    public void GetSpatialRelation_CalculatesCorrectCardinalDirection(float targetX, float targetZ, string expectedKey) {
+        var mockLocalPlayer = Substitute.For<IPlayerCharacter>();
+        mockLocalPlayer.Position.Returns(new Vector3(0, 0, 0)); // Local player at origin
+        this.mockObjectTable.LocalPlayer.Returns(mockLocalPlayer);
+
+        using var service = this.CreateService();
+
+        var result = service.GetSpatialRelation(new Vector3(targetX, 0, targetZ));
+
+        Assert.NotNull(result);
+        Assert.Equal(expectedKey, result.Value.CardinalDirectionKey);
     }
 }
