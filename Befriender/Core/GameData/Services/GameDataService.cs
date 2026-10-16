@@ -54,36 +54,33 @@ public class GameDataService : IGameDataService {
     }
 
     public string GetLocationName(uint territoryId) {
-        if (territoryId == 0) {
-            return string.Empty;
-        }
+        if (territoryId == 0) return string.Empty;
 
         var territorySheet = this.dataManager.GetExcelSheet<TerritoryType>();
-        if (territorySheet == null) {
-            return territoryId.ToString();
-        }
+        if (territorySheet == null) return territoryId.ToString();
 
         var territoryRow = territorySheet.GetRowOrDefault(territoryId);
-        if (territoryRow.HasValue) {
-            uint placeNameId = territoryRow.Value.PlaceName.RowId;
-            if (placeNameId == 0) {
-                placeNameId = territoryRow.Value.PlaceNameZone.RowId;
-            }
+        if (!territoryRow.HasValue) return territoryId.ToString();
 
-            if (placeNameId == 0) {
-                placeNameId = territoryRow.Value.PlaceNameRegion.RowId;
-            }
+        var placeNameSheet = this.dataManager.GetExcelSheet<PlaceName>();
+        if (placeNameSheet == null) return territoryId.ToString();
 
-            if (placeNameId > 0) {
-                var placeNameSheet = this.dataManager.GetExcelSheet<PlaceName>();
-                if (placeNameSheet != null) {
-                    var placeNameRow = placeNameSheet.GetRowOrDefault(placeNameId);
-                    if (placeNameRow.HasValue) {
-                        return placeNameRow.Value.Name.ToString();
-                    }
+        uint[] candidateIds = {
+            territoryRow.Value.PlaceName.RowId,
+            territoryRow.Value.PlaceNameZone.RowId,
+            territoryRow.Value.PlaceNameRegion.RowId
+        };
+
+        foreach (var id in candidateIds) {
+            if (id > 0) {
+                var placeRow = placeNameSheet.GetRowOrDefault(id);
+                if (placeRow.HasValue) {
+                    string name = placeRow.Value.Name.ToString();
+                    if (!string.IsNullOrWhiteSpace(name)) return name;
                 }
             }
         }
+
         return territoryId.ToString();
     }
 
