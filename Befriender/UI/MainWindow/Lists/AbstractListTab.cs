@@ -339,7 +339,15 @@ public abstract class AbstractListTab : ITab, IDisposable {
                 var spatialRelation = this.proximityService.GetSpatialRelation(character.LastKnownPosition);
                 if (spatialRelation.HasValue) {
                     string directionStr = this.loc.Translate(spatialRelation.Value.CardinalDirectionKey);
-                    tooltip += $"\n{spatialRelation.Value.Distance:F1}y - {directionStr}";
+                    string formatStr = this.loc.Translate("Tooltip_ProximityFormat");
+
+                    // Fallback in case the key is missing from JSON
+                    if (string.IsNullOrEmpty(formatStr) || formatStr == "Tooltip_ProximityFormat") {
+                        formatStr = "{0}y • {1}";
+                    }
+
+                    string spatialInfo = string.Format(formatStr, spatialRelation.Value.Distance.ToString("F1"), directionStr);
+                    tooltip += $"\n{spatialInfo}";
                 }
 
                 ImGui.SetTooltip(tooltip);
