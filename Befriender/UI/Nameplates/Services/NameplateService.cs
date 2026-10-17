@@ -58,7 +58,14 @@ public class NameplateService : INameplateService, IDisposable {
 
             var match = characters.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.Ordinal) && c.HomeWorldId == worldId);
 
-            if (match != null && !match.IsActivelyTracked) handler.NameParts.TextWrap = wrapper;
+            if (match != null && !match.IsActivelyTracked) {
+                // Apply color to the core name
+                handler.NameParts.TextWrap = wrapper;
+
+                // Apply color to the title and FC tag using OuterWrap to encompass native brackets
+                handler.TitleParts.OuterWrap = wrapper;
+                handler.FreeCompanyTagParts.OuterWrap = wrapper;
+            }
         }
     }
 
