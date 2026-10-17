@@ -161,5 +161,8 @@
   "Tooltip_ProximityFormat": "{0}y • {1}",
   "Tooltip_QuickActions": "Schnellaktionen",
   "Tooltip_ToggleFilters": "Filter umschalten",
-  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert"
+  "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
+  "Config_EnableOthersNameplateColor": "Namen von 'Andere'-Kontakten im Spiel färben",
+  "Config_NameplateSettings": "Namensschild-Einstellungen",
+  "Config_OthersNameplateColor": "Anzeigefarbe"
 }

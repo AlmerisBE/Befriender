@@ -161,5 +161,8 @@
   "Tooltip_ProximityFormat": "{0}y • {1}",
   "Tooltip_QuickActions": "Actions rapides",
   "Tooltip_ToggleFilters": "Afficher / Masquer les filtres",
-  "Tooltip_Tracked": "Alertes de connexion activées"
+  "Tooltip_Tracked": "Alertes de connexion activées",
+  "Config_EnableOthersNameplateColor": "Colorer les noms des contacts 'Autres' en jeu",
+  "Config_NameplateSettings": "Paramètres d'affichage des noms",
+  "Config_OthersNameplateColor": "Couleur d'affichage"
 }

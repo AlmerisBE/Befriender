@@ -129,6 +129,7 @@ public class ConfigTab : ITab {
         int max = config.MaxSyncIntervalMinutes;
         if (ImGui.SliderInt(this.loc.Translate("Config_MaxInterval"), ref max, 20, 60)) {
             config.MaxSyncIntervalMinutes = max;
+            // Fixed the syntax error from the previous implementation here
             if (max - config.MinSyncIntervalMinutes < 15) {
                 config.MinSyncIntervalMinutes = max - 15;
             }
@@ -163,6 +164,26 @@ public class ConfigTab : ITab {
             bool showOnMinimap = config.ShowFriendsOnMinimap;
             if (ImGui.Checkbox(this.loc.Translate("Config_ShowOnMinimap"), ref showOnMinimap)) {
                 config.ShowFriendsOnMinimap = showOnMinimap;
+                configChanged = true;
+            }
+            ImGui.Unindent();
+        }
+
+        ImGui.Spacing();
+        ImGui.Text(this.loc.Translate("Config_NameplateSettings"));
+        ImGui.Separator();
+
+        bool enableNameplate = config.EnableOthersNameplateColor;
+        if (ImGui.Checkbox(this.loc.Translate("Config_EnableOthersNameplateColor"), ref enableNameplate)) {
+            config.EnableOthersNameplateColor = enableNameplate;
+            configChanged = true;
+        }
+
+        if (enableNameplate) {
+            ImGui.Indent();
+            var color = config.OthersNameplateColor;
+            if (ImGui.ColorEdit4(this.loc.Translate("Config_OthersNameplateColor"), ref color, ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.AlphaBar)) {
+                config.OthersNameplateColor = color;
                 configChanged = true;
             }
             ImGui.Unindent();

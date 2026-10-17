@@ -4,6 +4,7 @@ using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 [Serializable]
 public class PluginConfiguration : IPluginConfiguration {
@@ -31,6 +32,9 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool NotifyOnNearbyFriends { get; set; } = true;
     public bool NotifyOnNearbyArchived { get; set; } = false;
     public bool ShowFriendsOnMinimap { get; set; } = true;
+
+    public bool EnableOthersNameplateColor { get; set; } = true;
+    public Vector4 OthersNameplateColor { get; set; } = new Vector4(0.8f, 0.4f, 0.8f, 1.0f);
 
     public Dictionary<string, TabState> TabStates { get; set; } = new();
 }
