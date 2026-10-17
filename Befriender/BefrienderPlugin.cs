@@ -10,6 +10,7 @@ using Befriender.UI.ContextMenu.Services;
 using Befriender.UI.Input.Services;
 using Befriender.UI.MainWindow.Contracts;
 using Befriender.UI.MainWindow.Services;
+using Befriender.UI.Nameplates.Contracts;
 using Befriender.UI.Notifications.Services;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
@@ -38,7 +39,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         IKeyState keyState,
         INotificationManager notificationManager,
         IGameGui gameGui,
-        IContextMenu contextMenu) {
+        IContextMenu contextMenu,
+        INamePlateGui namePlateGui) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -60,6 +62,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(notificationManager);
         services.AddSingleton(gameGui);
         services.AddSingleton(contextMenu);
+        services.AddSingleton(namePlateGui);
 
         services.AddPluginFeatures();
 
@@ -74,6 +77,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<IProximityService>();
         this.serviceProvider.GetRequiredService<AutomationService>();
         this.serviceProvider.GetRequiredService<ContextMenuService>();
+        this.serviceProvider.GetRequiredService<INameplateService>();
 
         var ipcProvider = this.serviceProvider.GetRequiredService<IIpcProviderService>();
         ipcProvider.Initialize();
@@ -90,16 +94,12 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
 
     private void OnOpenConfigUi() {
         var navService = this.serviceProvider.GetService<IWindowNavigationService>();
-        if (navService != null) {
-            navService.OpenTab("Tab_Config");
-        }
+        if (navService != null) navService.OpenTab("Tab_Config");
     }
 
     private void OnOpenMainUi() {
         var navService = this.serviceProvider.GetService<IWindowNavigationService>();
-        if (navService != null) {
-            navService.ToggleWindow();
-        }
+        if (navService != null) navService.ToggleWindow();
     }
 
     public void Dispose() {

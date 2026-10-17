@@ -17,13 +17,13 @@ public class BefrienderPluginTests {
         var mockCommandManager = Substitute.For<ICommandManager>();
 
         var mockClientState = Substitute.For<IClientState>();
-        mockClientState.IsLoggedIn.Returns(false); // Simulate title screen
+        mockClientState.IsLoggedIn.Returns(false);
 
         var mockLogger = Substitute.For<IPluginLog>();
         var mockFramework = Substitute.For<IFramework>();
 
         var mockObjectTable = Substitute.For<IObjectTable>();
-        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter)null!); // Simulate unallocated memory
+        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter)null!);
 
         var mockDataManager = Substitute.For<IDataManager>();
         var mockTextureProvider = Substitute.For<ITextureProvider>();
@@ -33,6 +33,7 @@ public class BefrienderPluginTests {
         var mockNotificationManager = Substitute.For<INotificationManager>();
         var mockGameGui = Substitute.For<IGameGui>();
         var mockContextMenu = Substitute.For<IContextMenu>();
+        var mockNamePlateGui = Substitute.For<INamePlateGui>();
 
         var exception = Record.Exception(() => new BefrienderPlugin(
             mockPluginInterface,
@@ -49,7 +50,8 @@ public class BefrienderPluginTests {
             mockKeyState,
             mockNotificationManager,
             mockGameGui,
-            mockContextMenu));
+            mockContextMenu,
+            mockNamePlateGui));
 
         Assert.Null(exception);
     }

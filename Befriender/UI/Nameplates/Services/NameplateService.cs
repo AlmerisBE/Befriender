@@ -2,10 +2,11 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.Logging.Contracts;
 using Befriender.UI.Nameplates.Contracts;
-using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,16 +15,20 @@ public class NameplateService : INameplateService, IDisposable {
     private INamePlateGui namePlateGui;
     private ICharacterRegistry registry;
     private IConfigurationService configService;
+    private ILoggerService logger;
 
     public NameplateService(
         INamePlateGui namePlateGui,
         ICharacterRegistry registry,
-        IConfigurationService configService) {
+        IConfigurationService configService,
+        ILoggerService logger) {
 
         this.namePlateGui = namePlateGui;
         this.registry = registry;
         this.configService = configService;
+        this.logger = logger;
 
+        this.logger.Info("[NameplateService] Initializing and subscribing to OnNamePlateUpdate.");
         this.namePlateGui.OnNamePlateUpdate += this.HandleNamePlateUpdate;
     }
 
@@ -31,28 +36,34 @@ public class NameplateService : INameplateService, IDisposable {
         var config = this.configService.GetConfig();
         if (!config.EnableOthersNameplateColor) return;
 
+        var characters = this.registry.GetAllCharacters();
+
+        using var leftSeString = new RentedSeStringBuilder();
+        using var rightSeString = new RentedSeStringBuilder();
+
+        leftSeString.Builder.PushColorRgba(config.OthersNameplateColor);
+        rightSeString.Builder.PopColor();
+
+        var wrapper = (
+            leftSeString.Builder.ToReadOnlySeString().ToDalamudString(),
+            rightSeString.Builder.ToReadOnlySeString().ToDalamudString()
+        );
+
         foreach (var handler in handlers) {
-            // The new API provides direct and safe access to the player character object
             var player = handler.PlayerCharacter;
             if (player == null) continue;
 
             var name = player.Name.TextValue;
             var worldId = player.HomeWorld.RowId;
 
-            var characters = this.registry.GetAllCharacters();
             var match = characters.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.Ordinal) && c.HomeWorldId == worldId);
 
-            // If the character is in the registry but NOT actively tracked, it belongs to "Others"
-            if (match != null && !match.IsActivelyTracked) {
-                uint colorU32 = ImGui.ColorConvertFloat4ToU32(config.OthersNameplateColor);
-
-                // The new API simplifies color overriding by exposing TextColor directly
-                handler.TextColor = colorU32;
-            }
+            if (match != null && !match.IsActivelyTracked) handler.NameParts.TextWrap = wrapper;
         }
     }
 
     public void Dispose() {
+        this.logger.Info("[NameplateService] Disposing and unsubscribing from OnNamePlateUpdate.");
         this.namePlateGui.OnNamePlateUpdate -= this.HandleNamePlateUpdate;
     }
 }
