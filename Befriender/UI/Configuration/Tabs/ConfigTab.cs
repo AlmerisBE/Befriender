@@ -106,6 +106,12 @@ public class ConfigTab : ITab {
             configChanged = true;
         }
 
+        bool autoSyncFc = config.AutoSyncFreeCompanyOnLogin;
+        if (ImGui.Checkbox(this.loc.Translate("Config_AutoSyncFC"), ref autoSyncFc)) {
+            config.AutoSyncFreeCompanyOnLogin = autoSyncFc;
+            configChanged = true;
+        }
+
         bool syncOnTerritory = config.SyncOnTerritoryChange;
         if (ImGui.Checkbox(this.loc.Translate("Config_SyncOnZoneChange"), ref syncOnTerritory)) {
             config.SyncOnTerritoryChange = syncOnTerritory;

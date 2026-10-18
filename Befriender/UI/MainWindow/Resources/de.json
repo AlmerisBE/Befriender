@@ -166,5 +166,6 @@
   "Config_NameplateSettings": "Namensschild-Einstellungen",
   "Config_OthersNameplateColor": "Anzeigefarbe",
   "Config_ContactSettings": "Kontakteinstellungen",
-  "Config_ShowSharedManualContacts": "Manuelle Kontakte über alle Charaktere hinweg teilen"
+  "Config_ShowSharedManualContacts": "Manuelle Kontakte über alle Charaktere hinweg teilen",
+  "Config_AutoSyncFC": "Freie Gesellschaft beim Login proaktiv synchronisieren (öffnet kurz die Benutzeroberfläche)"
 }

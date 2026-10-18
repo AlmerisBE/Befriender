@@ -8,4 +8,5 @@ public interface IFreeCompanyScanner {
     int GetEntryCount();
     ulong GetStateHash();
     void RequestServerUpdate();
+    void OpenAndCloseNativeList();
 }

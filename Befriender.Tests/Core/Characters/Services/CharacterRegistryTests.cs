@@ -191,21 +191,30 @@ public class CharacterRegistryTests {
     [Fact]
     public void RemoveCharacter_UnlinksCurrentPlayer_AndDeletes_IfNoAssociationsLeft() {
         var registry = this.CreateRegistry();
+
+        // Initialize the registry's currentAccountIdentity so SaveMasterList() doesn't silently abort
+        registry.LoadMasterList("TestAccount_33");
         this.mockLocalPlayerContext.GetLocalContentId().Returns(12345ul);
         registry.TryAddManualCharacter(999, "To Delete", 33, 0);
 
         var chars = registry.GetAllCharacters();
         var targetId = chars[0].Id;
 
+        // Clear the mock history to ignore the Save() call triggered by TryAddManualCharacter
+        this.mockStorage.ClearReceivedCalls();
+
         registry.RemoveCharacter(targetId);
 
         Assert.Empty(registry.GetAllCharacters());
-        this.mockStorage.Received().Save("MasterCharacterList", Arg.Any<string>(), Arg.Any<IEnumerable<Character>>());
+        this.mockStorage.Received(1).Save("MasterCharacterList", "TestAccount_33", Arg.Any<IEnumerable<Character>>());
     }
 
     [Fact]
     public void RemoveCharacter_UnlinksCurrentPlayer_ButKeepsCharacter_IfOtherAssociationsExist() {
         var registry = this.CreateRegistry();
+
+        // Initialize the registry's currentAccountIdentity
+        registry.LoadMasterList("TestAccount_33");
         this.mockLocalPlayerContext.GetLocalContentId().Returns(12345ul);
         registry.TryAddManualCharacter(999, "Shared Contact", 33, 0);
 
@@ -213,11 +222,16 @@ public class CharacterRegistryTests {
         var targetChar = chars[0];
         targetChar.AssociatedLocalPlayerIds.Add(67890ul); // Simulate another character linked to it
 
+        // Clear the mock history to ignore the Save() call triggered by TryAddManualCharacter
+        this.mockStorage.ClearReceivedCalls();
+
         registry.RemoveCharacter(targetChar.Id);
 
         var remainingChars = registry.GetAllCharacters();
         Assert.Single(remainingChars);
         Assert.DoesNotContain(12345ul, remainingChars[0].AssociatedLocalPlayerIds);
         Assert.Contains(67890ul, remainingChars[0].AssociatedLocalPlayerIds);
+
+        this.mockStorage.Received(1).Save("MasterCharacterList", "TestAccount_33", Arg.Any<IEnumerable<Character>>());
     }
 }

@@ -166,5 +166,6 @@
   "Config_NameplateSettings": "ネームプレート設定",
   "Config_OthersNameplateColor": "表示色",
   "Config_ContactSettings": "連絡先設定",
-  "Config_ShowSharedManualContacts": "手動で追加した連絡先をすべてのキャラクターで共有する"
+  "Config_ShowSharedManualContacts": "手動で追加した連絡先をすべてのキャラクターで共有する",
+  "Config_AutoSyncFC": "ログイン時にフリーカンパニーのメンバーをプロアクティブに同期する（UIが短時間開きます）"
 }

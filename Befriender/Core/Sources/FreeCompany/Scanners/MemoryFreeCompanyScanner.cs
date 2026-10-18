@@ -96,6 +96,17 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
         if (fcMemberProxy != null) fcMemberProxy->RequestData();
     }
 
+    public void OpenAndCloseNativeList() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) return;
+
+        // Command 9 targets the Free Company window.
+        // Executing it twice rapidly triggers the internal state machine to Open then Close,
+        // which is sufficient to force the native proxy to request data from the server.
+        uiModule->ExecuteMainCommand(9);
+        uiModule->ExecuteMainCommand(9);
+    }
+
     public ulong GetStateHash() {
         var uiModule = UIModule.Instance();
         if (uiModule == null) return 0;

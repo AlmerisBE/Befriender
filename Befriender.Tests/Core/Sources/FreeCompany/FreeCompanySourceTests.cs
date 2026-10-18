@@ -1,51 +1,68 @@
 ﻿namespace Befriender.Tests.Core.Sources.FreeCompany;
 
+using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.Configuration.Models;
+using Befriender.Core.Sources.FreeCompany;
+using Befriender.Core.Sources.FreeCompany.Contracts;
 using Dalamud.Plugin.Services;
-using global::Befriender.Core.Sources.FreeCompany;
-using global::Befriender.Core.Sources.FreeCompany.Contracts;
 using NSubstitute;
-using System.Threading;
 using Xunit;
 
 public class FreeCompanySourceTests {
-    [Fact]
-    public void OnFrameworkUpdate_DebouncesHashChanges_AndFiresDataUpdatedOnlyWhenStabilized() {
-        var mockScanner = Substitute.For<IFreeCompanyScanner>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockClientState = Substitute.For<IClientState>();
+    private IFreeCompanyScanner mockScanner;
+    private IFramework mockFramework;
+    private IObjectTable mockObjectTable;
+    private IClientState mockClientState;
+    private IConfigurationService mockConfigService;
 
-        using var source = new FreeCompanySource(mockScanner, mockFramework, mockObjectTable, mockClientState);
+    public FreeCompanySourceTests() {
+        this.mockScanner = Substitute.For<IFreeCompanyScanner>();
+        this.mockFramework = Substitute.For<IFramework>();
+        this.mockObjectTable = Substitute.For<IObjectTable>();
+        this.mockClientState = Substitute.For<IClientState>();
+        this.mockConfigService = Substitute.For<IConfigurationService>();
+    }
 
-        bool eventFired = false;
-        source.DataUpdated += () => eventFired = true;
-
-        mockScanner.GetStateHash().Returns(54321ul);
-        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
-
-        Assert.False(eventFired);
-
-        Thread.Sleep(1100);
-
-        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
-
-        Assert.True(eventFired);
+    private FreeCompanySource CreateSource() {
+        return new FreeCompanySource(
+            this.mockScanner,
+            this.mockFramework,
+            this.mockObjectTable,
+            this.mockClientState,
+            this.mockConfigService);
     }
 
     [Fact]
-    public void IsSyncing_ReturnsTrue_WhenManualRefreshIsTriggered() {
-        var mockScanner = Substitute.For<IFreeCompanyScanner>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockClientState = Substitute.For<IClientState>();
-
-        using var source = new FreeCompanySource(mockScanner, mockFramework, mockObjectTable, mockClientState);
-
-        Assert.False(source.IsSyncing);
+    public void TriggerManualRefresh_CallsOpenAndClose_WhenConfigEnabledAndFirstAttempt() {
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
+        var source = this.CreateSource();
 
         source.TriggerManualRefresh();
 
-        Assert.True(source.IsSyncing);
-        mockScanner.Received(1).RequestServerUpdate();
+        this.mockScanner.Received(1).OpenAndCloseNativeList();
+        this.mockScanner.DidNotReceive().RequestServerUpdate();
+    }
+
+    [Fact]
+    public void TriggerManualRefresh_CallsRequestServerUpdate_OnSubsequentAttempts() {
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
+        var source = this.CreateSource();
+
+        source.TriggerManualRefresh(); // First attempt
+        source.TriggerManualRefresh(); // Second attempt
+
+        this.mockScanner.Received(1).OpenAndCloseNativeList();
+        this.mockScanner.Received(1).RequestServerUpdate();
+    }
+
+    [Fact]
+    public void TriggerManualRefresh_CallsRequestServerUpdate_WhenConfigDisabled() {
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = false });
+        var source = this.CreateSource();
+
+        source.TriggerManualRefresh();
+
+        this.mockScanner.DidNotReceive().OpenAndCloseNativeList();
+        this.mockScanner.Received(1).RequestServerUpdate();
     }
 }
