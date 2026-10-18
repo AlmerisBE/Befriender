@@ -5,11 +5,13 @@ using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Logging.Contracts;
 using Befriender.UI.Nameplates.Contracts;
 using Dalamud.Game.Gui.NamePlate;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 public class NameplateService : INameplateService, IDisposable {
     private INamePlateGui namePlateGui;
@@ -32,22 +34,24 @@ public class NameplateService : INameplateService, IDisposable {
         this.namePlateGui.OnNamePlateUpdate += this.HandleNamePlateUpdate;
     }
 
+    private (SeString, SeString) CreateColorWrapper(Vector4 color) {
+        using var leftSeString = new RentedSeStringBuilder();
+        using var rightSeString = new RentedSeStringBuilder();
+
+        leftSeString.Builder.PushColorRgba(color);
+        rightSeString.Builder.PopColor();
+
+        return (
+            leftSeString.Builder.ToReadOnlySeString().ToDalamudString(),
+            rightSeString.Builder.ToReadOnlySeString().ToDalamudString()
+        );
+    }
+
     private void HandleNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers) {
         var config = this.configService.GetConfig();
         if (!config.EnableOthersNameplateColor) return;
 
         var characters = this.registry.GetAllCharacters();
-
-        using var leftSeString = new RentedSeStringBuilder();
-        using var rightSeString = new RentedSeStringBuilder();
-
-        leftSeString.Builder.PushColorRgba(config.OthersNameplateColor);
-        rightSeString.Builder.PopColor();
-
-        var wrapper = (
-            leftSeString.Builder.ToReadOnlySeString().ToDalamudString(),
-            rightSeString.Builder.ToReadOnlySeString().ToDalamudString()
-        );
 
         foreach (var handler in handlers) {
             var player = handler.PlayerCharacter;
@@ -59,12 +63,19 @@ public class NameplateService : INameplateService, IDisposable {
             var match = characters.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.Ordinal) && c.HomeWorldId == worldId);
 
             if (match != null && !match.IsActivelyTracked) {
-                // Apply color to the core name
+                // Must generate a new SeString instance per handler to prevent native engine memory tangling
+                var wrapper = this.CreateColorWrapper(config.OthersNameplateColor);
+
                 handler.NameParts.TextWrap = wrapper;
 
-                // Apply color to the title and FC tag using OuterWrap to encompass native brackets
-                handler.TitleParts.OuterWrap = wrapper;
-                handler.FreeCompanyTagParts.OuterWrap = wrapper;
+                // Safely apply wrappers only if the components actually contain text
+                if (handler.DisplayTitle && !string.IsNullOrEmpty(handler.Title.TextValue)) {
+                    handler.TitleParts.OuterWrap = wrapper;
+                }
+
+                if (!string.IsNullOrEmpty(handler.FreeCompanyTag.TextValue)) {
+                    handler.FreeCompanyTagParts.OuterWrap = wrapper;
+                }
             }
         }
     }

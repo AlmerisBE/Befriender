@@ -56,8 +56,8 @@ public class DeleteConfirmationModalComponent : IDisposable {
             ImGui.Spacing();
 
             if (ImGui.Button(this.loc.Translate("Action_Confirm"), new Vector2(120, 0))) {
+                // The registry now handles internal state logic and disk saving automatically.
                 this.registry.RemoveCharacter(this.pendingCharacter.Id);
-                this.registry.SaveMasterList();
                 ImGui.CloseCurrentPopup();
                 this.pendingCharacter = null;
             }
@@ -73,9 +73,7 @@ public class DeleteConfirmationModalComponent : IDisposable {
             ImGui.EndPopup();
         }
 
-        if (!isModalOpen) {
-            this.pendingCharacter = null;
-        }
+        if (!isModalOpen) this.pendingCharacter = null;
     }
 
     public void Dispose() {

@@ -215,10 +215,27 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     }
 
     public void RemoveCharacter(Guid id) {
+        ulong currentLocalId = this.localPlayerContext.GetLocalContentId();
+        bool stateChanged = false;
+
         lock (this.lockObj) {
-            this.masterList.RemoveAll(c => c.Id == id);
+            var character = this.masterList.FirstOrDefault(c => c.Id == id);
+            if (character == null) return;
+
+            if (currentLocalId > 0 && character.AssociatedLocalPlayerIds.Contains(currentLocalId)) {
+                character.AssociatedLocalPlayerIds.Remove(currentLocalId);
+                stateChanged = true;
+            }
+
+            if (character.AssociatedLocalPlayerIds.Count == 0 && !character.IsActivelyTracked) {
+                this.masterList.Remove(character);
+                stateChanged = true;
+            }
+
+            if (stateChanged) this.SaveMasterList();
         }
-        this.RegistryUpdated?.Invoke();
+
+        if (stateChanged) this.RegistryUpdated?.Invoke();
     }
 
     public void RequestManualRefresh() {
