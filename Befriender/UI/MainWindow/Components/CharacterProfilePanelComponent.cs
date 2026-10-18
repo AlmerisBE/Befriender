@@ -53,7 +53,6 @@ public class CharacterProfilePanelComponent {
                 this.notesBuffer = character.Notes ?? string.Empty;
             }
 
-            // Pinned Header
             bool isDeleted = string.IsNullOrEmpty(character.Name);
             ImGui.TextUnformatted(isDeleted ? this.loc.Translate("Profile_DeletedCharacter") : character.Name);
 
@@ -61,17 +60,13 @@ public class CharacterProfilePanelComponent {
             ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - closeButtonSize);
 
             int closeBtnId = unchecked("ClosePanel".GetHashCode() ^ character.ContentId.GetHashCode());
-            if (ImGuiComponents.IconButton(closeBtnId, FontAwesomeIcon.Times)) {
-                onClose();
-            }
+            if (ImGuiComponents.IconButton(closeBtnId, FontAwesomeIcon.Times)) onClose();
 
             ImGui.Separator();
 
-            // Inner child: takes remaining space and handles scrolling
             if (ImGui.BeginChild("ProfileScrollArea", new Vector2(0, 0), false)) {
                 ImGui.Spacing();
 
-                // --- Actions ---
                 var actions = this.actionService.GetAvailableActions(character);
                 if (actions.Count > 0) {
                     var style = ImGui.GetStyle();
@@ -81,26 +76,18 @@ public class CharacterProfilePanelComponent {
                         var action = actions[i];
                         int buttonId = unchecked((int)action.Icon ^ character.ContentId.GetHashCode());
 
-                        if (ImGuiComponents.IconButton(buttonId, action.Icon)) {
-                            action.Execute(character);
-                        }
-
-                        if (ImGui.IsItemHovered()) {
-                            ImGui.SetTooltip(this.loc.Translate(action.InternalName));
-                        }
+                        if (ImGuiComponents.IconButton(buttonId, action.Icon)) action.Execute(character);
+                        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.loc.Translate(action.InternalName));
 
                         if (i + 1 < actions.Count) {
                             float lastItemX2 = ImGui.GetItemRectMax().X;
                             float nextItemX2 = lastItemX2 + style.ItemSpacing.X + ImGui.GetItemRectSize().X;
-                            if (nextItemX2 < windowVisibleX2) {
-                                ImGui.SameLine();
-                            }
+                            if (nextItemX2 < windowVisibleX2) ImGui.SameLine();
                         }
                     }
                     ImGui.Spacing();
                 }
 
-                // --- Categorization ---
                 var groups = this.groupRepository.GetGroups().ToList();
                 var groupNames = groups.Select(g => g.Title).ToList();
                 groupNames.Insert(0, this.loc.Translate("Group_None"));
@@ -108,9 +95,7 @@ public class CharacterProfilePanelComponent {
                 int currentIndex = 0;
                 if (character.CustomGroupId.HasValue) {
                     var idx = groups.FindIndex(g => g.Id == character.CustomGroupId.Value);
-                    if (idx >= 0) {
-                        currentIndex = idx + 1;
-                    }
+                    if (idx >= 0) currentIndex = idx + 1;
                 }
 
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
@@ -119,39 +104,52 @@ public class CharacterProfilePanelComponent {
                     this.characterRegistry.SaveMasterList();
                 }
 
+                ImGui.Spacing();
                 var allTags = this.tagRepository.GetTags();
-                if (allTags.Count > 0) {
-                    var assignedTags = allTags.Where(t => character.Tags.Contains(t.Id)).ToList();
-                    string preview = assignedTags.Count > 0 ? string.Join(", ", assignedTags.Select(t => t.Name)) : this.loc.Translate("Profile_SelectTags");
+                var assignedTags = allTags.Where(t => character.Tags.Contains(t.Id)).ToList();
+                var unassignedTags = allTags.Where(t => !character.Tags.Contains(t.Id)).ToList();
 
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    if (ImGui.BeginCombo($"##tagSelect_{character.ContentId}", preview)) {
-                        bool tagsChanged = false;
+                ImGui.TextUnformatted(this.loc.Translate("Profile_Tags"));
 
-                        foreach (var tag in allTags) {
-                            bool isSelected = character.Tags.Contains(tag.Id);
-                            if (ImGui.Checkbox($"{tag.Name}##{tag.Id}", ref isSelected)) {
-                                if (isSelected) {
-                                    character.Tags.Add(tag.Id);
-                                }
-                                else {
-                                    character.Tags.Remove(tag.Id);
-                                }
-                                tagsChanged = true;
-                            }
-                        }
+                if (assignedTags.Count > 0) {
+                    float windowVisibleX2 = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+                    var style = ImGui.GetStyle();
 
-                        if (tagsChanged) {
+                    for (int i = 0; i < assignedTags.Count; i++) {
+                        var tag = assignedTags[i];
+                        ImGui.BeginGroup();
+                        ImGui.TextDisabled(tag.Name);
+                        ImGui.SameLine(0, 2f);
+
+                        if (ImGuiComponents.IconButton(unchecked(tag.Id.GetHashCode() ^ character.ContentId.GetHashCode()), FontAwesomeIcon.Times)) {
+                            character.Tags.Remove(tag.Id);
                             this.characterRegistry.SaveMasterList();
                         }
+                        ImGui.EndGroup();
 
-                        ImGui.EndCombo();
+                        if (i + 1 < assignedTags.Count) {
+                            float nextItemX2 = ImGui.GetItemRectMax().X + style.ItemSpacing.X + ImGui.CalcTextSize(assignedTags[i + 1].Name).X + ImGui.GetFrameHeight();
+                            if (nextItemX2 < windowVisibleX2) ImGui.SameLine();
+                        }
                     }
                 }
 
+                if (unassignedTags.Count > 0) {
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    if (ImGui.BeginCombo($"##assignExistingTag_{character.ContentId}", this.loc.Translate("Profile_SelectTags"))) {
+                        foreach (var tag in unassignedTags) {
+                            if (ImGui.Selectable(tag.Name)) {
+                                character.Tags.Add(tag.Id);
+                                this.characterRegistry.SaveMasterList();
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
+                else if (allTags.Count == 0) ImGui.TextDisabled(this.loc.Translate("Tag_NoTagsCreated"));
+
                 ImGui.Spacing();
 
-                // --- Accordion: Status & Location ---
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_Status"), ImGuiTreeNodeFlags.DefaultOpen)) {
                     ImGui.Text($"{this.loc.Translate("Column_Status")}: ");
                     ImGui.SameLine();
@@ -171,9 +169,7 @@ public class CharacterProfilePanelComponent {
                     ImGui.Text(statusInfo.Name);
 
                     string displayLocation = this.gameDataService.GetDisplayLocation(character.LocationId, character.CurrentWorldId, character.HomeWorldId, character.OnlineStateMask);
-                    if (string.IsNullOrEmpty(displayLocation) || displayLocation == "0") {
-                        displayLocation = this.loc.Translate("Profile_Unknown");
-                    }
+                    if (string.IsNullOrEmpty(displayLocation) || displayLocation == "0") displayLocation = this.loc.Translate("Profile_Unknown");
 
                     ImGui.Text($"{this.loc.Translate("Column_Location")}: {displayLocation}");
 
@@ -181,19 +177,14 @@ public class CharacterProfilePanelComponent {
 
                     if (!character.IsOnline && character.LastSeenAt != DateTime.MinValue) {
                         var diff = DateTime.Now - character.LastSeenAt;
-                        if (diff.TotalDays < 1 && diff.TotalHours >= 1) {
-                            lastSeenStr = this.loc.Translate("Profile_HoursAgo", (int)diff.TotalHours);
-                        }
-                        else if (diff.TotalHours < 1) {
-                            lastSeenStr = this.loc.Translate("Profile_MinsAgo", (int)diff.TotalMinutes);
-                        }
+                        if (diff.TotalDays < 1 && diff.TotalHours >= 1) lastSeenStr = this.loc.Translate("Profile_HoursAgo", (int)diff.TotalHours);
+                        else if (diff.TotalHours < 1) lastSeenStr = this.loc.Translate("Profile_MinsAgo", (int)diff.TotalMinutes);
                     }
 
                     ImGui.Text($"{this.loc.Translate("Profile_LastSeen")}: {lastSeenStr}");
                     ImGui.Spacing();
                 }
 
-                // --- Accordion: Character Information ---
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_Character"), ImGuiTreeNodeFlags.DefaultOpen)) {
                     ImGui.Text($"{this.loc.Translate("Profile_Job")}: ");
                     ImGui.SameLine();
@@ -216,20 +207,14 @@ public class CharacterProfilePanelComponent {
                     var jobAbbr = character.JobId > 0 ? this.gameDataService.GetJobAbbreviation(character.JobId) : this.loc.Translate("Profile_None");
                     ImGui.Text(jobAbbr);
 
-                    if (character.Level > 0) {
-                        ImGui.Text($"{this.loc.Translate("Profile_Level")}: {character.Level}");
-                    }
+                    if (character.Level > 0) ImGui.Text($"{this.loc.Translate("Profile_Level")}: {character.Level}");
 
                     string title = this.gameDataService.GetTitleName(character.TitleId, character.Gender);
-                    if (!string.IsNullOrEmpty(title)) {
-                        ImGui.Text($"{this.loc.Translate("Profile_Title")}: {title}");
-                    }
+                    if (!string.IsNullOrEmpty(title)) ImGui.Text($"{this.loc.Translate("Profile_Title")}: {title}");
 
                     string race = this.gameDataService.GetRaceName(character.Race, character.Gender);
                     string tribe = this.gameDataService.GetTribeName(character.Tribe, character.Gender);
-                    if (!string.IsNullOrEmpty(race)) {
-                        ImGui.Text($"{this.loc.Translate("Profile_Race")}: {race} ({tribe})");
-                    }
+                    if (!string.IsNullOrEmpty(race)) ImGui.Text($"{this.loc.Translate("Profile_Race")}: {race} ({tribe})");
 
                     if (character.IsFantasiaDetected) {
                         ImGui.PushStyleColor(ImGuiCol.Text, this.themeService.CurrentPalette.TextMarkedForRemoval);
@@ -241,9 +226,7 @@ public class CharacterProfilePanelComponent {
                             character.IsFantasiaDetected = false;
                             this.characterRegistry.SaveMasterList();
                         }
-                        if (ImGui.IsItemHovered()) {
-                            ImGui.SetTooltip(this.loc.Translate("Action_ClearFantasia"));
-                        }
+                        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.loc.Translate("Action_ClearFantasia"));
                     }
 
                     string fcName = string.IsNullOrEmpty(character.FcTag) ? this.loc.Translate("Profile_None") : character.FcTag;
@@ -272,38 +255,27 @@ public class CharacterProfilePanelComponent {
                     ImGui.Spacing();
                 }
 
-                // --- Accordion: System Data ---
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_System"))) {
                     var dateStr = character.AddedAt == DateTime.MinValue ? this.loc.Translate("Profile_Unknown") : character.AddedAt.ToShortDateString();
                     var locStr = this.gameDataService.GetLocationName(character.AddedLocationId);
                     ImGui.Text($"{this.loc.Translate("Profile_Added")}: {dateStr}");
                     ImGui.Text($"{this.loc.Translate("Profile_MetAt")}: {locStr}");
 
-                    // Dynamic list status deduction based on Domain-Driven Design constraints
                     string listStatus;
-                    if (isDeleted) {
-                        listStatus = this.loc.Translate("Profile_StatusDeleted");
-                    }
-                    else if (!character.IsActivelyTracked) {
-                        listStatus = this.loc.Translate("Profile_StatusUnsynchronized");
-                    }
-                    else {
-                        listStatus = this.loc.Translate("Profile_StatusActive");
-                    }
+                    if (isDeleted) listStatus = this.loc.Translate("Profile_StatusDeleted");
+                    else if (!character.IsActivelyTracked) listStatus = this.loc.Translate("Profile_StatusUnsynchronized");
+                    else listStatus = this.loc.Translate("Profile_StatusActive");
 
                     ImGui.Text($"{this.loc.Translate("Profile_ListStatus")}: {listStatus}");
 
                     if (character.PreviousNames != null && character.PreviousNames.Count > 0) {
                         ImGui.Spacing();
                         ImGui.TextUnformatted(this.loc.Translate("Section_NameHistory"));
-                        foreach (var oldName in character.PreviousNames) {
-                            ImGui.BulletText(oldName);
-                        }
+                        foreach (var oldName in character.PreviousNames) ImGui.BulletText(oldName);
                     }
                     ImGui.Spacing();
                 }
 
-                // --- Accordion: Notes ---
                 if (ImGui.CollapsingHeader(this.loc.Translate("Section_Notes"), ImGuiTreeNodeFlags.DefaultOpen)) {
                     ImGui.InputTextMultiline("##notes", ref this.notesBuffer, 2048, new Vector2(-1, 100));
                     if (ImGui.IsItemDeactivatedAfterEdit()) {
@@ -313,8 +285,8 @@ public class CharacterProfilePanelComponent {
                     ImGui.Spacing();
                 }
             }
-            ImGui.EndChild(); // Close inner scroll area
+            ImGui.EndChild();
         }
-        ImGui.EndChild(); // Close outer panel area
+        ImGui.EndChild();
     }
 }

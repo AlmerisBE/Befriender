@@ -167,5 +167,6 @@
   "Config_OthersNameplateColor": "Display Color",
   "Config_ContactSettings": "Contact Settings",
   "Config_ShowSharedManualContacts": "Share manual contacts across all characters",
-  "Config_AutoSyncFC": "Proactively sync Free Company roster on login (briefly opens UI)"
+  "Config_AutoSyncFC": "Proactively sync Free Company roster on login (briefly opens UI)",
+  "Action_QuickAssign": "Quick Assign"
 }
