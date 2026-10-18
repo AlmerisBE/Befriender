@@ -168,5 +168,6 @@
   "Config_ContactSettings": "Kontakteinstellungen",
   "Config_ShowSharedManualContacts": "Manuelle Kontakte über alle Charaktere hinweg teilen",
   "Config_AutoSyncFC": "Freie Gesellschaft beim Login proaktiv synchronisieren (öffnet kurz die Benutzeroberfläche)",
-  "Action_QuickAssign": "Schnellzuweisung"
+  "Action_AssignGroup": "Gruppe zuweisen",
+  "Action_AssignTag": "Tags zuweisen"
 }

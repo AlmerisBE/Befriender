@@ -168,5 +168,6 @@
   "Config_ContactSettings": "Paramètres des contacts",
   "Config_ShowSharedManualContacts": "Partager les contacts manuels entre tous les personnages",
   "Config_AutoSyncFC": "Synchroniser proactivement la Compagnie Libre à la connexion (ouvre brièvement l'interface)",
-  "Action_QuickAssign": "Assignation Rapide"
+  "Action_AssignGroup": "Assigner un Groupe",
+  "Action_AssignTag": "Assigner des Tags"
 }

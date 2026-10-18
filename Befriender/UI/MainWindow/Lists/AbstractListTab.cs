@@ -33,6 +33,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
     protected ListToolbarComponent toolbarComponent;
     protected CharacterProfilePanelComponent profilePanelComponent;
     protected IGameGui gameGui;
+    protected ICharacterSearchService searchService;
 
     protected string searchQuery = string.Empty;
     protected int statusFilter = 0;
@@ -68,7 +69,8 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent,
         IConfigurationService configurationService,
-        IGameGui gameGui) {
+        IGameGui gameGui,
+        ICharacterSearchService searchService) {
 
         this.registry = registry;
         this.loc = loc;
@@ -83,6 +85,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
         this.profilePanelComponent = profilePanelComponent;
         this.configurationService = configurationService;
         this.gameGui = gameGui;
+        this.searchService = searchService;
 
         var config = this.configurationService.GetConfig();
         if (config.TabStates.TryGetValue(this.InternalName, out var state)) {
@@ -129,16 +132,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
         if (this.showNearbyOnly) baseList = baseList.Where(m => this.proximityService.IsFriendNearby(m.ContentId));
 
         if (!string.IsNullOrWhiteSpace(this.searchQuery)) {
-            var allTags = this.tagRepository.GetTags();
-            var query = this.searchQuery.ToLowerInvariant();
-
-            baseList = baseList.Where(m => {
-                if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
-                if (!string.IsNullOrEmpty(m.Notes) && m.Notes.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
-                var characterTags = allTags.Where(t => m.Tags.Contains(t.Id));
-                if (characterTags.Any(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))) return true;
-                return false;
-            });
+            baseList = this.searchService.FilterCharacters(baseList, this.searchQuery);
         }
 
         this.cachedCharacterList = this.SortCharacterList(baseList).ToList();
@@ -280,12 +274,58 @@ public abstract class AbstractListTab : ITab, IDisposable {
         }
         ImGui.SetCursorPos(cursorStart);
 
+        // Internal ImGui Context Menu for the Plugin's List
         if (ImGui.BeginPopupContextItem($"ContextMenu_{character.ContentId}")) {
             var actions = this.actionService.GetAvailableActions(character);
             if (actions.Count == 0) ImGui.MenuItem(this.loc.Translate("Action_NoneAvailable"), false);
+
             foreach (var action in actions) {
                 if (ImGui.MenuItem(this.loc.Translate(action.InternalName))) action.Execute(character);
             }
+
+            ImGui.Separator();
+
+            // Native-like ImGui Submenus for Assignments
+            if (ImGui.BeginMenu(this.loc.Translate("Action_AssignGroup"))) {
+                bool noGroup = character.CustomGroupId == null;
+                if (ImGui.MenuItem(this.loc.Translate("Group_None"), "", noGroup)) {
+                    character.CustomGroupId = null;
+                    this.registry.SaveMasterList();
+                }
+
+                var groups = this.groupRepository.GetGroups();
+                if (groups.Count > 0) {
+                    ImGui.Separator();
+                    foreach (var group in groups) {
+                        bool isGroupSelected = character.CustomGroupId == group.Id;
+                        if (ImGui.MenuItem(group.Title, "", isGroupSelected)) {
+                            character.CustomGroupId = group.Id;
+                            this.registry.SaveMasterList();
+                        }
+                    }
+                }
+                ImGui.EndMenu();
+            }
+
+            if (ImGui.BeginMenu(this.loc.Translate("Action_AssignTag"))) {
+                var tags = this.tagRepository.GetTags();
+                if (tags.Count == 0) {
+                    ImGui.MenuItem(this.loc.Translate("Tag_NoTagsCreated"), "", false, false);
+                }
+                else {
+                    foreach (var tag in tags) {
+                        bool hasTag = character.Tags.Contains(tag.Id);
+                        if (ImGui.MenuItem(tag.Name, "", hasTag)) {
+                            if (hasTag) character.Tags.Remove(tag.Id);
+                            else character.Tags.Add(tag.Id);
+
+                            this.registry.SaveMasterList();
+                        }
+                    }
+                }
+                ImGui.EndMenu();
+            }
+
             ImGui.EndPopup();
         }
 

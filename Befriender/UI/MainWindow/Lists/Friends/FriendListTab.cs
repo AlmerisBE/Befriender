@@ -35,8 +35,9 @@ public class FriendListTab : AbstractListTab {
         ListToolbarComponent toolbarComponent,
         CharacterProfilePanelComponent profilePanelComponent,
         IConfigurationService configurationService,
-        IGameGui gameGui)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui) {
+        IGameGui gameGui,
+        ICharacterSearchService searchService)
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui, searchService) {
 
         var src = sources.FirstOrDefault(s => s.Name == "FriendList");
         if (src != null) {

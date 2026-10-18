@@ -35,8 +35,9 @@ public class OthersTab : AbstractListTab {
         CharacterProfilePanelComponent profilePanelComponent,
         IConfigurationService configurationService,
         IGameGui gameGui,
+        ICharacterSearchService searchService,
         ILocalPlayerContext localPlayerContext)
-        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui) {
+        : base(registry, loc, gameDataService, themeService, textureProvider, proximityService, actionService, groupRepository, tagRepository, toolbarComponent, profilePanelComponent, configurationService, gameGui, searchService) {
 
         this.localPlayerContext = localPlayerContext;
     }
