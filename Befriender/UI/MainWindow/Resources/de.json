@@ -164,5 +164,7 @@
   "Tooltip_Tracked": "Anmeldebenachrichtigungen aktiviert",
   "Config_EnableOthersNameplateColor": "Namen von 'Andere'-Kontakten im Spiel färben",
   "Config_NameplateSettings": "Namensschild-Einstellungen",
-  "Config_OthersNameplateColor": "Anzeigefarbe"
+  "Config_OthersNameplateColor": "Anzeigefarbe",
+  "Config_ContactSettings": "Kontakteinstellungen",
+  "Config_ShowSharedManualContacts": "Manuelle Kontakte über alle Charaktere hinweg teilen"
 }

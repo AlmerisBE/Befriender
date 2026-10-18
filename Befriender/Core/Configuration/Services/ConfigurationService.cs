@@ -1,17 +1,18 @@
-﻿using Befriender.Core.Configuration.Contracts;
+﻿namespace Befriender.Core.Configuration.Services;
+
+using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Configuration.Models;
 using Dalamud.Plugin;
-
-namespace Befriender.Core.Configuration.Services;
+using System;
 
 public class ConfigurationService : IConfigurationService {
+    public event Action? ConfigSaved;
+
     private IDalamudPluginInterface pluginInterface;
     private PluginConfiguration config;
 
     public ConfigurationService(IDalamudPluginInterface pluginInterface) {
         this.pluginInterface = pluginInterface;
-
-        // Load existing config or create a new one
         this.config = this.pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
     }
 
@@ -19,5 +20,6 @@ public class ConfigurationService : IConfigurationService {
 
     public void Save() {
         this.pluginInterface.SavePluginConfig(this.config);
+        this.ConfigSaved?.Invoke();
     }
 }

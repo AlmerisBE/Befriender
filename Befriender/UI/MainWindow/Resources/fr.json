@@ -164,5 +164,7 @@
   "Tooltip_Tracked": "Alertes de connexion activées",
   "Config_EnableOthersNameplateColor": "Colorer les noms des contacts 'Autres' en jeu",
   "Config_NameplateSettings": "Paramètres d'affichage des noms",
-  "Config_OthersNameplateColor": "Couleur d'affichage"
+  "Config_OthersNameplateColor": "Couleur d'affichage",
+  "Config_ContactSettings": "Paramètres des contacts",
+  "Config_ShowSharedManualContacts": "Partager les contacts manuels entre tous les personnages"
 }

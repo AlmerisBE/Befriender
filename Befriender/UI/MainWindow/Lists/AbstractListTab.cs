@@ -97,6 +97,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
         }
 
         this.registry.RegistryUpdated += this.OnRegistryUpdated;
+        this.configurationService.ConfigSaved += this.OnConfigSaved;
     }
 
     private void OnRegistryUpdated() {
@@ -104,6 +105,10 @@ public abstract class AbstractListTab : ITab, IDisposable {
         if (this.selectedCharacter != null && this.registry.GetCharacterById(this.selectedCharacter.Id) == null) {
             this.selectedCharacter = null;
         }
+    }
+
+    private void OnConfigSaved() {
+        this.requiresListRebuild = true;
     }
 
     protected virtual IEnumerable<Character> SortCharacterList(IEnumerable<Character> characters) {
@@ -117,8 +122,8 @@ public abstract class AbstractListTab : ITab, IDisposable {
             return;
         }
 
-        if (this.statusFilter == 1) baseList = baseList.Where(m => m.IsOnline && m.IsActivelyTracked);
-        else if (this.statusFilter == 2) baseList = baseList.Where(m => !m.IsOnline && m.IsActivelyTracked);
+        if (this.statusFilter == 1) baseList = baseList.Where(m => m.IsOnline);
+        else if (this.statusFilter == 2) baseList = baseList.Where(m => !m.IsOnline);
         else if (this.statusFilter == 3) baseList = baseList.Where(m => !m.IsActivelyTracked);
 
         if (this.showNearbyOnly) baseList = baseList.Where(m => this.proximityService.IsFriendNearby(m.ContentId));
@@ -170,9 +175,7 @@ public abstract class AbstractListTab : ITab, IDisposable {
         ImGui.Separator();
         ImGui.Spacing();
 
-        // On revient à un calcul de hauteur de footer simple
         float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 3);
-
         float tableWidth = this.selectedCharacter != null ? ImGui.GetContentRegionAvail().X - PanelWidth - ImGui.GetStyle().ItemSpacing.X : 0f;
 
         if (ImGui.BeginChild($"{this.InternalName}_Container", new Vector2(tableWidth, -footerHeight))) {
@@ -257,12 +260,10 @@ public abstract class AbstractListTab : ITab, IDisposable {
         bool isAvailable = this.gameDataService.IsFriendAvailable(character.OnlineStateMask);
         bool isDeleted = string.IsNullOrEmpty(character.Name);
 
-        // We evaluate proximity early to override the offline/untracked visual masking
         bool isNearby = this.proximityService.IsFriendNearby(character.ContentId);
 
         Vector4 rowColor = palette.TextOnline;
 
-        // An untracked character will only be greyed out if they are not currently standing near the player
         if (isDeleted || (!character.IsActivelyTracked && !isNearby)) rowColor = palette.TextArchived;
         else if (!character.IsOnline) rowColor = palette.TextOffline;
         else if (!isAvailable) rowColor = palette.TextBusy;
@@ -341,7 +342,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
                     string directionStr = this.loc.Translate(spatialRelation.Value.CardinalDirectionKey);
                     string formatStr = this.loc.Translate("Tooltip_ProximityFormat");
 
-                    // Fallback in case the key is missing from JSON
                     if (string.IsNullOrEmpty(formatStr) || formatStr == "Tooltip_ProximityFormat") {
                         formatStr = "{0}y • {1}";
                     }
@@ -418,5 +418,6 @@ public abstract class AbstractListTab : ITab, IDisposable {
 
     public virtual void Dispose() {
         this.registry.RegistryUpdated -= this.OnRegistryUpdated;
+        this.configurationService.ConfigSaved -= this.OnConfigSaved;
     }
 }

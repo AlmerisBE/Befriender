@@ -129,7 +129,6 @@ public class ConfigTab : ITab {
         int max = config.MaxSyncIntervalMinutes;
         if (ImGui.SliderInt(this.loc.Translate("Config_MaxInterval"), ref max, 20, 60)) {
             config.MaxSyncIntervalMinutes = max;
-            // Fixed the syntax error from the previous implementation here
             if (max - config.MinSyncIntervalMinutes < 15) {
                 config.MinSyncIntervalMinutes = max - 15;
             }
@@ -167,6 +166,16 @@ public class ConfigTab : ITab {
                 configChanged = true;
             }
             ImGui.Unindent();
+        }
+
+        ImGui.Spacing();
+        ImGui.Text(this.loc.Translate("Config_ContactSettings"));
+        ImGui.Separator();
+
+        bool showShared = config.ShowSharedManualContacts;
+        if (ImGui.Checkbox(this.loc.Translate("Config_ShowSharedManualContacts"), ref showShared)) {
+            config.ShowSharedManualContacts = showShared;
+            configChanged = true;
         }
 
         ImGui.Spacing();

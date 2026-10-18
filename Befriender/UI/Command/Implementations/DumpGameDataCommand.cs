@@ -13,41 +13,40 @@ public class DumpGameDataCommand : ICommand {
     private IClientState clientState;
     private ICharacterRegistry registry;
     private IGameDataService gameDataService;
+    private ILocalPlayerContext localPlayerContext;
 
     public string CommandTrigger => "dumpdata";
-    public string Description => "Dumps diagnostic data (status, territory, loc) to the plugin log.";
+    public string Description => "Dumps diagnostic data (status, territory, loc, contacts) to the plugin log.";
 
     public DumpGameDataCommand(
         IDataManager dataManager,
         IPluginLog pluginLog,
         IClientState clientState,
         ICharacterRegistry registry,
-        IGameDataService gameDataService) {
+        IGameDataService gameDataService,
+        ILocalPlayerContext localPlayerContext) {
 
         this.dataManager = dataManager;
         this.pluginLog = pluginLog;
         this.clientState = clientState;
         this.registry = registry;
         this.gameDataService = gameDataService;
+        this.localPlayerContext = localPlayerContext;
     }
 
     public void Execute(string arguments) {
         string arg = arguments.Trim().ToLowerInvariant();
 
-        if (arg == "status") {
-            this.DumpOnlineStatus();
-        }
-        else if (arg == "territory") {
-            this.DumpTerritoryUses();
-        }
-        else if (arg == "loc") {
-            this.DumpLocationDiagnostics();
-        }
+        if (arg == "status") this.DumpOnlineStatus();
+        else if (arg == "territory") this.DumpTerritoryUses();
+        else if (arg == "loc") this.DumpLocationDiagnostics();
+        else if (arg == "contacts") this.DumpContactsDiagnostics();
         else {
-            this.pluginLog.Info("Available arguments for /befriender dumpdata: status, territory, loc");
+            this.pluginLog.Info("Available arguments for /befriender dumpdata: status, territory, loc, contacts");
             this.DumpOnlineStatus();
             this.DumpTerritoryUses();
             this.DumpLocationDiagnostics();
+            this.DumpContactsDiagnostics();
         }
     }
 
@@ -56,10 +55,7 @@ public class DumpGameDataCommand : ICommand {
         var statusSheet = this.dataManager.GetExcelSheet<OnlineStatus>();
         if (statusSheet != null) {
             foreach (var row in statusSheet) {
-                if (row.Icon == 0) {
-                    continue;
-                }
-
+                if (row.Icon == 0) continue;
                 this.pluginLog.Info($"Status ID: {row.RowId} | Icon: {row.Icon} | Name: {row.Name}");
             }
         }
@@ -81,9 +77,7 @@ public class DumpGameDataCommand : ICommand {
                         var placeNameSheet = this.dataManager.GetExcelSheet<PlaceName>();
                         if (placeNameSheet != null) {
                             var placeNameRow = placeNameSheet.GetRowOrDefault(placeNameId);
-                            if (placeNameRow.HasValue) {
-                                placeName = placeNameRow.Value.Name.ToString();
-                            }
+                            if (placeNameRow.HasValue) placeName = placeNameRow.Value.Name.ToString();
                         }
                     }
                     this.pluginLog.Info($"Use ID: {useId} | Example: {placeName}");
@@ -101,9 +95,7 @@ public class DumpGameDataCommand : ICommand {
 
         var characters = this.registry.GetAllCharacters();
         foreach (var c in characters) {
-            if (!c.IsOnline) {
-                continue;
-            }
+            if (!c.IsOnline) continue;
 
             string displayLocation = this.gameDataService.GetDisplayLocation(c.LocationId, c.CurrentWorldId, c.HomeWorldId, c.OnlineStateMask);
             string isTracked = c.IsActivelyTracked ? "Vanilla" : "Unsynchronized";
@@ -111,6 +103,24 @@ public class DumpGameDataCommand : ICommand {
             this.pluginLog.Info($"- {c.Name} [{isTracked}] | LocationId: {c.LocationId} | Display: '{displayLocation}'");
         }
 
+        this.pluginLog.Info("===========================");
+    }
+
+    private void DumpContactsDiagnostics() {
+        ulong localId = this.localPlayerContext.GetLocalContentId();
+        this.pluginLog.Info("=== CONTACTS DEBUG DUMP ===");
+        this.pluginLog.Info($"Current Local ContentId: {localId}");
+
+        var characters = this.registry.GetAllCharacters();
+        foreach (var c in characters) {
+            // We focus this diagnostic exclusively on manual/untracked contacts
+            if (c.IsActivelyTracked) continue;
+
+            string associations = string.Join(", ", c.AssociatedLocalPlayerIds);
+            bool isLinked = c.AssociatedLocalPlayerIds.Count == 0 || c.AssociatedLocalPlayerIds.Contains(localId);
+
+            this.pluginLog.Info($"- Untracked: {c.Name} | Linked to Current Player: {isLinked} | Associations: [{associations}]");
+        }
         this.pluginLog.Info("===========================");
     }
 }

@@ -164,5 +164,7 @@
   "Tooltip_Tracked": "Login alerts enabled",
   "Config_EnableOthersNameplateColor": "Colorize 'Others' contacts in-game",
   "Config_NameplateSettings": "Nameplate Settings",
-  "Config_OthersNameplateColor": "Display Color"
+  "Config_OthersNameplateColor": "Display Color",
+  "Config_ContactSettings": "Contact Settings",
+  "Config_ShowSharedManualContacts": "Share manual contacts across all characters"
 }
