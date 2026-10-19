@@ -269,17 +269,16 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
             var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(contentId, name, homeWorldId));
 
             if (existing != null) {
-                if (!existing.IsActivelyTracked) {
-                    if (contentId > 0) existing.ContentId = contentId;
-                    if (locationId > 0 && existing.AddedLocationId == 0) existing.AddedLocationId = locationId;
-
+                if (!existing.AssociatedLocalPlayerIds.Contains(currentLocalPlayerId)) {
                     existing.AssociatedLocalPlayerIds.Add(currentLocalPlayerId);
-
-                    this.SaveMasterList();
-                    this.NotifyDataChanged();
-                    return true;
                 }
-                return false;
+
+                if (contentId > 0) existing.ContentId = contentId;
+                if (locationId > 0 && existing.AddedLocationId == 0) existing.AddedLocationId = locationId;
+
+                this.SaveMasterList();
+                this.NotifyDataChanged();
+                return true;
             }
 
             var newCharacter = new Character {

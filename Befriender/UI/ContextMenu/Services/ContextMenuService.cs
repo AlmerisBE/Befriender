@@ -2,7 +2,6 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Localization.Contracts;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Plugin.Services;
 using System;
@@ -13,20 +12,17 @@ public class ContextMenuService : IDisposable {
     private ICharacterRegistry registry;
     private ILocalizationService loc;
     private IClientState clientState;
-    private IObjectTable objectTable;
 
     public ContextMenuService(
         IContextMenu contextMenu,
         ICharacterRegistry registry,
         ILocalizationService loc,
-        IClientState clientState,
-        IObjectTable objectTable) {
+        IClientState clientState) {
 
         this.contextMenu = contextMenu;
         this.registry = registry;
         this.loc = loc;
         this.clientState = clientState;
-        this.objectTable = objectTable;
 
         this.contextMenu.OnMenuOpened += this.OnMenuOpened;
     }
@@ -53,20 +49,12 @@ public class ContextMenuService : IDisposable {
     private void OnAddClicked(MenuTargetDefault target) {
         string name = target.TargetName;
         uint homeWorldId = target.TargetHomeWorld.RowId;
-        ulong contentId = 0;
-
-        if (target.TargetObjectId > 0) {
-            var obj = this.objectTable.SearchById(target.TargetObjectId);
-            if (obj is IPlayerCharacter pc) {
-                unsafe {
-                    var csChar = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)pc.Address;
-                    if (csChar != null) contentId = csChar->AccountId;
-                }
-            }
-        }
-
         uint locationId = this.clientState.TerritoryType;
-        this.registry.TryAddManualCharacter(contentId, name, homeWorldId, locationId);
+
+        // We pass 0 for contentId because the native FFXIV client does not securely broadcast
+        // the ContentId of nearby untracked players (reading memory here yields garbage values).
+        // The registry will seamlessly fallback to identifying the contact by Name + HomeWorldId.
+        this.registry.TryAddManualCharacter(0, name, homeWorldId, locationId);
     }
 
     public void Dispose() {

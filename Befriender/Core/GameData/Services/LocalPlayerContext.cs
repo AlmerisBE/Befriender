@@ -21,22 +21,26 @@ public class LocalPlayerContext : ILocalPlayerContext, IDisposable {
     }
 
     public ulong GetLocalContentId() {
-        // Return the cached ID immediately to prevent 0-value reads during zone transitions
         if (this.cachedContentId != 0) return this.cachedContentId;
 
         var localPlayer = this.objectTable.LocalPlayer;
         if (localPlayer == null) return 0;
 
-        unsafe {
-            var csChar = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)localPlayer.Address;
-
-            // Cache the value once it becomes valid (non-zero)
-            if (csChar != null && csChar->AccountId != 0) {
-                this.cachedContentId = csChar->AccountId;
-            }
-        }
+        // Generate a strictly deterministic 64-bit ID based on the globally unique Name + HomeWorld
+        // This elegantly bypasses native memory layout volatility which yields garbage AccountIds.
+        string identityKey = $"{localPlayer.Name.TextValue}@{localPlayer.HomeWorld.RowId}";
+        this.cachedContentId = this.GenerateStableHash(identityKey);
 
         return this.cachedContentId;
+    }
+
+    private ulong GenerateStableHash(string str) {
+        ulong hash = 14695981039346656037; // FNV offset basis
+        foreach (char c in str) {
+            hash ^= c;
+            hash *= 1099511628211; // FNV prime
+        }
+        return hash;
     }
 
     public void Dispose() {
