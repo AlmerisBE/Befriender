@@ -96,9 +96,11 @@ public abstract class AbstractListTab : ITab, IDisposable {
             this.groupByGroups = state.GroupByGroups;
             this.isFiltersExpanded = state.IsFiltersExpanded;
 
-            // Validate and load saved columns
             if (state.ActiveColumns != null && state.ActiveColumns.Count > 0) {
-                this.activeColumns = state.ActiveColumns.ToList();
+                this.activeColumns = state.ActiveColumns.Distinct().ToList();
+            }
+            else {
+                this.activeColumns = new List<ColumnType> { ColumnType.Status, ColumnType.Name, ColumnType.Job, ColumnType.Location };
             }
         }
 

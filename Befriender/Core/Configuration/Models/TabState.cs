@@ -11,11 +11,5 @@ public class TabState {
     public bool GroupByGroups { get; set; }
     public bool IsFiltersExpanded { get; set; }
 
-    // Default columns matching the original layout
-    public List<ColumnType> ActiveColumns { get; set; } = new() {
-        ColumnType.Status,
-        ColumnType.Name,
-        ColumnType.Job,
-        ColumnType.Location
-    };
+    public List<ColumnType> ActiveColumns { get; set; } = new();
 }
