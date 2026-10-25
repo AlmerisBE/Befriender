@@ -128,4 +128,11 @@ public unsafe class MemoryFriendListScanner : IFriendListScanner {
         uiModule->ExecuteMainCommand(13);
         uiModule->ExecuteMainCommand(13);
     }
+
+    public void ToggleNativeList() {
+        var uiModule = UIModule.Instance();
+        if (uiModule != null) {
+            uiModule->ExecuteMainCommand(13);
+        }
+    }
 }

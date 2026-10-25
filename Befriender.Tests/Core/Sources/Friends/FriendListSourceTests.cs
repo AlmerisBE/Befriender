@@ -6,6 +6,7 @@ using Befriender.Core.Sources.Friends;
 using Befriender.Core.Sources.Friends.Contracts;
 using Dalamud.Plugin.Services;
 using NSubstitute;
+using System.Reflection;
 using Xunit;
 
 public class FriendListSourceTests {
@@ -30,48 +31,51 @@ public class FriendListSourceTests {
     }
 
     [Fact]
-    public void RequestRefresh_WithUserInitiatedTrue_ExecutesOpenAndCloseNativeList() {
+    public void RequestRefresh_WithUserInitiatedTrue_ExecutesToggleNativeListOnce_AndSetsFrameDelay() {
+        // Arrange
         this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = false });
         var source = this.CreateSource();
 
+        // Act
         source.RequestRefresh(true);
 
-        this.mockScanner.Received(1).OpenAndCloseNativeList();
+        // Assert
+        this.mockScanner.Received(1).ToggleNativeList(); // Open execution
         this.mockScanner.DidNotReceive().RequestServerUpdate();
         Assert.True(source.IsSyncing);
     }
 
     [Fact]
-    public void RequestRefresh_WithUserInitiatedFalse_AndSyncOnLoginEnabled_OnFirstAttempt_ExecutesOpenAndCloseNativeList() {
+    public void OnFrameworkUpdate_ExecutesToggleNativeListSecondTime_AfterFrameDelay() {
+        // Arrange
         this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = true });
         var source = this.CreateSource();
+        source.RequestRefresh(false); // Fires 1st toggle, sets 10 frames delay
+        this.mockScanner.ClearReceivedCalls();
 
-        source.RequestRefresh(false);
+        // Act - Simulate 10 frames passing
+        for (int i = 0; i < 10; i++) {
+            source.GetType().GetMethod("OnFrameworkUpdate", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
+        }
 
-        this.mockScanner.Received(1).OpenAndCloseNativeList();
-        this.mockScanner.DidNotReceive().RequestServerUpdate();
-    }
+        // At this point, the delay should still be processed, we trigger the final frame
+        source.GetType().GetMethod("OnFrameworkUpdate", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
 
-    [Fact]
-    public void RequestRefresh_WithUserInitiatedFalse_AndSyncOnLoginEnabled_OnSubsequentAttempts_ExecutesRequestServerUpdate() {
-        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = true });
-        var source = this.CreateSource();
-
-        source.RequestRefresh(false); // First attempt (e.g., Login)
-        source.RequestRefresh(false); // Second attempt (e.g., Zone change)
-
-        this.mockScanner.Received(1).OpenAndCloseNativeList(); // Should only happen once
-        this.mockScanner.Received(1).RequestServerUpdate();
+        // Assert
+        this.mockScanner.Received(1).ToggleNativeList(); // Close execution
     }
 
     [Fact]
     public void RequestRefresh_WithUserInitiatedFalse_AndSyncOnLoginDisabled_ExecutesRequestServerUpdate() {
+        // Arrange
         this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = false });
         var source = this.CreateSource();
 
+        // Act
         source.RequestRefresh(false);
 
-        this.mockScanner.DidNotReceive().OpenAndCloseNativeList();
+        // Assert
+        this.mockScanner.DidNotReceive().ToggleNativeList();
         this.mockScanner.Received(1).RequestServerUpdate();
     }
 }

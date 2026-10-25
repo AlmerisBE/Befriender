@@ -8,5 +8,5 @@ public interface IFriendListScanner {
     int GetCurrentFriendCount();
     ulong GetStateHash();
     void RequestServerUpdate();
-    void OpenAndCloseNativeList();
+    void ToggleNativeList();
 }

@@ -24,11 +24,15 @@ public class FriendListSource : ICharacterSource, IDisposable {
     private bool isManualRefreshPending = false;
     private bool hasAttemptedAutoOpenThisSession = false;
 
+    // Frame delay variables for native UI toggling
+    private bool isNativeListOpen = false;
+    private int nativeListCloseFrameDelay = 0;
+
     public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000001");
     public string Name => "FriendList";
     public int Priority => 10;
 
-    public bool IsSyncing => this.isManualRefreshPending || this.dataStabilizedTime != DateTime.MaxValue;
+    public bool IsSyncing => this.isManualRefreshPending || this.dataStabilizedTime != DateTime.MaxValue || this.isNativeListOpen;
 
     public event Action? DataUpdated;
 
@@ -50,6 +54,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
         this.timeoutTime = DateTime.MaxValue;
         this.isManualRefreshPending = false;
         this.hasAttemptedAutoOpenThisSession = false;
+        this.isNativeListOpen = false;
     }
 
     public IEnumerable<Character> GetCurrentState() {
@@ -71,13 +76,29 @@ public class FriendListSource : ICharacterSource, IDisposable {
             shouldOpenNativeUI = true;
         }
 
-        if (shouldOpenNativeUI) this.scanner.OpenAndCloseNativeList();
-        else this.scanner.RequestServerUpdate();
+        if (shouldOpenNativeUI) {
+            this.scanner.ToggleNativeList(); // First execution (Open)
+            this.isNativeListOpen = true;
+            this.nativeListCloseFrameDelay = 10; // Wait 10 frames before closing
+        }
+        else {
+            this.scanner.RequestServerUpdate();
+        }
 
         this.DataUpdated?.Invoke();
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
+        if (this.isNativeListOpen) {
+            if (this.nativeListCloseFrameDelay > 0) {
+                this.nativeListCloseFrameDelay--;
+            }
+            else {
+                this.isNativeListOpen = false;
+                this.scanner.ToggleNativeList(); // Second execution (Close)
+            }
+        }
+
         var now = DateTime.Now;
         ulong currentHash = this.scanner.GetStateHash();
 
