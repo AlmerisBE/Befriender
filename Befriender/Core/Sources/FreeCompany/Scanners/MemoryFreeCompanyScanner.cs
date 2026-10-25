@@ -129,4 +129,11 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
 
         return hash;
     }
+
+    public void ToggleNativeList() {
+        unsafe {
+            var uiModule = UIModule.Instance();
+            if (uiModule != null) uiModule->ExecuteMainCommand(9);
+        }
+    }
 }

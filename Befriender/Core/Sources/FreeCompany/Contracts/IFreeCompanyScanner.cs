@@ -9,4 +9,5 @@ public interface IFreeCompanyScanner {
     ulong GetStateHash();
     void RequestServerUpdate();
     void OpenAndCloseNativeList();
+    void ToggleNativeList();
 }

@@ -65,4 +65,38 @@ public class FreeCompanySourceTests {
         this.mockScanner.DidNotReceive().OpenAndCloseNativeList();
         this.mockScanner.Received(1).RequestServerUpdate();
     }
+
+    [Fact]
+    public void TriggerManualRefresh_ExecutesToggleNativeListOnce_AndSetsFrameDelay() {
+        // Arrange
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
+        var source = this.CreateSource();
+
+        // Act
+        source.TriggerManualRefresh(isUserInitiated: true);
+
+        // Assert
+        this.mockScanner.Received(1).ToggleNativeList(); // Open execution
+        Assert.True(source.IsSyncing);
+    }
+
+    [Fact]
+    public void OnFrameworkUpdate_ExecutesToggleNativeListSecondTime_AfterFrameDelay() {
+        // Arrange
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
+        var source = this.CreateSource();
+        source.TriggerManualRefresh(isUserInitiated: true); // Fires 1st toggle, sets 10 frames delay
+        this.mockScanner.ClearReceivedCalls();
+
+        // Act - Simulate 10 frames passing
+        for (int i = 0; i < 10; i++) {
+            source.GetType().GetMethod("OnFrameworkUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
+        }
+
+        // At this point, the delay should still be processed, we trigger the final frame
+        source.GetType().GetMethod("OnFrameworkUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
+
+        // Assert
+        this.mockScanner.Received(1).ToggleNativeList(); // Close execution
+    }
 }
