@@ -10,6 +10,7 @@ using Befriender.UI.Theme.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,7 @@ public class MainWindow : Window, IDisposable {
     private DeleteConfirmationModalComponent deleteModal = null!;
     private IHotkeyService hotkeyService = null!;
     private IThemeService themeService = null!;
+    private IClientState clientState = null!;
 
     private ITab? currentTab;
     private ITab? tabToFocus;
@@ -43,7 +45,8 @@ public class MainWindow : Window, IDisposable {
         RemoveConfirmationModalComponent removeModal,
         IHotkeyService hotkeyService,
         IThemeService themeService,
-        DeleteConfirmationModalComponent deleteModal)
+        DeleteConfirmationModalComponent deleteModal,
+        IClientState clientState)
         : base($"Befriender v{Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"}###Befriender", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.tabs = tabs.OrderBy(t => t.Order).ToList();
@@ -56,6 +59,7 @@ public class MainWindow : Window, IDisposable {
         this.hotkeyService = hotkeyService;
         this.themeService = themeService;
         this.deleteModal = deleteModal;
+        this.clientState = clientState;
 
         if (this.tabs != null && this.tabs.Any()) {
             this.currentTab = this.tabs.First();
@@ -78,6 +82,8 @@ public class MainWindow : Window, IDisposable {
             this.hotkeyService.OnHotkeyPressed += this.Toggle;
         }
 
+        this.clientState.Logout += this.OnLogout;
+
         this.TitleBarButtons.Add(new TitleBarButton {
             Icon = FontAwesomeIcon.SyncAlt,
             IconOffset = new Vector2(1, 1),
@@ -88,6 +94,14 @@ public class MainWindow : Window, IDisposable {
                 this.registry.RequestRefresh(true);
             }
         });
+    }
+
+    private void OnLogout(int type, int code) {
+        this.IsOpen = false;
+    }
+
+    public override bool DrawConditions() {
+        return this.clientState.IsLoggedIn;
     }
 
     private void SetTab(string tabInternalName) {
@@ -175,6 +189,10 @@ public class MainWindow : Window, IDisposable {
     }
 
     public override void OnOpen() {
+        if (!this.clientState.IsLoggedIn) {
+            this.IsOpen = false;
+            return;
+        }
         this.registry.RequestRefresh(false);
     }
 
@@ -186,6 +204,10 @@ public class MainWindow : Window, IDisposable {
 
         if (this.hotkeyService != null) {
             this.hotkeyService.OnHotkeyPressed -= this.Toggle;
+        }
+
+        if (this.clientState != null) {
+            this.clientState.Logout -= this.OnLogout;
         }
     }
 }
