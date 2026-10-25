@@ -169,5 +169,13 @@
   "Config_ShowSharedManualContacts": "Share manual contacts across all characters",
   "Config_AutoSyncFC": "Proactively sync Free Company roster on login (briefly opens UI)",
   "Action_AssignGroup": "Assign Group",
-  "Action_AssignTag": "Assign Tags"
+  "Action_AssignTag": "Assign Tags",
+  "Tooltip_SelectColumns": "Select columns",
+  "List_VisibleColumns": "Visible Columns",
+  "Column_LastSeen": "Last Seen",
+  "Column_Level": "Level",
+  "Column_FreeCompany": "Free Company",
+  "Column_ClientLanguages": "Client Languages",
+  "Column_GrandCompany": "Grand Company",
+  "Column_DateAdded": "Date Added"
 }

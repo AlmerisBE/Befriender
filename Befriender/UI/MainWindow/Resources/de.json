@@ -169,5 +169,13 @@
   "Config_ShowSharedManualContacts": "Manuelle Kontakte über alle Charaktere hinweg teilen",
   "Config_AutoSyncFC": "Freie Gesellschaft beim Login proaktiv synchronisieren (öffnet kurz die Benutzeroberfläche)",
   "Action_AssignGroup": "Gruppe zuweisen",
-  "Action_AssignTag": "Tags zuweisen"
+  "Action_AssignTag": "Tags zuweisen",
+  "Tooltip_SelectColumns": "Spalten auswählen",
+  "List_VisibleColumns": "Sichtbare Spalten",
+  "Column_LastSeen": "Zuletzt online",
+  "Column_Level": "Stufe",
+  "Column_FreeCompany": "Freie Gesellschaft",
+  "Column_ClientLanguages": "Client-Sprachen",
+  "Column_GrandCompany": "Staatliche Gesellschaft",
+  "Column_DateAdded": "Hinzugefügt am"
 }

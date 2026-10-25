@@ -169,5 +169,13 @@
   "Config_ShowSharedManualContacts": "手動で追加した連絡先をすべてのキャラクターで共有する",
   "Config_AutoSyncFC": "ログイン時にフリーカンパニーのメンバーをプロアクティブに同期する（UIが短時間開きます）",
   "Action_AssignGroup": "グループを割り当てる",
-  "Action_AssignTag": "タグを割り当てる"
+  "Action_AssignTag": "タグを割り当てる",
+  "Tooltip_SelectColumns": "列を選択",
+  "List_VisibleColumns": "表示する列",
+  "Column_LastSeen": "最終ログイン",
+  "Column_Level": "レベル",
+  "Column_FreeCompany": "フリーカンパニー",
+  "Column_ClientLanguages": "クライアント言語",
+  "Column_GrandCompany": "グランドカンパニー",
+  "Column_DateAdded": "追加日"
 }

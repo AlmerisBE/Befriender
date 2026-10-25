@@ -1,9 +1,12 @@
 ﻿namespace Befriender.UI.MainWindow.Components;
 
+using Befriender.Core.Configuration.Models;
 using Befriender.Core.Localization.Contracts;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using System;
+using System.Collections.Generic;
 
 public class ListToolbarComponent {
     private ILocalizationService loc;
@@ -12,7 +15,15 @@ public class ListToolbarComponent {
         this.loc = loc;
     }
 
-    public bool Draw(ref int statusFilter, ref bool showNearbyOnly, ref bool groupByGroups, ref string searchQuery, ref bool isFiltersExpanded, bool showStatusFilter) {
+    public bool Draw(
+        ref int statusFilter,
+        ref bool showNearbyOnly,
+        ref bool groupByGroups,
+        ref string searchQuery,
+        ref bool isFiltersExpanded,
+        bool showStatusFilter,
+        List<ColumnType> activeColumns) {
+
         bool forceRefresh = false;
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Filter)) {
@@ -49,6 +60,37 @@ public class ListToolbarComponent {
             forceRefresh = true;
         }
 
+        ImGui.SameLine();
+
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.Columns)) {
+            ImGui.OpenPopup("ColumnSelectorPopup");
+        }
+
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(this.loc.Translate("Tooltip_SelectColumns"));
+        }
+
+        if (ImGui.BeginPopup("ColumnSelectorPopup")) {
+            ImGui.TextDisabled(this.loc.Translate("List_VisibleColumns"));
+            ImGui.Separator();
+
+            var allColumns = Enum.GetValues<ColumnType>();
+            foreach (var col in allColumns) {
+                bool isActive = activeColumns.Contains(col);
+                if (ImGui.Checkbox(this.loc.Translate($"Column_{col}"), ref isActive)) {
+                    if (isActive) {
+                        activeColumns.Add(col);
+                        activeColumns.Sort();
+                    }
+                    else if (activeColumns.Count > 1) {
+                        activeColumns.Remove(col);
+                    }
+                    forceRefresh = true;
+                }
+            }
+            ImGui.EndPopup();
+        }
+
         if (isFiltersExpanded) {
             ImGui.Spacing();
 
@@ -67,9 +109,7 @@ public class ListToolbarComponent {
                     if (nextItemX2 < windowVisibleX2) {
                         ImGui.SameLine();
                     }
-                    else {
-                        isFirstItemOnLine = true;
-                    }
+                    else isFirstItemOnLine = true;
                 }
 
                 if (ImGui.Checkbox(label, ref value)) {

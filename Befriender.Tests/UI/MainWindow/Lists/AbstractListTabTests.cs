@@ -20,7 +20,7 @@ public class AbstractListTabTests {
     private class TestListTab : AbstractListTab {
         public override string InternalName => "TestTab";
         public override string Name => "Test";
-        public override int Order => 0; // Added the missing abstract member implementation
+        public override int Order => 0;
         protected override string EmptyListMessageKey => "Empty";
 
         public TestListTab(
@@ -59,5 +59,33 @@ public class AbstractListTabTests {
         mockRegistry.RegistryUpdated += Raise.Event<Action>();
 
         Assert.False(tab.IsProfilePanelOpen);
+    }
+
+    [Fact]
+    public void Constructor_LoadsActiveColumns_FromTabStateConfiguration() {
+        // Arrange
+        var mockRegistry = Substitute.For<ICharacterRegistry>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        var config = new PluginConfiguration();
+
+        config.TabStates["TestTab"] = new TabState {
+            ActiveColumns = new List<ColumnType> { ColumnType.Name, ColumnType.Level }
+        };
+
+        mockConfigService.GetConfig().Returns(config);
+
+        // Act
+        using var tab = new TestListTab(
+            mockRegistry, null!, null!, null!, null!, null!, null!, null!, null!,
+            new ListToolbarComponent(Substitute.For<ILocalizationService>()), null!, mockConfigService, null!, null!);
+
+        // Assert
+        var field = typeof(AbstractListTab).GetField("activeColumns", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var loadedColumns = field?.GetValue(tab) as List<ColumnType>;
+
+        Assert.NotNull(loadedColumns);
+        Assert.Equal(2, loadedColumns.Count);
+        Assert.Contains(ColumnType.Name, loadedColumns);
+        Assert.Contains(ColumnType.Level, loadedColumns);
     }
 }
