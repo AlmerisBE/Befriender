@@ -234,4 +234,54 @@ public class CharacterRegistryTests {
 
         this.mockStorage.Received(1).Save("MasterCharacterList", "TestAccount_33", Arg.Any<IEnumerable<Character>>());
     }
+
+    [Fact]
+    public void ProcessSourceUpdate_FiresCharacterLoggedOn_OnlyOnTrueOfflineToOnlineTransition() {
+        // Arrange
+        var mockStorage = Substitute.For<ICharacterStorage>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockLocalPlayerContext = Substitute.For<ILocalPlayerContext>();
+
+        var sourceId = Guid.NewGuid();
+        var mockSource = Substitute.For<ICharacterSource>();
+        mockSource.SourceId.Returns(sourceId);
+
+        var registry = new CharacterRegistry(
+            mockStorage,
+            new List<ICharacterSource> { mockSource },
+            Substitute.For<IMigrationService>(),
+            mockIdentityService,
+            mockClientState,
+            Substitute.For<IFramework>(),
+            Substitute.For<IPluginLog>(),
+            mockLocalPlayerContext
+        );
+
+        var existingCharacter = new Character {
+            Id = Guid.NewGuid(),
+            Name = "Flapping Contact",
+            HomeWorldId = 33,
+            IsOnline = true // Already online before the update
+        };
+
+        mockStorage.Load("MasterCharacterList", "TestAccount").Returns(new List<Character> { existingCharacter });
+        registry.LoadMasterList("TestAccount");
+
+        int notificationCount = 0;
+        registry.CharacterLoggedOn += (c) => notificationCount++;
+
+        // Act - The source updates and reports the character is STILL online
+        var incomingState = new List<Character> {
+            new Character { Name = "Flapping Contact", HomeWorldId = 33, IsOnline = true }
+        };
+        mockSource.GetCurrentState().Returns(incomingState);
+
+        // Manually trigger the private ProcessSourceUpdate by invoking the event
+        // Note: In a real test suite, you might expose a testable hook or rely on the Action trigger
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        // Assert - The notification should NOT fire because they were already online
+        Assert.Equal(0, notificationCount);
+    }
 }

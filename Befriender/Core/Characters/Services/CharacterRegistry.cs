@@ -77,7 +77,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
             this.currentAccountIdentity = accountIdentity;
             this.masterList = this.storage.Load("MasterCharacterList", accountIdentity).ToList();
 
-            // Force the local player to be online immediately upon loading the cache
             var localChar = this.masterList.FirstOrDefault(c => $"{c.Name}_{c.HomeWorldId}" == accountIdentity);
             if (localChar != null) {
                 localChar.IsOnline = true;
@@ -114,22 +113,23 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
     }
 
     private void ProcessSourceUpdate(ICharacterSource source) {
+        var newlyOnlineCharacters = new List<Character>();
+
         lock (this.lockObj) {
+            // 1. Snapshot the exact online state of all known characters before the rebuild
+            var previousOnlineStates = this.masterList.ToDictionary(c => c.Id, c => c.IsOnline);
+
             var sourceState = source.GetCurrentState().ToList();
             var processedIds = new HashSet<Guid>();
 
+            // 2. Perform the normal source aggregation
             foreach (var incoming in sourceState) {
                 var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(incoming.ContentId, incoming.Name, incoming.HomeWorldId));
 
                 if (existing == null) {
                     existing = incoming;
-                    if (existing.Id == Guid.Empty) {
-                        existing.Id = Guid.NewGuid();
-                    }
-
-                    if (existing.AddedAt == DateTime.MinValue) {
-                        existing.AddedAt = DateTime.Now;
-                    }
+                    if (existing.Id == Guid.Empty) existing.Id = Guid.NewGuid();
+                    if (existing.AddedAt == DateTime.MinValue) existing.AddedAt = DateTime.Now;
 
                     this.masterList.Add(existing);
                 }
@@ -144,10 +144,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                             existing.PreviousNames.Add(existing.Name);
                         }
                         existing.Name = incoming.Name;
-                    }
-
-                    if (!existing.IsOnline && incoming.IsOnline) {
-                        this.CharacterLoggedOn?.Invoke(existing);
                     }
 
                     existing.IsOnline = incoming.IsOnline;
@@ -182,7 +178,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 }
             }
 
-            // Enforce domain rule: Local player is always online
             if (!string.IsNullOrEmpty(this.currentAccountIdentity)) {
                 var localChar = this.masterList.FirstOrDefault(c => $"{c.Name}_{c.HomeWorldId}" == this.currentAccountIdentity);
                 if (localChar != null && !localChar.IsOnline) {
@@ -192,7 +187,22 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
             }
 
             this.SaveMasterList();
+
+            // 3. Diff the states and queue notifications only on true transitions
+            foreach (var character in this.masterList) {
+                bool wasOnline = previousOnlineStates.TryGetValue(character.Id, out var online) && online;
+
+                if (!wasOnline && character.IsOnline) {
+                    newlyOnlineCharacters.Add(character);
+                }
+            }
         }
+
+        // Fire events outside the lock to prevent deadlocks with UI threads
+        foreach (var character in newlyOnlineCharacters) {
+            this.CharacterLoggedOn?.Invoke(character);
+        }
+
         this.RegistryUpdated?.Invoke();
     }
 
