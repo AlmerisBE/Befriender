@@ -85,7 +85,7 @@ public class MainWindow : Window, IDisposable {
                 ImGui.SetTooltip(this.loc.Translate("Action_ManualRefresh"));
             },
             Click = (mouseButton) => {
-                this.registry.RequestManualRefresh();
+                this.registry.RequestRefresh(true);
             }
         });
     }
@@ -175,7 +175,7 @@ public class MainWindow : Window, IDisposable {
     }
 
     public override void OnOpen() {
-        this.registry.RequestManualRefresh();
+        this.registry.RequestRefresh(false);
     }
 
     public void Dispose() {

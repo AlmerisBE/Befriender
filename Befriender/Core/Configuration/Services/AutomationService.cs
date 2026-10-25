@@ -102,16 +102,16 @@ public class AutomationService : IDisposable {
             if (this.fullRefreshPending) {
                 this.fullRefreshPending = false;
                 this.pendingSourcesToRefresh.Clear();
-                this.registry.RequestManualRefresh();
+                this.registry.RequestRefresh(false);
             }
             else if (this.pendingSourcesToRefresh.Count > 0) {
-                this.registry.RequestManualRefresh(this.pendingSourcesToRefresh.ToList());
+                this.registry.RequestRefresh(this.pendingSourcesToRefresh.ToList(), false);
                 this.pendingSourcesToRefresh.Clear();
             }
         }
 
         if (DateTime.Now >= this.nextPeriodicSyncTime) {
-            this.registry.RequestManualRefresh();
+            this.registry.RequestRefresh(false);
             this.ScheduleNextPeriodicSync();
         }
     }

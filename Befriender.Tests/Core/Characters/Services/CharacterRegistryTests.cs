@@ -105,9 +105,9 @@ public class CharacterRegistryTests {
         mockSource.SourceId.Returns(Guid.NewGuid());
 
         registry.RegisterSource(mockSource);
-        registry.RequestManualRefresh();
+        registry.RequestRefresh(true);
 
-        mockSource.Received(1).RequestManualRefresh();
+        mockSource.Received(1).RequestRefresh(true);
     }
 
     [Fact]

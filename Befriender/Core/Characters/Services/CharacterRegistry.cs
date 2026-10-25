@@ -248,19 +248,19 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         if (stateChanged) this.RegistryUpdated?.Invoke();
     }
 
-    public void RequestManualRefresh() {
+    public void RequestRefresh(bool isUserInitiated = false) {
         lock (this.lockObj) {
             foreach (var source in this.sources) {
-                source.RequestManualRefresh();
+                source.RequestRefresh(isUserInitiated);
             }
         }
     }
 
-    public void RequestManualRefresh(IEnumerable<Guid> sourceIds) {
+    public void RequestRefresh(IEnumerable<Guid> sourceIds, bool isUserInitiated = false) {
         lock (this.lockObj) {
             var targetSources = this.sources.Where(s => sourceIds.Contains(s.SourceId));
             foreach (var source in targetSources) {
-                source.RequestManualRefresh();
+                source.RequestRefresh(isUserInitiated);
             }
         }
     }

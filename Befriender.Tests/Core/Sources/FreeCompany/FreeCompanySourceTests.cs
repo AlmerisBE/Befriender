@@ -33,70 +33,48 @@ public class FreeCompanySourceTests {
     }
 
     [Fact]
-    public void TriggerManualRefresh_CallsOpenAndClose_WhenConfigEnabledAndFirstAttempt() {
+    public void RequestRefresh_WithUserInitiatedTrue_ExecutesOpenAndCloseNativeList() {
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = false });
+        var source = this.CreateSource();
+
+        source.RequestRefresh(true);
+
+        this.mockScanner.Received(1).OpenAndCloseNativeList();
+        this.mockScanner.DidNotReceive().RequestServerUpdate();
+        Assert.True(source.IsSyncing);
+    }
+
+    [Fact]
+    public void RequestRefresh_WithUserInitiatedFalse_AndAutoSyncEnabled_OnFirstAttempt_ExecutesOpenAndCloseNativeList() {
         this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
         var source = this.CreateSource();
 
-        source.TriggerManualRefresh();
+        source.RequestRefresh(false);
 
         this.mockScanner.Received(1).OpenAndCloseNativeList();
         this.mockScanner.DidNotReceive().RequestServerUpdate();
     }
 
     [Fact]
-    public void TriggerManualRefresh_CallsRequestServerUpdate_OnSubsequentAttempts() {
+    public void RequestRefresh_WithUserInitiatedFalse_AndAutoSyncEnabled_OnSubsequentAttempts_ExecutesRequestServerUpdate() {
         this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
         var source = this.CreateSource();
 
-        source.TriggerManualRefresh(); // First attempt
-        source.TriggerManualRefresh(); // Second attempt
+        source.RequestRefresh(false); // First attempt (e.g., Login)
+        source.RequestRefresh(false); // Second attempt (e.g., Zone change)
 
-        this.mockScanner.Received(1).OpenAndCloseNativeList();
-        this.mockScanner.Received(1).RequestServerUpdate();
+        this.mockScanner.Received(1).OpenAndCloseNativeList(); // Should only happen once
+        this.mockScanner.Received(1).RequestServerUpdate(); // Fallback to silent update for subsequent calls
     }
 
     [Fact]
-    public void TriggerManualRefresh_CallsRequestServerUpdate_WhenConfigDisabled() {
+    public void RequestRefresh_WithUserInitiatedFalse_AndAutoSyncDisabled_ExecutesRequestServerUpdate() {
         this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = false });
         var source = this.CreateSource();
 
-        source.TriggerManualRefresh();
+        source.RequestRefresh(false);
 
         this.mockScanner.DidNotReceive().OpenAndCloseNativeList();
         this.mockScanner.Received(1).RequestServerUpdate();
-    }
-
-    [Fact]
-    public void TriggerManualRefresh_ExecutesToggleNativeListOnce_AndSetsFrameDelay() {
-        // Arrange
-        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
-        var source = this.CreateSource();
-
-        // Act
-        source.TriggerManualRefresh(isUserInitiated: true);
-
-        // Assert
-        this.mockScanner.Received(1).ToggleNativeList(); // Open execution
-        Assert.True(source.IsSyncing);
-    }
-
-    [Fact]
-    public void OnFrameworkUpdate_ExecutesToggleNativeListSecondTime_AfterFrameDelay() {
-        // Arrange
-        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { AutoSyncFreeCompanyOnLogin = true });
-        var source = this.CreateSource();
-        source.TriggerManualRefresh(isUserInitiated: true); // Fires 1st toggle, sets 10 frames delay
-        this.mockScanner.ClearReceivedCalls();
-
-        // Act - Simulate 10 frames passing
-        for (int i = 0; i < 10; i++) {
-            source.GetType().GetMethod("OnFrameworkUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
-        }
-
-        // At this point, the delay should still be processed, we trigger the final frame
-        source.GetType().GetMethod("OnFrameworkUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
-
-        // Assert
-        this.mockScanner.Received(1).ToggleNativeList(); // Close execution
     }
 }

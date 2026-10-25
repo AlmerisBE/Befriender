@@ -51,8 +51,11 @@ public class FriendListSource : ICharacterSource, IDisposable {
         return this.currentState.ToList();
     }
 
-    public void RequestManualRefresh() {
-        this.TriggerManualRefresh();
+    public void RequestRefresh(bool isUserInitiated) {
+        this.isManualRefreshPending = true;
+        this.timeoutTime = DateTime.Now.AddSeconds(5);
+        this.scanner.RequestServerUpdate();
+        this.DataUpdated?.Invoke();
     }
 
     public void TriggerManualRefresh() {

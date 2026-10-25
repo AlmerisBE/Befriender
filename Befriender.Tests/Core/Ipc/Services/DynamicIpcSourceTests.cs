@@ -30,7 +30,7 @@ public class DynamicIpcSourceTests {
     public void RequestManualRefresh_DoesNotThrowException() {
         var source = new DynamicIpcSource(Guid.NewGuid(), "TestIPC", 15);
 
-        var exception = Record.Exception(() => source.RequestManualRefresh());
+        var exception = Record.Exception(() => source.RequestRefresh(true));
 
         Assert.Null(exception);
     }

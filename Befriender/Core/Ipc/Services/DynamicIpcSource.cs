@@ -25,7 +25,7 @@ public class DynamicIpcSource : ICharacterSource {
         return this.currentState;
     }
 
-    public void RequestManualRefresh() {
+    public void RequestRefresh(bool isUserInitiated) {
         // Since the data is pushed by an external plugin, we cannot force them to pull data here easily.
         // For a simple IPC implementation, we rely on the external plugin to push updates proactively.
     }

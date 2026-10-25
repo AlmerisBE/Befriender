@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Text;
 
 public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
+    private const uint FreeCompanyMainCommandId = 27;
+
     public IEnumerable<Character> ScanMembers() {
         var members = new List<Character>();
         var uiModule = UIModule.Instance();
@@ -100,11 +102,9 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
         var uiModule = UIModule.Instance();
         if (uiModule == null) return;
 
-        // Command 9 targets the Free Company window.
-        // Executing it twice rapidly triggers the internal state machine to Open then Close,
-        // which is sufficient to force the native proxy to request data from the server.
-        uiModule->ExecuteMainCommand(9);
-        uiModule->ExecuteMainCommand(9);
+        // Double execution in the same frame to trigger the data request instantly
+        uiModule->ExecuteMainCommand(FreeCompanyMainCommandId);
+        uiModule->ExecuteMainCommand(FreeCompanyMainCommandId);
     }
 
     public ulong GetStateHash() {
@@ -131,9 +131,7 @@ public unsafe class MemoryFreeCompanyScanner : IFreeCompanyScanner {
     }
 
     public void ToggleNativeList() {
-        unsafe {
-            var uiModule = UIModule.Instance();
-            if (uiModule != null) uiModule->ExecuteMainCommand(9);
-        }
+        var uiModule = UIModule.Instance();
+        if (uiModule != null) uiModule->ExecuteMainCommand(FreeCompanyMainCommandId);
     }
 }

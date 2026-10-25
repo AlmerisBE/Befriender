@@ -27,12 +27,12 @@ public class AutomationServiceTests {
         };
 
         mockClientState.Login += Raise.Event<Action>();
-        mockRegistry.DidNotReceive().RequestManualRefresh();
+        mockRegistry.DidNotReceive().RequestRefresh(false);
 
         Thread.Sleep(60);
         mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
 
-        mockRegistry.Received(1).RequestManualRefresh();
+        mockRegistry.Received(1).RequestRefresh(false);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class AutomationServiceTests {
 
         mockClientState.TerritoryChanged += Raise.Event<Action<uint>>(123u);
 
-        mockRegistry.DidNotReceive().RequestManualRefresh();
+        mockRegistry.DidNotReceive().RequestRefresh(false);
     }
 
     [Fact]
@@ -67,6 +67,6 @@ public class AutomationServiceTests {
         Thread.Sleep(10);
         mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
 
-        mockRegistry.Received(1).RequestManualRefresh();
+        mockRegistry.Received(1).RequestRefresh(false);
     }
 }

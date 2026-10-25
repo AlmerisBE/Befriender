@@ -19,8 +19,8 @@ public interface ICharacterRegistry {
     Character? GetCharacterById(Guid id);
 
     void RemoveCharacter(Guid id);
-    void RequestManualRefresh();
-    void RequestManualRefresh(IEnumerable<Guid> sourceIds);
+    void RequestRefresh(bool isUserInitiated = false);
+    void RequestRefresh(IEnumerable<Guid> sourceIds, bool isUserInitiated = false);
 
     bool TryAddManualCharacter(ulong contentId, string name, uint homeWorldId, uint locationId);
 

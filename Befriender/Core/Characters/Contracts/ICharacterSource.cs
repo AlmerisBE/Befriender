@@ -13,5 +13,5 @@ public interface ICharacterSource {
     event Action? DataUpdated;
 
     IEnumerable<Character> GetCurrentState();
-    void RequestManualRefresh();
+    void RequestRefresh(bool isUserInitiated);
 }
