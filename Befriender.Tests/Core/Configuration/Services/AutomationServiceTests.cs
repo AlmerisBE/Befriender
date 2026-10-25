@@ -19,10 +19,11 @@ public class AutomationServiceTests {
         var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockProximity = Substitute.For<IProximityService>();
         var mockFramework = Substitute.For<IFramework>();
+        var mockCondition = Substitute.For<ICondition>();
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = true });
 
-        using var service = new AutomationService(mockClientState, mockConfigService, mockRegistry, mockProximity, mockFramework) {
+        using var service = new AutomationService(mockClientState, mockConfigService, mockRegistry, mockProximity, mockFramework, mockCondition) {
             LoginDelay = TimeSpan.FromMilliseconds(50) // Micro-delay for test brevity
         };
 
@@ -42,10 +43,11 @@ public class AutomationServiceTests {
         var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockProximity = Substitute.For<IProximityService>();
         var mockFramework = Substitute.For<IFramework>();
+        var mockCondition = Substitute.For<ICondition>();
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnTerritoryChange = false });
 
-        using var service = new AutomationService(mockClientState, mockConfigService, mockRegistry, mockProximity, mockFramework);
+        using var service = new AutomationService(mockClientState, mockConfigService, mockRegistry, mockProximity, mockFramework, mockCondition);
 
         mockClientState.TerritoryChanged += Raise.Event<Action<uint>>(123u);
 
@@ -59,10 +61,11 @@ public class AutomationServiceTests {
         var mockRegistry = Substitute.For<ICharacterRegistry>();
         var mockProximity = Substitute.For<IProximityService>();
         var mockFramework = Substitute.For<IFramework>();
+        var mockCondition = Substitute.For<ICondition>();
 
         mockConfigService.GetConfig().Returns(new PluginConfiguration { MinSyncIntervalMinutes = 0, MaxSyncIntervalMinutes = 0 });
 
-        using var service = new AutomationService(mockClientState, mockConfigService, mockRegistry, mockProximity, mockFramework);
+        using var service = new AutomationService(mockClientState, mockConfigService, mockRegistry, mockProximity, mockFramework, mockCondition);
 
         Thread.Sleep(10);
         mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);

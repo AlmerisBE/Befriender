@@ -2,6 +2,7 @@
 
 using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
+using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Sources.Friends.Contracts;
 using Dalamud.Plugin.Services;
 using System;
@@ -12,6 +13,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
     private IFriendListScanner scanner;
     private IFramework framework;
     private IClientState clientState;
+    private IConfigurationService configService;
 
     private ulong lastStateHash = 0;
     private ulong pendingHash = 0;
@@ -20,6 +22,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
 
     private List<Character> currentState = new();
     private bool isManualRefreshPending = false;
+    private bool hasAttemptedAutoOpenThisSession = false;
 
     public Guid SourceId { get; } = Guid.Parse("51000000-0000-0000-0000-000000000001");
     public string Name => "FriendList";
@@ -29,10 +32,11 @@ public class FriendListSource : ICharacterSource, IDisposable {
 
     public event Action? DataUpdated;
 
-    public FriendListSource(IFriendListScanner scanner, IFramework framework, IClientState clientState) {
+    public FriendListSource(IFriendListScanner scanner, IFramework framework, IClientState clientState, IConfigurationService configService) {
         this.scanner = scanner;
         this.framework = framework;
         this.clientState = clientState;
+        this.configService = configService;
 
         this.framework.Update += this.OnFrameworkUpdate;
         this.clientState.Logout += this.OnLogout;
@@ -45,6 +49,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
         this.dataStabilizedTime = DateTime.MaxValue;
         this.timeoutTime = DateTime.MaxValue;
         this.isManualRefreshPending = false;
+        this.hasAttemptedAutoOpenThisSession = false;
     }
 
     public IEnumerable<Character> GetCurrentState() {
@@ -54,14 +59,21 @@ public class FriendListSource : ICharacterSource, IDisposable {
     public void RequestRefresh(bool isUserInitiated) {
         this.isManualRefreshPending = true;
         this.timeoutTime = DateTime.Now.AddSeconds(5);
-        this.scanner.RequestServerUpdate();
-        this.DataUpdated?.Invoke();
-    }
 
-    public void TriggerManualRefresh() {
-        this.isManualRefreshPending = true;
-        this.timeoutTime = DateTime.Now.AddSeconds(5);
-        this.scanner.RequestServerUpdate();
+        var config = this.configService.GetConfig();
+        bool shouldOpenNativeUI = false;
+
+        if (isUserInitiated) {
+            shouldOpenNativeUI = true;
+        }
+        else if (!this.hasAttemptedAutoOpenThisSession && config.SyncOnLogin) {
+            this.hasAttemptedAutoOpenThisSession = true;
+            shouldOpenNativeUI = true;
+        }
+
+        if (shouldOpenNativeUI) this.scanner.OpenAndCloseNativeList();
+        else this.scanner.RequestServerUpdate();
+
         this.DataUpdated?.Invoke();
     }
 

@@ -40,7 +40,8 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         INotificationManager notificationManager,
         IGameGui gameGui,
         IContextMenu contextMenu,
-        INamePlateGui namePlateGui) {
+        INamePlateGui namePlateGui,
+        ICondition condition) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Befriender");
@@ -63,6 +64,7 @@ public sealed class BefrienderPlugin : IDalamudPlugin {
         services.AddSingleton(gameGui);
         services.AddSingleton(contextMenu);
         services.AddSingleton(namePlateGui);
+        services.AddSingleton(condition);
 
         services.AddPluginFeatures();
 

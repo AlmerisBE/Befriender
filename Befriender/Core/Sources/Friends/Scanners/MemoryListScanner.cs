@@ -118,4 +118,14 @@ public unsafe class MemoryFriendListScanner : IFriendListScanner {
         var friendProxy = (InfoProxyCommonList*)infoModule->GetInfoProxyById(InfoProxyId.FriendList);
         if (friendProxy != null) friendProxy->RequestData();
     }
+
+    public void OpenAndCloseNativeList() {
+        var uiModule = UIModule.Instance();
+        if (uiModule == null) return;
+
+        // Double execution in the same frame triggers the UI state machine 
+        // to instantly request cross-world data from the server
+        uiModule->ExecuteMainCommand(13);
+        uiModule->ExecuteMainCommand(13);
+    }
 }

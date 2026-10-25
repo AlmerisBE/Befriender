@@ -4,6 +4,7 @@ using Befriender.Core.Characters.Contracts;
 using Befriender.Core.Characters.Models;
 using Befriender.Core.Configuration.Contracts;
 using Befriender.Core.Proximity.Contracts;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
@@ -15,12 +16,12 @@ public class AutomationService : IDisposable {
     private ICharacterRegistry registry;
     private IProximityService proximityService;
     private IFramework framework;
+    private ICondition condition;
 
     private HashSet<Guid> pendingSourcesToRefresh = new();
     private DateTime? refreshTriggerTime = null;
     private bool fullRefreshPending = false;
 
-    // Exposed for pragmatic unit testing without massive Thread.Sleep delays
     internal TimeSpan LoginDelay = TimeSpan.FromSeconds(12);
     internal TimeSpan TerritoryDelay = TimeSpan.FromSeconds(5);
     private readonly TimeSpan departureDelay = TimeSpan.FromSeconds(10);
@@ -33,13 +34,15 @@ public class AutomationService : IDisposable {
         IConfigurationService configService,
         ICharacterRegistry registry,
         IProximityService proximityService,
-        IFramework framework) {
+        IFramework framework,
+        ICondition condition) {
 
         this.clientState = clientState;
         this.configService = configService;
         this.registry = registry;
         this.proximityService = proximityService;
         this.framework = framework;
+        this.condition = condition;
 
         this.clientState.Login += this.OnLogin;
         this.clientState.TerritoryChanged += this.OnTerritoryChanged;
@@ -97,6 +100,12 @@ public class AutomationService : IDisposable {
 
     private void OnFrameworkUpdate(IFramework fw) {
         if (this.refreshTriggerTime.HasValue && DateTime.Now >= this.refreshTriggerTime.Value) {
+            // Safely postpone the sync if the client is still transitioning (loading screens)
+            if (this.condition[ConditionFlag.BetweenAreas] || this.condition[ConditionFlag.BetweenAreas51]) {
+                this.refreshTriggerTime = DateTime.Now.AddSeconds(2);
+                return;
+            }
+
             this.refreshTriggerTime = null;
 
             if (this.fullRefreshPending) {
@@ -111,6 +120,10 @@ public class AutomationService : IDisposable {
         }
 
         if (DateTime.Now >= this.nextPeriodicSyncTime) {
+            if (this.condition[ConditionFlag.BetweenAreas] || this.condition[ConditionFlag.BetweenAreas51]) {
+                this.nextPeriodicSyncTime = DateTime.Now.AddSeconds(10);
+                return;
+            }
             this.registry.RequestRefresh(false);
             this.ScheduleNextPeriodicSync();
         }
