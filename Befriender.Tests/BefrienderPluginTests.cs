@@ -34,6 +34,7 @@ public class BefrienderPluginTests {
         var mockGameGui = Substitute.For<IGameGui>();
         var mockContextMenu = Substitute.For<IContextMenu>();
         var mockNamePlateGui = Substitute.For<INamePlateGui>();
+        var mockCondition = Substitute.For<ICondition>();
 
         var exception = Record.Exception(() => new BefrienderPlugin(
             mockPluginInterface,
@@ -51,7 +52,8 @@ public class BefrienderPluginTests {
             mockNotificationManager,
             mockGameGui,
             mockContextMenu,
-            mockNamePlateGui));
+            mockNamePlateGui,
+            mockCondition));
 
         Assert.Null(exception);
     }
