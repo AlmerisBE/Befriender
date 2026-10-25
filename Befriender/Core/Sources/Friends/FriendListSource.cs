@@ -77,9 +77,9 @@ public class FriendListSource : ICharacterSource, IDisposable {
         }
 
         if (shouldOpenNativeUI) {
-            this.scanner.ToggleNativeList(); // First execution (Open)
+            this.scanner.ToggleNativeList();
             this.isNativeListOpen = true;
-            this.nativeListCloseFrameDelay = 10; // Wait 10 frames before closing
+            this.nativeListCloseFrameDelay = 0;
         }
         else {
             this.scanner.RequestServerUpdate();
@@ -95,7 +95,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
             }
             else {
                 this.isNativeListOpen = false;
-                this.scanner.ToggleNativeList(); // Second execution (Close)
+                this.scanner.ToggleNativeList();
             }
         }
 

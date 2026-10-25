@@ -146,18 +146,34 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                         existing.Name = incoming.Name;
                     }
 
-                    existing.IsOnline = incoming.IsOnline;
+                    // Determine the highest priority among currently active sources for this character
+                    int highestPriority = existing.ActiveSourceIds
+                        .Select(id => this.sources.FirstOrDefault(s => s.SourceId == id)?.Priority ?? 0)
+                        .DefaultIfEmpty(0)
+                        .Max();
 
-                    if (incoming.CurrentWorldId > 0) existing.CurrentWorldId = incoming.CurrentWorldId;
-                    if (incoming.LocationId > 0) existing.LocationId = incoming.LocationId;
+                    if (source.Priority > highestPriority) {
+                        highestPriority = source.Priority;
+                    }
 
+                    bool isAuthoritativeSource = source.Priority >= highestPriority;
+
+                    // Online state is absolute; Offline state requires authoritative priority
                     if (incoming.IsOnline) {
+                        existing.IsOnline = true;
                         existing.LastSeenAt = DateTime.Now;
+                        existing.OnlineStateMask = incoming.OnlineStateMask;
+
+                        if (incoming.CurrentWorldId > 0) existing.CurrentWorldId = incoming.CurrentWorldId;
+                        if (incoming.LocationId > 0) existing.LocationId = incoming.LocationId;
+                        if (incoming.JobId > 0) existing.JobId = incoming.JobId;
+                        if (incoming.Level > 0) existing.Level = incoming.Level;
+                    }
+                    else if (isAuthoritativeSource) {
+                        existing.IsOnline = false;
                         existing.OnlineStateMask = incoming.OnlineStateMask;
                     }
 
-                    if (incoming.JobId > 0) existing.JobId = incoming.JobId;
-                    if (incoming.Level > 0) existing.Level = incoming.Level;
                     if (!string.IsNullOrEmpty(incoming.FcTag)) existing.FcTag = incoming.FcTag;
 
                     if (incoming.SourceSpecificData.TryGetValue(source.SourceId, out var specificData)) {
