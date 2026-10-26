@@ -79,7 +79,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
         if (shouldOpenNativeUI) {
             this.scanner.ToggleNativeList();
             this.isNativeListOpen = true;
-            this.nativeListCloseFrameDelay = 0;
+            this.nativeListCloseFrameDelay = 5;
         }
         else {
             this.scanner.RequestServerUpdate();

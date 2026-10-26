@@ -116,13 +116,11 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
         var newlyOnlineCharacters = new List<Character>();
 
         lock (this.lockObj) {
-            // 1. Snapshot the exact online state of all known characters before the rebuild
             var previousOnlineStates = this.masterList.ToDictionary(c => c.Id, c => c.IsOnline);
-
             var sourceState = source.GetCurrentState().ToList();
             var processedIds = new HashSet<Guid>();
 
-            // 2. Perform the normal source aggregation
+            // 1. Merge incoming data and persist isolated source state
             foreach (var incoming in sourceState) {
                 var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(incoming.ContentId, incoming.Name, incoming.HomeWorldId));
 
@@ -130,6 +128,10 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                     existing = incoming;
                     if (existing.Id == Guid.Empty) existing.Id = Guid.NewGuid();
                     if (existing.AddedAt == DateTime.MinValue) existing.AddedAt = DateTime.Now;
+
+                    if (!existing.SourceSpecificData.ContainsKey(source.SourceId)) {
+                        existing.SourceSpecificData[source.SourceId] = new Dictionary<string, string>();
+                    }
 
                     this.masterList.Add(existing);
                 }
@@ -146,52 +148,65 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                         existing.Name = incoming.Name;
                     }
 
-                    // Determine the highest priority among currently active sources for this character
-                    int highestPriority = existing.ActiveSourceIds
-                        .Select(id => this.sources.FirstOrDefault(s => s.SourceId == id)?.Priority ?? 0)
-                        .DefaultIfEmpty(0)
-                        .Max();
-
-                    if (source.Priority > highestPriority) {
-                        highestPriority = source.Priority;
-                    }
-
-                    bool isAuthoritativeSource = source.Priority >= highestPriority;
-
-                    // Online state is absolute; Offline state requires authoritative priority
-                    if (incoming.IsOnline) {
-                        existing.IsOnline = true;
-                        existing.LastSeenAt = DateTime.Now;
-                        existing.OnlineStateMask = incoming.OnlineStateMask;
-
-                        if (incoming.CurrentWorldId > 0) existing.CurrentWorldId = incoming.CurrentWorldId;
-                        if (incoming.LocationId > 0) existing.LocationId = incoming.LocationId;
-                        if (incoming.JobId > 0) existing.JobId = incoming.JobId;
-                        if (incoming.Level > 0) existing.Level = incoming.Level;
-                    }
-                    else if (isAuthoritativeSource) {
-                        existing.IsOnline = false;
-                        existing.OnlineStateMask = incoming.OnlineStateMask;
-                    }
-
-                    if (!string.IsNullOrEmpty(incoming.FcTag)) existing.FcTag = incoming.FcTag;
-
-                    if (incoming.SourceSpecificData.TryGetValue(source.SourceId, out var specificData)) {
-                        existing.SourceSpecificData[source.SourceId] = specificData;
+                    if (!existing.SourceSpecificData.ContainsKey(source.SourceId)) {
+                        existing.SourceSpecificData[source.SourceId] = new Dictionary<string, string>();
                     }
                 }
+
+                if (incoming.SourceSpecificData.TryGetValue(source.SourceId, out var incomingSpecific)) {
+                    foreach (var kvp in incomingSpecific) {
+                        existing.SourceSpecificData[source.SourceId][kvp.Key] = kvp.Value;
+                    }
+                }
+
+                existing.SourceSpecificData[source.SourceId]["IsOnline"] = incoming.IsOnline.ToString();
+                existing.SourceSpecificData[source.SourceId]["OnlineStateMask"] = incoming.OnlineStateMask.ToString();
+
+                if (incoming.IsOnline) {
+                    existing.LastSeenAt = DateTime.Now;
+                    if (incoming.CurrentWorldId > 0) existing.CurrentWorldId = incoming.CurrentWorldId;
+                    if (incoming.LocationId > 0) existing.LocationId = incoming.LocationId;
+                    if (incoming.JobId > 0) existing.JobId = incoming.JobId;
+                    if (incoming.Level > 0) existing.Level = incoming.Level;
+                }
+
+                if (!string.IsNullOrEmpty(incoming.FcTag)) existing.FcTag = incoming.FcTag;
 
                 existing.ActiveSourceIds.Add(source.SourceId);
                 processedIds.Add(existing.Id);
             }
 
+            // 2. Remove isolated state for characters no longer present in this source
             foreach (var character in this.masterList) {
                 if (character.ActiveSourceIds.Contains(source.SourceId) && !processedIds.Contains(character.Id)) {
                     character.ActiveSourceIds.Remove(source.SourceId);
+                    character.SourceSpecificData.Remove(source.SourceId);
                     if (!character.IsActivelyTracked) {
                         character.IsOnline = false;
                     }
                 }
+            }
+
+            // 3. Re-evaluate absolute online state across ALL sources
+            foreach (var character in this.masterList) {
+                if (!character.IsActivelyTracked) continue;
+
+                bool isAnySourceOnline = false;
+                ulong activeMask = 0;
+
+                foreach (var sourceId in character.ActiveSourceIds) {
+                    if (character.SourceSpecificData.TryGetValue(sourceId, out var data)) {
+                        if (data.TryGetValue("IsOnline", out var isOnlineStr) && bool.TryParse(isOnlineStr, out var isOnline) && isOnline) {
+                            isAnySourceOnline = true;
+                            if (data.TryGetValue("OnlineStateMask", out var maskStr) && ulong.TryParse(maskStr, out var mask)) {
+                                activeMask = mask;
+                            }
+                        }
+                    }
+                }
+
+                character.IsOnline = isAnySourceOnline;
+                if (isAnySourceOnline) character.OnlineStateMask = activeMask;
             }
 
             if (!string.IsNullOrEmpty(this.currentAccountIdentity)) {
@@ -204,7 +219,7 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
 
             this.SaveMasterList();
 
-            // 3. Diff the states and queue notifications only on true transitions
+            // 4. Diff states for notifications
             foreach (var character in this.masterList) {
                 bool wasOnline = previousOnlineStates.TryGetValue(character.Id, out var online) && online;
 
@@ -214,7 +229,6 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
             }
         }
 
-        // Fire events outside the lock to prevent deadlocks with UI threads
         foreach (var character in newlyOnlineCharacters) {
             this.CharacterLoggedOn?.Invoke(character);
         }

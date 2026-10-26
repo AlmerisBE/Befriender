@@ -284,4 +284,114 @@ public class CharacterRegistryTests {
         // Assert - The notification should NOT fire because they were already online
         Assert.Equal(0, notificationCount);
     }
+
+    [Fact]
+    public void ProcessSourceUpdate_IgnoresOfflineStatus_FromLowerPrioritySource() {
+        // Arrange
+        var mockStorage = Substitute.For<ICharacterStorage>();
+        var mockMigrationService = Substitute.For<IMigrationService>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockFramework = Substitute.For<IFramework>();
+        var mockPluginLog = Substitute.For<IPluginLog>();
+        var mockLocalPlayerContext = Substitute.For<ILocalPlayerContext>();
+
+        using var registry = new CharacterRegistry(
+            mockStorage,
+            new List<ICharacterSource>(),
+            mockMigrationService,
+            mockIdentityService,
+            mockClientState,
+            mockFramework,
+            mockPluginLog,
+            mockLocalPlayerContext
+        );
+
+        var mockAuthoritativeSource = Substitute.For<ICharacterSource>();
+        mockAuthoritativeSource.SourceId.Returns(Guid.NewGuid());
+        mockAuthoritativeSource.Priority.Returns(10);
+
+        var mockLowerPrioritySource = Substitute.For<ICharacterSource>();
+        mockLowerPrioritySource.SourceId.Returns(Guid.NewGuid());
+        mockLowerPrioritySource.Priority.Returns(5);
+
+        var sharedContentId = 123456ul;
+
+        // Act 1: Authoritative source sets character to ONLINE
+        mockAuthoritativeSource.GetCurrentState().Returns(new List<Character> {
+            new Character { ContentId = sharedContentId, Name = "Shared Char", HomeWorldId = 1, IsOnline = true }
+        });
+
+        registry.RegisterSource(mockAuthoritativeSource);
+        mockAuthoritativeSource.DataUpdated += Raise.Event<Action>();
+
+        // Assert 1: Character is online
+        var character = registry.GetAllCharacters().First(c => c.ContentId == sharedContentId);
+        Assert.True(character.IsOnline);
+
+        // Act 2: Lower priority source reports the character as OFFLINE
+        mockLowerPrioritySource.GetCurrentState().Returns(new List<Character> {
+            new Character { ContentId = sharedContentId, Name = "Shared Char", HomeWorldId = 1, IsOnline = false }
+        });
+
+        registry.RegisterSource(mockLowerPrioritySource);
+        mockLowerPrioritySource.DataUpdated += Raise.Event<Action>();
+
+        // Assert 2: Character must REMAIN online because the offline claim came from a lower priority source
+        character = registry.GetAllCharacters().First(c => c.ContentId == sharedContentId);
+        Assert.True(character.IsOnline);
+    }
+
+    [Fact]
+    public void ProcessSourceUpdate_MaintainsOnlineState_WhenAnySourceReportsOnline() {
+        // Arrange
+        var mockStorage = Substitute.For<ICharacterStorage>();
+        var mockMigrationService = Substitute.For<IMigrationService>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockFramework = Substitute.For<IFramework>();
+        var mockPluginLog = Substitute.For<IPluginLog>();
+        var mockLocalPlayerContext = Substitute.For<ILocalPlayerContext>();
+
+        using var registry = new CharacterRegistry(
+            mockStorage,
+            new List<ICharacterSource>(),
+            mockMigrationService,
+            mockIdentityService,
+            mockClientState,
+            mockFramework,
+            mockPluginLog,
+            mockLocalPlayerContext
+        );
+
+        var mockSourceA = Substitute.For<ICharacterSource>();
+        mockSourceA.SourceId.Returns(Guid.NewGuid());
+        mockSourceA.Priority.Returns(10);
+
+        var mockSourceB = Substitute.For<ICharacterSource>();
+        mockSourceB.SourceId.Returns(Guid.NewGuid());
+        mockSourceB.Priority.Returns(5);
+
+        var sharedContentId = 123456ul;
+
+        // Act 1: Source A (FriendList) reports Online
+        mockSourceA.GetCurrentState().Returns(new List<Character> {
+            new Character { ContentId = sharedContentId, Name = "Shared Char", HomeWorldId = 1, IsOnline = true }
+        });
+
+        registry.RegisterSource(mockSourceA);
+        mockSourceA.DataUpdated += Raise.Event<Action>();
+
+        // Act 2: Source B (FreeCompany background sync) reports Offline
+        mockSourceB.GetCurrentState().Returns(new List<Character> {
+            new Character { ContentId = sharedContentId, Name = "Shared Char", HomeWorldId = 1, IsOnline = false }
+        });
+
+        registry.RegisterSource(mockSourceB);
+        mockSourceB.DataUpdated += Raise.Event<Action>();
+
+        // Assert: Character must remain online globally because Source A still tracks them as online
+        var character = registry.GetAllCharacters().First(c => c.ContentId == sharedContentId);
+        Assert.True(character.IsOnline);
+    }
 }
