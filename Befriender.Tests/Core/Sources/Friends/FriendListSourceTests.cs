@@ -1,11 +1,11 @@
 ﻿namespace Befriender.Tests.Core.Sources.Friends;
 
 using Befriender.Core.Configuration.Contracts;
+using Befriender.Core.Configuration.Models;
 using Befriender.Core.Sources.Friends;
 using Befriender.Core.Sources.Friends.Contracts;
 using Dalamud.Plugin.Services;
 using NSubstitute;
-using System.Reflection;
 using Xunit;
 
 public class FriendListSourceTests {
@@ -29,49 +29,19 @@ public class FriendListSourceTests {
             this.mockConfigService);
     }
 
-    [Fact]
-    public void RequestRefresh_WithUserInitiatedTrue_ExecutesToggleNativeListOnce_AndSetsFrameDelay() {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void RequestRefresh_ExecutesSilentServerUpdate_RegardlessOfUserInitiation(bool isUserInitiated) {
         // Arrange
+        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = true });
         var source = this.CreateSource();
 
         // Act
-        source.RequestRefresh(true);
+        source.RequestRefresh(isUserInitiated);
 
         // Assert
-        this.mockScanner.Received(1).ToggleNativeList(); // Open execution
-        this.mockScanner.DidNotReceive().RequestServerUpdate();
-        Assert.True(source.IsSyncing);
-    }
-
-    [Fact]
-    public void OnFrameworkUpdate_ExecutesToggleNativeListSecondTime_AfterFrameDelay() {
-        // Arrange
-        var source = this.CreateSource();
-        source.RequestRefresh(true); // Fires 1st toggle, sets 10 frames delay
-        this.mockScanner.ClearReceivedCalls();
-
-        // Act - Simulate 10 frames passing
-        for (int i = 0; i < 10; i++) {
-            source.GetType().GetMethod("OnFrameworkUpdate", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
-        }
-
-        // At this point, the delay should still be processed, we trigger the final frame
-        source.GetType().GetMethod("OnFrameworkUpdate", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(source, new object[] { this.mockFramework });
-
-        // Assert
-        this.mockScanner.Received(1).ToggleNativeList(); // Close execution
-    }
-
-    [Fact]
-    public void RequestRefresh_WithUserInitiatedFalse_ExecutesRequestServerUpdate() {
-        // Arrange
-        var source = this.CreateSource();
-
-        // Act
-        source.RequestRefresh(false);
-
-        // Assert
-        this.mockScanner.DidNotReceive().ToggleNativeList();
         this.mockScanner.Received(1).RequestServerUpdate();
+        Assert.True(source.IsSyncing);
     }
 }
