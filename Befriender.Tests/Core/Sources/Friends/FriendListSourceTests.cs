@@ -1,7 +1,6 @@
 ﻿namespace Befriender.Tests.Core.Sources.Friends;
 
 using Befriender.Core.Configuration.Contracts;
-using Befriender.Core.Configuration.Models;
 using Befriender.Core.Sources.Friends;
 using Befriender.Core.Sources.Friends.Contracts;
 using Dalamud.Plugin.Services;
@@ -33,7 +32,6 @@ public class FriendListSourceTests {
     [Fact]
     public void RequestRefresh_WithUserInitiatedTrue_ExecutesToggleNativeListOnce_AndSetsFrameDelay() {
         // Arrange
-        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = false });
         var source = this.CreateSource();
 
         // Act
@@ -48,9 +46,8 @@ public class FriendListSourceTests {
     [Fact]
     public void OnFrameworkUpdate_ExecutesToggleNativeListSecondTime_AfterFrameDelay() {
         // Arrange
-        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = true });
         var source = this.CreateSource();
-        source.RequestRefresh(false); // Fires 1st toggle, sets 10 frames delay
+        source.RequestRefresh(true); // Fires 1st toggle, sets 10 frames delay
         this.mockScanner.ClearReceivedCalls();
 
         // Act - Simulate 10 frames passing
@@ -66,9 +63,8 @@ public class FriendListSourceTests {
     }
 
     [Fact]
-    public void RequestRefresh_WithUserInitiatedFalse_AndSyncOnLoginDisabled_ExecutesRequestServerUpdate() {
+    public void RequestRefresh_WithUserInitiatedFalse_ExecutesRequestServerUpdate() {
         // Arrange
-        this.mockConfigService.GetConfig().Returns(new PluginConfiguration { SyncOnLogin = false });
         var source = this.CreateSource();
 
         // Act

@@ -22,7 +22,6 @@ public class FriendListSource : ICharacterSource, IDisposable {
 
     private List<Character> currentState = new();
     private bool isManualRefreshPending = false;
-    private bool hasAttemptedAutoOpenThisSession = false;
 
     // Frame delay variables for native UI toggling
     private bool isNativeListOpen = false;
@@ -53,7 +52,6 @@ public class FriendListSource : ICharacterSource, IDisposable {
         this.dataStabilizedTime = DateTime.MaxValue;
         this.timeoutTime = DateTime.MaxValue;
         this.isManualRefreshPending = false;
-        this.hasAttemptedAutoOpenThisSession = false;
         this.isNativeListOpen = false;
     }
 
@@ -65,21 +63,10 @@ public class FriendListSource : ICharacterSource, IDisposable {
         this.isManualRefreshPending = true;
         this.timeoutTime = DateTime.Now.AddSeconds(5);
 
-        var config = this.configService.GetConfig();
-        bool shouldOpenNativeUI = false;
-
         if (isUserInitiated) {
-            shouldOpenNativeUI = true;
-        }
-        else if (!this.hasAttemptedAutoOpenThisSession && config.SyncOnLogin) {
-            this.hasAttemptedAutoOpenThisSession = true;
-            shouldOpenNativeUI = true;
-        }
-
-        if (shouldOpenNativeUI) {
-            this.scanner.ToggleNativeList();
+            this.scanner.ToggleNativeList(); // First execution (Open)
             this.isNativeListOpen = true;
-            this.nativeListCloseFrameDelay = 5;
+            this.nativeListCloseFrameDelay = 10; // Wait 10 frames before closing
         }
         else {
             this.scanner.RequestServerUpdate();
@@ -95,7 +82,7 @@ public class FriendListSource : ICharacterSource, IDisposable {
             }
             else {
                 this.isNativeListOpen = false;
-                this.scanner.ToggleNativeList();
+                this.scanner.ToggleNativeList(); // Second execution (Close)
             }
         }
 
