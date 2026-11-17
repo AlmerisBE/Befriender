@@ -394,4 +394,57 @@ public class CharacterRegistryTests {
         var character = registry.GetAllCharacters().First(c => c.ContentId == sharedContentId);
         Assert.True(character.IsOnline);
     }
+
+    [Fact]
+    public void ProcessSourceUpdate_IgnoresEmptyName_FromIncomingSourceData() {
+        // Arrange
+        var mockStorage = Substitute.For<ICharacterStorage>();
+        var mockMigrationService = Substitute.For<IMigrationService>();
+        var mockIdentityService = Substitute.For<ICharacterIdentityService>();
+        var mockClientState = Substitute.For<IClientState>();
+        var mockFramework = Substitute.For<IFramework>();
+        var mockPluginLog = Substitute.For<IPluginLog>();
+        var mockLocalPlayerContext = Substitute.For<ILocalPlayerContext>();
+
+        using var registry = new CharacterRegistry(
+            mockStorage,
+            new List<ICharacterSource>(),
+            mockMigrationService,
+            mockIdentityService,
+            mockClientState,
+            mockFramework,
+            mockPluginLog,
+            mockLocalPlayerContext
+        );
+
+        var mockSource = Substitute.For<ICharacterSource>();
+        mockSource.SourceId.Returns(Guid.NewGuid());
+        mockSource.Priority.Returns(10);
+
+        var sharedContentId = 123456ul;
+        var validName = "Valid Name";
+
+        // Act 1: Initial valid data populates the registry
+        mockSource.GetCurrentState().Returns(new List<Character> {
+            new Character { ContentId = sharedContentId, Name = validName, HomeWorldId = 1, IsOnline = true }
+        });
+
+        registry.RegisterSource(mockSource);
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        // Assert 1
+        var character = registry.GetAllCharacters().First(c => c.ContentId == sharedContentId);
+        Assert.Equal(validName, character.Name);
+
+        // Act 2: Transient empty name arrives from the memory scanner
+        mockSource.GetCurrentState().Returns(new List<Character> {
+            new Character { ContentId = sharedContentId, Name = "", HomeWorldId = 1, IsOnline = true }
+        });
+
+        mockSource.DataUpdated += Raise.Event<Action>();
+
+        // Assert 2: The registry must reject the empty string and preserve the valid name
+        character = registry.GetAllCharacters().First(c => c.ContentId == sharedContentId);
+        Assert.Equal(validName, character.Name);
+    }
 }

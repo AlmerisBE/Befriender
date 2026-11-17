@@ -125,6 +125,11 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                 var existing = this.masterList.FirstOrDefault(c => c.IsSameIdentity(incoming.ContentId, incoming.Name, incoming.HomeWorldId));
 
                 if (existing == null) {
+                    // Prevent insertion of transient unpopulated memory reads
+                    if (string.IsNullOrWhiteSpace(incoming.Name)) {
+                        continue;
+                    }
+
                     existing = incoming;
                     if (existing.Id == Guid.Empty) existing.Id = Guid.NewGuid();
                     if (existing.AddedAt == DateTime.MinValue) existing.AddedAt = DateTime.Now;
@@ -141,8 +146,9 @@ public class CharacterRegistry : ICharacterRegistry, IDisposable {
                     if (incoming.Tribe > 0) existing.Tribe = incoming.Tribe;
                     if (incoming.Gender > 0) existing.Gender = incoming.Gender;
 
-                    if (!string.Equals(existing.Name, incoming.Name, StringComparison.Ordinal) && !string.IsNullOrEmpty(existing.Name)) {
-                        if (!existing.PreviousNames.Contains(existing.Name)) {
+                    // FIX: Ensure we never overwrite a valid existing name with a transient empty string
+                    if (!string.IsNullOrWhiteSpace(incoming.Name) && !string.Equals(existing.Name, incoming.Name, StringComparison.Ordinal)) {
+                        if (!string.IsNullOrEmpty(existing.Name) && !existing.PreviousNames.Contains(existing.Name)) {
                             existing.PreviousNames.Add(existing.Name);
                         }
                         existing.Name = incoming.Name;
