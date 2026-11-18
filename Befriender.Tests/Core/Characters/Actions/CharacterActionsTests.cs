@@ -154,7 +154,8 @@ public class CharacterActionsTests {
     [Fact]
     public void SendTellAction_CanExecute_OnlyIfNameIsNotEmpty() {
         var mockGameDataService = Substitute.For<IGameDataService>();
-        var action = new SendTellAction(mockGameDataService);
+        var mockChatBoxService = Substitute.For<IChatBoxService>();
+        var action = new SendTellAction(mockGameDataService, mockChatBoxService);
 
         Assert.True(action.CanExecute(new Character { Name = "Alice" }));
         Assert.False(action.CanExecute(new Character { Name = "" }));

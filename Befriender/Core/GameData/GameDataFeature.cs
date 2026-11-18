@@ -10,5 +10,6 @@ public class GameDataFeature : IFeatureModule {
         services.AddSingleton<IGameDataService, GameDataService>();
         services.AddSingleton<ILocalPlayerContext, LocalPlayerContext>();
         services.AddSingleton<IMainCommandProvider, MainCommandProvider>();
+        services.AddSingleton<IChatBoxService, ChatBoxService>();
     }
 }
